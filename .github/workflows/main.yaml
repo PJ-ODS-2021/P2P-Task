@@ -63,6 +63,7 @@ jobs:
           flutter-version: '2.0.6'
       - run: flutter pub get
       - run: flutter build web
+      - run: sed -i 's#<base href="/">#<base href="/P2P-Task/">#g' build/web/index.html
       - uses: JamesIves/github-pages-deploy-action@4.1.3
         with:
           branch: gh-pages
