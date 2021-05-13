@@ -51,7 +51,7 @@ jobs:
           name: ios-build
           path: build/ios/iphoneos
 
-  build-web:
+  deploy-web:
     runs-on: ubuntu-latest
     needs: test
     if:
@@ -63,7 +63,7 @@ jobs:
           flutter-version: '2.0.6'
       - run: flutter pub get
       - run: flutter build web
-      - uses: actions/upload-artifact@v2
+      - uses: JamesIves/github-pages-deploy-action@4.1.3
         with:
-          name: web-build
-          path: build/web
+          branch: gh-pages
+          folder: build/web
