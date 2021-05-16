@@ -4,12 +4,7 @@ import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 
 void main() {
-  runApp(MultiProvider(
-    providers: [
-      ChangeNotifierProvider(create: (context) => TaskListService()),
-    ],
-    child: App(),
-  ));
+  runApp(App());
 }
 
 class App extends StatelessWidget {
@@ -30,7 +25,12 @@ class App extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.deepPurple,
       ),
-      home: HomeScreen(title: 'P2P Task Manager'),
+      home: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (context) => TaskListService()),
+        ],
+        child: HomeScreen(title: 'P2P Task Manager'),
+      ),
     );
   }
 }
