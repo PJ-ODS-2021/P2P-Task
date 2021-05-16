@@ -1,16 +1,23 @@
-# p2p_task
+# P2P Task Manager
 
-A privacy-aware P2P task manager.
+A privacy-aware task manager.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+Follow the instruction on https://flutter.dev/docs/get-started/install
 
-A few resources to get you started if this is your first Flutter project:
+Follow the instructions on https://flutter.dev/docs/get-started/editor
+
+Run `flutter pub get` in the terminal to load all dependencies
+
+Run `flutter pub run build_runner build` in the terminal to autogenerate some relevant files
+
+Check with the command `flutter doctor` if everything works as expected
+
+You should now be able to run the example in your IDE
+
+A few resources to get you started:
 
 - [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
 - [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- [Online Documentation](https://flutter.dev/docs)
