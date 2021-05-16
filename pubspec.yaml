@@ -26,7 +26,7 @@ dependencies:
 
   network_info_plus: ^1.0.1
   provider: ^5.0.0
-  web_socket_channel: ^2.1.0
+  qr_code_scanner: ^0.4.0
   qr_flutter: ^4.0.0
   path_provider: ^2.0.1
   permission_handler: ^7.1.0

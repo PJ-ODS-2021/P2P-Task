@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:p2p_task/screens/counter_example_screen.dart';
 import 'package:p2p_task/screens/task_form_screen.dart';
 import 'package:p2p_task/screens/task_list_screen.dart';
+import 'package:p2p_task/screens/fun_with_sockets.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -48,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
             case 1:
               return CounterExampleScreen();
             case 2:
-              return Center(child: Text('Nothing yet.'));
+              return FunWithSockets();
             case 3:
               return Center(child: Text('Nothing yet.'));
             default:
