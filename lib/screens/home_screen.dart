@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:p2p_task/screens/counter_example_screen.dart';
 import 'package:p2p_task/screens/task_form_screen.dart';
 import 'package:p2p_task/screens/task_list_screen.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
@@ -45,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
             case 0:
               return TaskListScreen();
             case 1:
-              return Center(child: Text('Nothing yet.'));
+              return CounterExampleScreen();
             case 2:
               return Center(child: Text('Nothing yet.'));
             case 3:
