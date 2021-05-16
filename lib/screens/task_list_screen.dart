@@ -19,8 +19,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         builder: (context, taskListService, child) {
       return ListView(
         children: taskListService.tasks
-            .map((element) =>
-                _buildSlideable(context, element))
+            .map((element) => _buildSlideable(context, element))
             .toList(),
       );
     });
@@ -33,7 +32,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
       child: Container(
         color: Colors.white,
         child: ListTile(
-          leading: task.completed ? Icon(Icons.check_box_outlined) : Icon(Icons.check_box_outline_blank),
+          leading: task.completed
+              ? Icon(Icons.check_box_outlined)
+              : Icon(Icons.check_box_outline_blank),
           title: Text(task.title),
           subtitle: Text(task.title),
         ),
@@ -43,13 +44,17 @@ class _TaskListScreenState extends State<TaskListScreen> {
           caption: 'Edit',
           color: Colors.grey[400],
           icon: Icons.edit,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => TaskFormScreen(task: task))),
+          onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => TaskFormScreen(task: task))),
         ),
         IconSlideAction(
           caption: 'Delete',
           color: Colors.red,
           icon: Icons.delete,
-          onTap: () => Provider.of<TaskListService>(context, listen: false).remove(task),
+          onTap: () =>
+              Provider.of<TaskListService>(context, listen: false).remove(task),
         ),
       ],
     );

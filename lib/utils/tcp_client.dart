@@ -20,7 +20,6 @@ class TcpClient {
       _socket!.handleError((err) {
         print(err);
       });
-
     } catch (err) {
       print(err);
     }

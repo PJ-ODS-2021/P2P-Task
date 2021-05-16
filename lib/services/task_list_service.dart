@@ -8,10 +8,12 @@ class TaskListService extends ChangeNotifier {
 
   TaskListService();
 
-  UnmodifiableListView<Task> get tasks => UnmodifiableListView(_taskList.elements);
+  UnmodifiableListView<Task> get tasks =>
+      UnmodifiableListView(_taskList.elements);
 
   void upsert(Task task) {
-    int index = _taskList.elements.indexWhere((element) => element.id == task.id);
+    int index =
+        _taskList.elements.indexWhere((element) => element.id == task.id);
     if (index > -1) {
       _taskList.elements.removeAt(index);
       _taskList.elements.insert(index, task);

@@ -41,7 +41,10 @@ class _QrReaderScreenState extends State<QrReaderScreen> {
       widget.onQRCodeRead(_result);
     }
     return Scaffold(
-      appBar: AppBar(title: Text('Scan QR Code'), centerTitle: true,),
+      appBar: AppBar(
+        title: Text('Scan QR Code'),
+        centerTitle: true,
+      ),
       body: Column(
         children: <Widget>[
           Expanded(
