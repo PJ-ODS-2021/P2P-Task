@@ -69,7 +69,8 @@ class _FunWithSocketsState extends State<FunWithSockets> {
               TextFormField(
                 controller: _ipTextController,
                 decoration: InputDecoration(hintText: 'IP'),
-                enabled: false,
+                enabled: true,
+                onFieldSubmitted: (value) => _client.connect(value),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.push(
@@ -104,6 +105,12 @@ class _FunWithSocketsState extends State<FunWithSockets> {
 
     try {
       wifiIP = await _networkInfo.getWifiIP();
+      if (wifiIP == "0.0.0.0") {
+        for (var interface in await NetworkInterface.list()) {
+          wifiIP = interface.addresses[0].address;
+          break;
+        }
+      }
     } on PlatformException catch (e) {
       print(e.toString());
       wifiIP = 'Failed to get Wifi IP';

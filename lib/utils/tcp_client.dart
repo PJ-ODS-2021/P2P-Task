@@ -11,9 +11,11 @@ class TcpClient {
 
   void connect(String host) async {
     try {
+      print("connecting to socket");
       _socketConnectionTask = await Socket.startConnect(host, port);
       _socket = await _socketConnectionTask!.socket;
 
+      print("listening from socket");
       _socketStreamSub = _socket!.asBroadcastStream().listen((event) {
         print(String.fromCharCodes(event));
       });

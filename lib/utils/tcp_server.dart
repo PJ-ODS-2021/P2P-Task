@@ -3,14 +3,13 @@ import 'dart:io';
 
 import 'dart:typed_data';
 
-const hostname = '0.0.0.0';
 const port = 7594;
 
 class TcpServer {
   ServerSocket? _server;
 
   void start() async {
-    _server = await ServerSocket.bind(hostname, port);
+    _server = await ServerSocket.bind(InternetAddress.anyIPv4, port);
     print('TCP server started at ${_server?.address}:${_server?.port}.');
 
     try {
