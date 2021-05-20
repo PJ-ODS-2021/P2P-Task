@@ -29,6 +29,7 @@ jobs:
         with:
           flutter-version: '2.0.6'
       - run: flutter pub get
+      - run: flutter pub run build_runner build
       - run: flutter build apk
       - uses: actions/upload-artifact@v2
         with:
@@ -46,6 +47,7 @@ jobs:
         with:
           flutter-version: '2.0.6'
       - run: flutter pub get
+      - run: flutter pub run build_runner build
       - run: flutter build ios --release --no-codesign
       - uses: actions/upload-artifact@v2
         with:
@@ -63,6 +65,7 @@ jobs:
         with:
           flutter-version: '2.0.6'
       - run: flutter pub get
+      - run: flutter pub run build_runner build
       - run: flutter build web
       - run: sed -i 's#<base href="/">#<base href="/P2P-Task/">#g' build/web/index.html
       - uses: JamesIves/github-pages-deploy-action@4.1.3
