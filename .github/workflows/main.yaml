@@ -11,6 +11,7 @@ jobs:
           flutter-version: '2.0.6'
       - run: flutter pub get
       - run: flutter format --set-exit-if-changed .
+      - run: flutter pub run build_runner build
       - run: flutter analyze
       - run: flutter test
 
