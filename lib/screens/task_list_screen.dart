@@ -89,8 +89,15 @@ class _TaskListScreenState extends State<TaskListScreen> {
       color: index.isEven ? Colors.white : Colors.white30,
       child: ListTile(
         leading: task.completed
-            ? Icon(Icons.check_circle, color: Colors.green)
-            : Icon(Icons.circle_outlined),
+            ? Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                semanticLabel: "Completed Task",
+              )
+            : Icon(
+                Icons.radio_button_off,
+                semanticLabel: "Uncompleted Task",
+              ),
         title: Text(task.title),
         // ToDo Change subtitle to task description
         subtitle: Text(task.title),
