@@ -16,6 +16,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   late final _task;
   final _formKey = GlobalKey<FormState>();
   late final _formController = TextEditingController(text: _task.title);
+  bool _editing = false;
 
   void _onSubmitPressed(context) {
     if (_formKey.currentState!.validate()) {
@@ -30,6 +31,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     super.initState();
     if (widget.task != null) {
       _task = widget.task;
+      _editing = true;
     } else {
       _task = Task(title: '');
     }
@@ -59,15 +61,17 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 controller: _formController,
                 validator: (value) {
                   if (value == null || value.length < 1)
-                    return 'At least 1 symbol.';
+                    return 'Give your task a title.';
                   return null;
                 },
               ),
             ),
+            Spacer(flex: 5),
             ElevatedButton(
               onPressed: () => _onSubmitPressed(context),
-              child: Text('Submit'),
-            )
+              child: Text(_editing ? 'Update Task' : 'Create Task'),
+            ),
+            Spacer(),
           ],
         ),
       ),

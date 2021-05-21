@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/screens/counter_example_screen.dart';
-import 'package:p2p_task/screens/task_form_screen.dart';
 import 'package:p2p_task/screens/task_list_screen.dart';
 import 'package:p2p_task/screens/fun_with_sockets.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
@@ -57,13 +56,6 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         },
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-            context, MaterialPageRoute(builder: (context) => TaskFormScreen())),
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
       bottomNavigationBar: BottomNavigation(
         onTap: (index) => setState(() {
           _selectedIndex = index;

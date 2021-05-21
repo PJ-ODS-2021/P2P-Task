@@ -13,32 +13,56 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
+  final _heroFont = TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold);
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<TaskListService>(
-        builder: (context, taskListService, child) {
-      return ListView(
-        children: taskListService.tasks
-            .map((element) => _buildSlideable(context, element))
-            .toList(),
-      );
-    });
+    final consumerWidget = Consumer<TaskListService>(
+      builder: (context, service, child) => _buildTaskList(context, service),
+    );
+
+    return Stack(
+      alignment: const Alignment(0, 0.9),
+      children: [
+        consumerWidget,
+        ElevatedButton(
+          onPressed: () => Navigator.push(context,
+              MaterialPageRoute(builder: (context) => TaskFormScreen())),
+          child: Icon(Icons.add),
+          style: ElevatedButton.styleFrom(
+            shape: CircleBorder(),
+            padding: EdgeInsets.all(24),
+          ),
+        )
+      ],
+    );
   }
 
-  Widget _buildSlideable(BuildContext context, Task task) {
+  Widget _buildTaskList(BuildContext context, TaskListService service) {
+    if (service.tasks.length == 0) {
+      return Center(
+          child: Column(
+        children: [
+          Spacer(),
+          Text('🎉 Nothing to do.', style: _heroFont),
+          Text('Click the plus button below to add a ToDo.'),
+          Spacer(flex: 2),
+        ],
+      ));
+    }
+    return ListView.builder(
+      itemCount: service.tasks.length,
+      itemBuilder: (context, index) {
+        return _buildSlidableTaskRow(context, service.tasks[index], index);
+      },
+    );
+  }
+
+  Widget _buildSlidableTaskRow(BuildContext context, Task task, int index) {
     return Slidable(
       actionPane: SlidableDrawerActionPane(),
       actionExtentRatio: 0.20,
-      child: Container(
-        color: Colors.white,
-        child: ListTile(
-          leading: task.completed
-              ? Icon(Icons.check_box_outlined)
-              : Icon(Icons.check_box_outline_blank),
-          title: Text(task.title),
-          subtitle: Text(task.title),
-        ),
-      ),
+      child: _buildTaskContainer(task, index),
       secondaryActions: <Widget>[
         IconSlideAction(
           caption: 'Edit',
@@ -57,6 +81,33 @@ class _TaskListScreenState extends State<TaskListScreen> {
               Provider.of<TaskListService>(context, listen: false).remove(task),
         ),
       ],
+    );
+  }
+
+  Widget _buildTaskContainer(Task task, int index) {
+    return Container(
+      color: index.isEven ? Colors.white : Colors.white30,
+      child: ListTile(
+        leading: task.completed
+            ? Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                semanticLabel: "Completed Task",
+              )
+            : Icon(
+                Icons.circle_outlined,
+                semanticLabel: "Uncompleted Task",
+              ),
+        title: Text(task.title),
+        // ToDo Change subtitle to task description
+        subtitle: Text(task.title),
+        trailing: Icon(Icons.chevron_left),
+        onTap: () {
+          setState(() {
+            task.completed = !task.completed;
+          });
+        },
+      ),
     );
   }
 }
