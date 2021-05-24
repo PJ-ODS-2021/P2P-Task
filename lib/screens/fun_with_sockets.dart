@@ -79,10 +79,12 @@ class _FunWithSocketsState extends State<FunWithSockets> {
           size: 200,
         ),
         Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
                 onPressed: () => _startServer(_port),
                 child: Text('Start Server')),
+            Padding(padding: const EdgeInsets.all(5.0)),
             ElevatedButton(onPressed: _closeServer, child: Text('Stop Server'))
           ],
         ),
@@ -103,9 +105,10 @@ class _FunWithSocketsState extends State<FunWithSockets> {
                   MaterialPageRoute(
                     builder: (context) => QrReaderScreen(
                       onQRCodeRead: (ip) {
-                        _ipTextController..text = ip;
                         _connect(ip, _port);
-                        setState(() {});
+                        setState(() {
+                          _ipTextController..text = ip;
+                        });
                       },
                     ),
                   ),
@@ -204,9 +207,11 @@ class _FunWithSocketsState extends State<FunWithSockets> {
       await client.close();
     }
 
-    setState(() {
-      _serverStatus = "down";
-    });
+    if (mounted) {
+      setState(() {
+        _serverStatus = "down";
+      });
+    }
   }
 
   @override
