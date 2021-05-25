@@ -13,7 +13,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => TaskListService()),
+        ChangeNotifierProvider(create: (context) => TaskListService.instance),
       ],
       child: MaterialApp(
         title: 'P2P Task Manager',
