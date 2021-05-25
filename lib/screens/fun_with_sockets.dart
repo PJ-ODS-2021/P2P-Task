@@ -133,7 +133,7 @@ class _FunWithSocketsState extends State<FunWithSockets> {
 
     try {
       wifiIP = await _networkInfo.getWifiIP();
-      if (wifiIP == "0.0.0.0") {
+      if (wifiIP == null || wifiIP.isEmpty || wifiIP == '0.0.0.0') {
         for (var interface in await NetworkInterface.list()) {
           wifiIP = interface.addresses[0].address;
           break;
