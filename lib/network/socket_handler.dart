@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:p2p_task/network/packet.dart';
 import 'package:p2p_task/network/packet_handler.dart';
 import 'package:p2p_task/network/serializable.dart';
@@ -19,7 +20,7 @@ class SocketHandler extends PacketHandler {
   }
 
   Future<SocketHandler> listen() async {
-    print('listning for data....');
+    print('listening for data....');
     await for (final data in websock) {
       print('received $data from websock');
       var packet = Packet.fromJson(jsonDecode(data));
@@ -45,8 +46,8 @@ class SocketHandler extends PacketHandler {
 
 Future<HttpServer> runServer(int port,
     [Function(SocketHandler)? onConnected]) async {
-  print('running server on port $port');
   final server = await HttpServer.bind(InternetAddress.anyIPv4, port);
+  print('running server on port ${server.port}');
   server.listen((request) async {
     final socketHandler = await SocketHandler.upgrade(request);
     if (onConnected != null) {
