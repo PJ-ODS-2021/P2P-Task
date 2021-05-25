@@ -2,14 +2,14 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:network_info_plus/network_info_plus.dart';
 import 'package:p2p_task/network/socket_handler.dart';
+import 'package:p2p_task/screens/fun_with_sockets/simple_dropdown.dart';
 import 'package:p2p_task/screens/qr_reader_screen.dart';
+import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/utils/messages/debug_message.dart';
+import 'package:provider/provider.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 const _port = 7594;
 
@@ -36,9 +36,9 @@ class FunWithSockets extends StatefulWidget {
 }
 
 class _FunWithSocketsState extends State<FunWithSockets> {
-  String _connectionStatus = 'Unknown';
+  List<String> ips = [];
+  String qrContent = '';
   String _serverStatus = 'down';
-  final NetworkInfo _networkInfo = NetworkInfo();
 
   Barcode? result;
   QRViewController? controller;
@@ -50,103 +50,67 @@ class _FunWithSocketsState extends State<FunWithSockets> {
   final _ipTextController = TextEditingController(text: '');
 
   @override
-  void initState() {
-    super.initState();
-    _initNetworkInfo();
-  }
-
-  // In order to get hot reload to work we need to pause the camera if the platform
-  // is android, or resume the camera if the platform is iOS.
-  @override
-  void reassemble() {
-    super.reassemble();
-    if (Platform.isAndroid) {
-      controller?.pauseCamera();
-    } else if (Platform.isIOS) {
-      controller?.resumeCamera();
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Center(
-        child: Column(
-      children: [
-        Text('Connection Status: $_connectionStatus (server: $_serverStatus)'),
-        QrImage(
-          data: '$_connectionStatus',
-          version: QrVersions.auto,
-          size: 200,
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-                onPressed: () => _startServer(_port),
-                child: Text('Start Server')),
-            Padding(padding: const EdgeInsets.all(5.0)),
-            ElevatedButton(onPressed: _closeServer, child: Text('Stop Server'))
-          ],
-        ),
-        Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              TextFormField(
-                controller: _ipTextController,
-                decoration: InputDecoration(hintText: 'IP'),
-                enabled: true,
-                onFieldSubmitted: (value) => _connect(value, _port),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => QrReaderScreen(
-                      onQRCodeRead: (ip) {
-                        _connect(ip, _port);
-                        setState(() {
-                          _ipTextController..text = ip;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-                child: Text('Get IP from QR Code'),
-              ),
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Send a message'),
-                onFieldSubmitted: (value) => _sendDebugMessage(value),
-              ),
-            ],
+    return ListView(children: [
+      Column(
+        children: [
+          _buildIpDropdown(context),
+          QrImage(
+            data: qrContent,
+            version: QrVersions.auto,
+            size: 200,
+          ),
+          ElevatedButton(
+            onPressed: _serverStatus == 'down'
+                ? () => _startServer(_port)
+                : _closeServer,
+            child: _serverStatus == 'down'
+                ? Text('Start Server')
+                : Text('Stop Server'),
+          ),
+          TextFormField(
+            controller: _ipTextController,
+            decoration: InputDecoration(hintText: 'IP'),
+            enabled: true,
+            onFieldSubmitted: (value) => _connect(value, _port),
+          ),
+          _buildQrReaderButton(context),
+          TextFormField(
+            decoration: InputDecoration(labelText: 'Send a message'),
+            onFieldSubmitted: (value) => _sendDebugMessage(value),
+          ),
+        ],
+      )
+    ]);
+  }
+
+  Widget _buildIpDropdown(BuildContext context) {
+    return Consumer<NetworkInfoService>(
+      builder: (context, service, child) => SimpleDropdown(
+          items: service.ips,
+          onItemSelect: (ip) => setState(() {
+                qrContent = ip;
+              })),
+    );
+  }
+
+  Widget _buildQrReaderButton(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => QrReaderScreen(
+            onQRCodeRead: (ip) {
+              _connect(ip, _port);
+              setState(() {
+                _ipTextController..text = ip;
+              });
+            },
           ),
         ),
-      ],
-    ));
-  }
-
-  Future<void> _initNetworkInfo() async {
-    if (kIsWeb) return;
-
-    String? wifiIP;
-
-    try {
-      wifiIP = await _networkInfo.getWifiIP();
-      if (wifiIP == null || wifiIP.isEmpty || wifiIP == '0.0.0.0') {
-        for (var interface in await NetworkInterface.list()) {
-          wifiIP = interface.addresses[0].address;
-          break;
-        }
-      }
-    } on PlatformException catch (e) {
-      print(e.toString());
-      wifiIP = 'Failed to get Wifi IP';
-    }
-
-    setState(() {
-      _connectionStatus = '$wifiIP';
-    });
+      ),
+      child: Text('Get IP from QR Code'),
+    );
   }
 
   Future<SocketHandler> _connect(String ip, int port) async {
@@ -200,6 +164,7 @@ class _FunWithSocketsState extends State<FunWithSockets> {
   }
 
   void _closeServer() async {
+    if (_server != null) print('closing server on port ${_server!.port}');
     await _server?.close(force: true);
     _server = null;
 

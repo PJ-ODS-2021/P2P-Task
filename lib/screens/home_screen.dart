@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/screens/counter_example_screen.dart';
 import 'package:p2p_task/screens/task_list_screen.dart';
-import 'package:p2p_task/screens/fun_with_sockets.dart';
+import 'package:p2p_task/screens/fun_with_sockets/fun_with_sockets.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
 
 class HomeScreen extends StatefulWidget {

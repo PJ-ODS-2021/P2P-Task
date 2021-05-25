@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/screens/home_screen.dart';
+import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 
@@ -14,6 +15,7 @@ class App extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => TaskListService.instance),
+        ChangeNotifierProvider(create: (context) => NetworkInfoService(null)),
       ],
       child: MaterialApp(
         title: 'P2P Task Manager',
