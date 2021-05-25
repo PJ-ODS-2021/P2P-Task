@@ -29,7 +29,6 @@ void _registerClientCallbacks(
 }
 
 class Peer extends ChangeNotifier {
-  String _serverStatus = 'down';
   HttpServer? _server;
   List<SocketHandler> _serverConnections = [];
   SocketHandler? _client;
@@ -38,14 +37,16 @@ class Peer extends ChangeNotifier {
 
   List<String> get messages => List.unmodifiable(_message);
 
-  String get serverStatus => _serverStatus;
+  bool get serverRunning => _server != null;
 
   Peer._privateConstructor();
   static final Peer instance = Peer._privateConstructor();
 
   Future<SocketHandler> connect(String ip, int port) async {
+    final url = 'ws://$ip:$port';
     await _client?.close();
-    return SocketHandler.connect('ws://$ip:$port').then((sock) {
+    print('connecting to $url');
+    return SocketHandler.connect(url).then((sock) {
       print('client connected to server');
       _client = sock;
       _registerTypes(sock);
@@ -67,11 +68,17 @@ class Peer extends ChangeNotifier {
       _registerServerCallbacks(sock, _message, notifyListeners);
       sock.send(DebugMessage('hello from the server'));
       await sock.listen();
+      print('closing client connection');
       _serverConnections.remove(sock);
       await sock.close();
+    }, onDone: () {
+      print('server is done');
+      _server = null;
+    }, onError: (err) {
+      print('server got error: $err');
+      _server = null;
     }).then((server) {
       _server = server;
-      _serverStatus = 'up';
       notifyListeners();
       return server;
     });
@@ -87,7 +94,7 @@ class Peer extends ChangeNotifier {
         }
       } else if (_client != null) {
         print('sending message to server');
-        _client?.send(messageObj);
+        _client!.send(messageObj);
       }
       _message.add('Peer sent: $message');
       notifyListeners();
@@ -95,15 +102,12 @@ class Peer extends ChangeNotifier {
   }
 
   void closeServer() async {
-    if (_server != null) print('closing server on port ${_server!.port}');
-    await _server?.close(force: true);
-    _server = null;
-
-    for (var client in _serverConnections) {
-      await client.close();
+    if (_server != null) {
+      print('closing server on port ${_server!.port}');
+      await _server!.close(force: true);
     }
+    await Future.wait([for (var client in _serverConnections) client.close()]);
 
-    _serverStatus = 'down';
     notifyListeners();
   }
 

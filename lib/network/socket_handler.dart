@@ -44,15 +44,12 @@ class SocketHandler extends PacketHandler {
   }
 }
 
-Future<HttpServer> runServer(int port,
-    [Function(SocketHandler)? onConnected]) async {
+Future<HttpServer> runServer(int port, Function(SocketHandler) onConnected,
+    {Function? onError, Function()? onDone}) async {
   final server = await HttpServer.bind(InternetAddress.anyIPv4, port);
-  print('running server on port ${server.port}');
+  print('running server on ${server.address}:${server.port}');
   server.listen((request) async {
-    final socketHandler = await SocketHandler.upgrade(request);
-    if (onConnected != null) {
-      onConnected(socketHandler);
-    }
-  });
+    onConnected(await SocketHandler.upgrade(request));
+  }, onError: onError, onDone: onDone);
   return server;
 }

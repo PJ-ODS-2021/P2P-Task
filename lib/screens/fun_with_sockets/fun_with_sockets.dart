@@ -19,7 +19,7 @@ class FunWithSockets extends StatefulWidget {
 
 class _FunWithSocketsState extends State<FunWithSockets> {
   List<String> ips = [];
-  String qrContent = '';
+  String? qrContent;
 
   Barcode? result;
   QRViewController? controller;
@@ -34,18 +34,14 @@ class _FunWithSocketsState extends State<FunWithSockets> {
         Column(
           children: [
             _buildIpDropdown(context),
-            QrImage(
-              data: qrContent,
-              version: QrVersions.auto,
-              size: 200,
-            ),
+            _buildQrImage(context),
             ElevatedButton(
-              onPressed: peer.serverStatus == 'down'
+              onPressed: !peer.serverRunning
                   ? () => peer.startServer(_port)
                   : peer.closeServer,
-              child: peer.serverStatus == 'down'
-                  ? Text('Start Server')
-                  : Text('Stop Server'),
+              child: peer.serverRunning
+                  ? Text('Stop Server')
+                  : Text('Start Server'),
             ),
             TextFormField(
               controller: _ipTextController,
@@ -71,6 +67,32 @@ class _FunWithSocketsState extends State<FunWithSockets> {
     );
   }
 
+  Widget _buildQrImage(BuildContext context) {
+    return Consumer<NetworkInfoService>(
+      builder: (context, networkService, child) {
+        return Consumer<Peer>(
+          builder: (context, peer, child) {
+            if (peer.serverRunning) {
+              final qrStr = qrContent ??
+                  (networkService.ips.isEmpty ? null : networkService.ips[0]);
+              if (qrStr == null) {
+                return Text("Could not find IP");
+              } else {
+                return QrImage(
+                  data: qrStr,
+                  version: QrVersions.auto,
+                  size: 200,
+                );
+              }
+            } else {
+              return Text("Server is not running");
+            }
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildIpDropdown(BuildContext context) {
     return Consumer<NetworkInfoService>(
       builder: (context, service, child) => SimpleDropdown(
@@ -88,8 +110,8 @@ class _FunWithSocketsState extends State<FunWithSockets> {
         MaterialPageRoute(
           builder: (context) => QrReaderScreen(
             onQRCodeRead: (ip) {
-              peer.connect(ip, _port);
               _ipTextController..text = ip;
+              peer.connect(ip, _port);
             },
           ),
         ),
