@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:p2p_task/screens/counter_example_screen.dart';
+import 'package:p2p_task/screens/activity_log_screen.dart';
 import 'package:p2p_task/screens/task_list_screen.dart';
 import 'package:p2p_task/screens/fun_with_sockets.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
@@ -46,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
             case 0:
               return TaskListScreen();
             case 1:
-              return CounterExampleScreen();
+              return ActivityLogScreen();
             case 2:
               return FunWithSockets();
             case 3:

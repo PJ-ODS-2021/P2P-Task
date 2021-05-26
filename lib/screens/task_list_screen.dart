@@ -45,7 +45,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         children: [
           Spacer(),
           Text('🎉 Nothing to do.', style: _heroFont),
-          Text('Click the plus button below to add a ToDo.'),
+          Text('Click the plus button below to add a Task.'),
           Spacer(flex: 2),
         ],
       ));
