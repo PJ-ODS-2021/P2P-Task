@@ -6,12 +6,13 @@ import 'package:p2p_task/network/packet_handler.dart';
 import 'package:p2p_task/network/serializable.dart';
 
 class SocketHandler extends PacketHandler {
-  WebSocket websock;
+  final String? url;
+  final WebSocket websock;
 
-  SocketHandler(this.websock);
+  SocketHandler(this.websock, [this.url]);
 
   static Future<SocketHandler> connect(String url) {
-    return WebSocket.connect(url).then((value) => SocketHandler(value));
+    return WebSocket.connect(url).then((value) => SocketHandler(value, url));
   }
 
   static Future<SocketHandler> upgrade(HttpRequest httpRequest) {

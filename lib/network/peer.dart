@@ -38,9 +38,12 @@ class Peer extends ChangeNotifier {
   List<String> get messages => List.unmodifiable(_message);
 
   bool get serverRunning => _server != null;
+  SocketHandler? get client => _client;
+
+  static final Peer _instance = Peer._privateConstructor();
 
   Peer._privateConstructor();
-  static final Peer instance = Peer._privateConstructor();
+  factory Peer.instance() => _instance;
 
   Future<SocketHandler> connect(String ip, int port) async {
     final url = 'ws://$ip:$port';
@@ -51,9 +54,11 @@ class Peer extends ChangeNotifier {
       _client = sock;
       _registerTypes(sock);
       _registerClientCallbacks(sock, _message, notifyListeners);
+      notifyListeners();
       sock.send(DebugMessage('hello from the client'));
       return sock.listen().then((sock) {
         _client = null;
+        notifyListeners();
         return sock;
       });
     });
@@ -74,9 +79,11 @@ class Peer extends ChangeNotifier {
     }, onDone: () {
       print('server is done');
       _server = null;
+      notifyListeners();
     }, onError: (err) {
       print('server got error: $err');
       _server = null;
+      notifyListeners();
     }).then((server) {
       _server = server;
       notifyListeners();
@@ -107,13 +114,13 @@ class Peer extends ChangeNotifier {
       await _server!.close(force: true);
     }
     await Future.wait([for (var client in _serverConnections) client.close()]);
-
     notifyListeners();
   }
 
   void closeClient() {
     _client?.close();
     _client = null;
+    notifyListeners();
   }
 
   @override

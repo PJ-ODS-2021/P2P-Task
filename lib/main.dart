@@ -17,7 +17,7 @@ class App extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (context) => TaskListService.instance),
         ChangeNotifierProvider(create: (context) => NetworkInfoService(null)),
-        ChangeNotifierProvider(create: (context) => Peer.instance),
+        ChangeNotifierProvider(create: (context) => Peer.instance()),
       ],
       child: MaterialApp(
         title: 'P2P Task Manager',
