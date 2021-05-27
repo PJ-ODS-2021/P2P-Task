@@ -53,16 +53,16 @@ class _TaskListScreenState extends State<TaskListScreen> {
     return ListView.builder(
       itemCount: service.tasks.length,
       itemBuilder: (context, index) {
-        return _buildSlidableTaskRow(context, service.tasks[index], index);
+        return _buildSlidableTaskRow(context, service, service.tasks[index], index);
       },
     );
   }
 
-  Widget _buildSlidableTaskRow(BuildContext context, Task task, int index) {
+  Widget _buildSlidableTaskRow(BuildContext context, TaskListService service, Task task, int index) {
     return Slidable(
       actionPane: SlidableDrawerActionPane(),
       actionExtentRatio: 0.20,
-      child: _buildTaskContainer(task, index),
+      child: _buildTaskContainer(service, task, index),
       secondaryActions: <Widget>[
         IconSlideAction(
           caption: 'Edit',
@@ -84,7 +84,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
-  Widget _buildTaskContainer(Task task, int index) {
+  Widget _buildTaskContainer(TaskListService service, Task task, int index) {
     return Container(
       color: index.isEven ? Colors.white : Colors.white30,
       child: ListTile(
@@ -105,6 +105,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         onTap: () {
           setState(() {
             task.completed = !task.completed;
+            service.upsert(task);
           });
         },
       ),

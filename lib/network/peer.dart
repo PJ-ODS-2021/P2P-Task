@@ -2,28 +2,50 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
+import 'package:p2p_task/network/messages/task_list_message.dart';
+import 'package:p2p_task/network/serializable.dart';
 import 'package:p2p_task/network/socket_handler.dart';
-import 'package:p2p_task/utils/messages/debug_message.dart';
+import 'package:p2p_task/network/messages/debug_message.dart';
+import 'package:p2p_task/services/task_list_service.dart';
 
 void _registerTypes(SocketHandler sock) {
   sock.registerTypename<DebugMessage>(
       "DebugMessage", (json) => DebugMessage.fromJson(json));
+  sock.registerTypename<TaskListMessage>(
+      "TaskListMessage", (json) => TaskListMessage.fromJson(json));
 }
 
 void _registerServerCallbacks(
-    SocketHandler sock, List<String> messages, notifier) {
+    SocketHandler sock, List<String> messages, Function() notifier) {
   sock.registerCallback<DebugMessage>((msg) {
     print('server received debug message "${msg.value}"');
+
     messages.add('Server received: ${msg.value}');
     notifier();
   });
 }
 
 void _registerClientCallbacks(
-    SocketHandler sock, List<String> messages, notifier) {
+    SocketHandler sock, List<String> messages, Function() notifier) {
   sock.registerCallback<DebugMessage>((msg) {
     print('client received debug message "${msg.value}"');
+
     messages.add('Client received: ${msg.value}');
+    notifier();
+  });
+}
+
+void _registerCommonCallbacks(SocketHandler sock, bool isSever,
+    List<String> messages, Function() notifier) {
+  sock.registerCallback<TaskListMessage>((msg) {
+    print('server task list message');
+    TaskListService.instance.mergeCrdtJson(msg.taskListCrdtJson);
+    if (msg.requestReply) {
+      sock.send(TaskListMessage(TaskListService.instance.crdtToJson()));
+      messages.add('Received task list message and sent reply');
+    } else {
+      messages.add('Received task list message');
+    }
     notifier();
   });
 }
@@ -33,9 +55,9 @@ class Peer extends ChangeNotifier {
   List<SocketHandler> _serverConnections = [];
   SocketHandler? _client;
 
-  List<String> _message = [];
+  List<String> _messageList = [];
 
-  List<String> get messages => List.unmodifiable(_message);
+  List<String> get messages => List.unmodifiable(_messageList);
 
   bool get serverRunning => _server != null;
   SocketHandler? get client => _client;
@@ -53,7 +75,8 @@ class Peer extends ChangeNotifier {
       print('client connected to server');
       _client = sock;
       _registerTypes(sock);
-      _registerClientCallbacks(sock, _message, notifyListeners);
+      _registerClientCallbacks(sock, _messageList, notifyListeners);
+      _registerCommonCallbacks(sock, false, _messageList, notifyListeners);
       notifyListeners();
       sock.send(DebugMessage('hello from the client'));
       return sock.listen().then((sock) {
@@ -70,7 +93,8 @@ class Peer extends ChangeNotifier {
       print('server got connection from client!');
       _serverConnections.add(sock);
       _registerTypes(sock);
-      _registerServerCallbacks(sock, _message, notifyListeners);
+      _registerServerCallbacks(sock, _messageList, notifyListeners);
+      _registerCommonCallbacks(sock, true, _messageList, notifyListeners);
       sock.send(DebugMessage('hello from the server'));
       await sock.listen();
       print('closing client connection');
@@ -91,19 +115,32 @@ class Peer extends ChangeNotifier {
     });
   }
 
+  void sendToServer<T extends Serializable>(T msg) {
+    if (_client == null) return;
+    print('sending $msg to server');
+    _client!.send(msg);
+  }
+
+  void sendToAllClients<T extends Serializable>(T msg) {
+    if (_server == null) return;
+    print('sending message $msg to all clients (${_serverConnections.length})');
+    for (final connection in _serverConnections) {
+      connection.send(msg);
+    }
+  }
+
   void sendDebugMessage(String message) {
     if (message.isNotEmpty) {
       final messageObj = DebugMessage(message);
       if (_server != null) {
-        print('sending message to all clients (${_serverConnections.length})');
-        for (var client in _serverConnections) {
-          client.send(messageObj);
-        }
-      } else if (_client != null) {
-        print('sending message to server');
-        _client!.send(messageObj);
+        sendToAllClients(messageObj);
+        _messageList.add(
+            'Peer sent: "$message" to ${_serverConnections.length} clients');
       }
-      _message.add('Peer sent: $message');
+      if (_client != null) {
+        sendToServer(messageObj);
+        _messageList.add('Peer sent: "$message" to server');
+      }
       notifyListeners();
     }
   }
@@ -117,8 +154,8 @@ class Peer extends ChangeNotifier {
     notifyListeners();
   }
 
-  void closeClient() {
-    _client?.close();
+  void closeClient() async {
+    await _client?.close();
     _client = null;
     notifyListeners();
   }

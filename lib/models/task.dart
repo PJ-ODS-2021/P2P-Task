@@ -5,7 +5,7 @@ part 'task.g.dart';
 
 @JsonSerializable()
 class Task {
-  String? id;
+  final String id;
   String title;
   bool completed;
   DateTime? due;
@@ -13,14 +13,13 @@ class Task {
   String? priority;
 
   Task(
-      {this.id,
+      {String? id,
       required this.title,
       this.completed = false,
       this.due,
       this.dueNotification,
-      this.priority}) {
-    if (this.id == null) this.id = Uuid().v4();
-  }
+      this.priority})
+      : id = id ?? Uuid().v4();
 
   factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);
 
