@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:p2p_task/network/peer.dart';
+import 'package:p2p_task/network/socket_handler.dart';
 import 'package:p2p_task/screens/fun_with_sockets/simple_dropdown.dart';
 import 'package:p2p_task/screens/qr_reader_screen.dart';
 import 'package:p2p_task/services/network_info_service.dart';
@@ -175,7 +176,7 @@ class _FunWithSocketsState extends State<FunWithSockets> {
       } else {
         _displaySnackBar('Error: $socketException');
       }
-      return e;
+      return Future<SocketHandler>.error(e);
     }, test: (e) => e is SocketException);
   }
 
