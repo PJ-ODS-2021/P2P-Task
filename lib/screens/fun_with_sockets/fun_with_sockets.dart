@@ -199,7 +199,8 @@ class _FunWithSocketsState extends State<FunWithSockets> {
 
   void _sync(BuildContext context) {
     final peer = Provider.of<Peer>(context, listen: false);
-    final msg = TaskListMessage(TaskListService.instance.crdtToJson(), requestReply: true);
+    final msg = TaskListMessage(TaskListService.instance.crdtToJson(),
+        requestReply: true);
     peer.sendToAllClients(msg);
     peer.sendToServer(msg);
   }

@@ -53,12 +53,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
     return ListView.builder(
       itemCount: service.tasks.length,
       itemBuilder: (context, index) {
-        return _buildSlidableTaskRow(context, service, service.tasks[index], index);
+        return _buildSlidableTaskRow(
+            context, service, service.tasks[index], index);
       },
     );
   }
 
-  Widget _buildSlidableTaskRow(BuildContext context, TaskListService service, Task task, int index) {
+  Widget _buildSlidableTaskRow(
+      BuildContext context, TaskListService service, Task task, int index) {
     return Slidable(
       actionPane: SlidableDrawerActionPane(),
       actionExtentRatio: 0.20,
