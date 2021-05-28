@@ -1,7 +1,7 @@
 import 'dart:isolate';
 
 import 'package:p2p_task/network/socket_handler.dart';
-import 'package:p2p_task/utils/messages/debug_message.dart';
+import 'package:p2p_task/network/messages/debug_message.dart';
 
 void _registerTypes(SocketHandler sock) {
   sock.registerTypename<DebugMessage>(

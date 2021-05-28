@@ -4,7 +4,7 @@ import 'dart:isolate';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/network/socket_handler.dart';
-import 'package:p2p_task/utils/messages/debug_message.dart';
+import 'package:p2p_task/network/messages/debug_message.dart';
 
 import 'websocket_server_custom.dart';
 
