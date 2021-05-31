@@ -1,4 +1,5 @@
 import 'dart:collection';
+
 import 'package:flutter/cupertino.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/models/task_list.dart';
@@ -6,10 +7,14 @@ import 'package:p2p_task/models/task_list.dart';
 class TaskListService extends ChangeNotifier {
   TaskList _taskList = TaskList('List', []);
 
-  TaskListService();
+  TaskListService._privateConstructor();
+  static final TaskListService instance = TaskListService._privateConstructor();
 
   UnmodifiableListView<Task> get tasks =>
       UnmodifiableListView(_taskList.elements);
+
+  TaskList get taskList =>
+      TaskList('List', UnmodifiableListView(_taskList.elements));
 
   void upsert(Task task) {
     int index =
