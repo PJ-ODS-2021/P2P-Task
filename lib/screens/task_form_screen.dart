@@ -16,12 +16,16 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   late final _task;
   final _formKey = GlobalKey<FormState>();
   late final _formController = TextEditingController(text: _task.title);
+  late final _formDescriptionController =
+      TextEditingController(text: _task.description);
   bool _editing = false;
 
   void _onSubmitPressed(context) {
     if (_formKey.currentState!.validate()) {
       Provider.of<TaskListService>(context, listen: false)
           .upsert(_task..title = _formController.text);
+      Provider.of<TaskListService>(context, listen: false)
+          .upsert(_task..description = _formDescriptionController.text);
       Navigator.pop(context);
     }
   }
@@ -66,6 +70,22 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 },
               ),
             ),
+            Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: 10.0,
+                horizontal: 15.0,
+              ),
+              child: TextFormField(
+                onFieldSubmitted: (value) => _onSubmitPressed(context),
+                decoration: InputDecoration(
+                  hintText: 'Description',
+                  filled: true,
+                  fillColor: Colors.purple[50],
+                  border: OutlineInputBorder(borderSide: BorderSide.none),
+                ),
+                controller: _formDescriptionController,
+              ),
+            ),
             Spacer(flex: 5),
             ElevatedButton(
               onPressed: () => _onSubmitPressed(context),
@@ -81,6 +101,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   @override
   void dispose() {
     _formController.dispose();
+    _formDescriptionController.dispose();
     super.dispose();
   }
 }
