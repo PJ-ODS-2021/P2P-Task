@@ -3,6 +3,8 @@ import 'package:p2p_task/models/activity_entry.dart';
 import 'package:p2p_task/services/activity_entry_service.dart';
 import 'package:provider/provider.dart';
 
+import '../models/activity_entry.dart';
+
 class ActivityLogScreen extends StatefulWidget {
   ActivityLogScreen({Key? key}) : super(key: key);
 
@@ -37,6 +39,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
       ));
     }
     return ListView.separated(
+      padding: EdgeInsets.symmetric(vertical: 8),
         itemCount: service.activities.length,
         separatorBuilder: (BuildContext context, int index) => const Divider(),
         itemBuilder: (BuildContext context, int index) {
@@ -46,11 +49,94 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
   }
 
   Widget _buildActivityEntry(BuildContext context, ActivityEntry activity) {
-    return ListTile(
-      title: Text(activity.event),
-      subtitle: Text("On this device in Work."),
-      leading: Icon(Icons.file_download_outlined),
-      trailing: Text("2021-05-26"),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _getActivityName(activity),
+              _getActivityDate(activity),
+            ],
+          ),
+          const SizedBox(height: 8.0),
+          Row(
+            children: [
+              _getActivityBasedIcon(activity),
+              const SizedBox(width: 8.0),
+              _getActivityDesc(activity),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _getActivityName(ActivityEntry activity) {
+    return Text(
+      activity.event ?? '',
+      style: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: Colors.black,
+        fontSize: 18,
+      ),
+    );
+  }
+
+  Widget _getActivityDate(ActivityEntry activity) {
+    return Text(
+      "${activity.timestamp?.day}/${activity.timestamp?.month}/${activity.timestamp?.year}",
+      style: TextStyle(
+        color: Colors.black.withOpacity(0.6),
+        fontSize: 14,
+      ),
+    );
+  }
+
+  Widget _getActivityBasedIcon(ActivityEntry activity) {
+    return Image.asset(
+      activity.event == "Task Completed"
+          ? "./assets/up_arrow_square.png"
+          : "./assets/download.png",
+      color: Colors.black,
+      height: 22,
+      width: 22,
+    );
+  }
+
+  Widget _getActivityDesc(ActivityEntry activity) {
+    return RichText(
+      text: TextSpan(
+        text: "On ",
+        style: TextStyle(color: Colors.grey),
+        children: [
+          TextSpan(
+            text: activity.event == "Task Completed"
+                ? "this device"
+                : activity.device,
+            style: TextStyle(
+              color: activity.event == "Task Completed"
+                  ? Colors.black.withOpacity(0.5)
+                  : Colors.black.withOpacity(0.6),
+              fontWeight: activity.event == "Task Completed"
+                  ? FontWeight.normal
+                  : FontWeight.bold,
+            ),
+          ),
+          TextSpan(
+            text: " in ",
+            style: TextStyle(color: Colors.black.withOpacity(0.5)),
+          ),
+          TextSpan(
+            text: activity.network,
+            style: TextStyle(
+              color: Colors.black.withOpacity(0.6),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

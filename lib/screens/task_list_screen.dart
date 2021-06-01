@@ -95,7 +95,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 semanticLabel: "Completed Task",
               )
             : Icon(
-                Icons.circle_outlined,
+                Icons.circle,
                 semanticLabel: "Uncompleted Task",
               ),
         title: Text(task.title),
