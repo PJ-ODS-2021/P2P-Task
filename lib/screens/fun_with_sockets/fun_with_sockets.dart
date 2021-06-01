@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:p2p_task/network/peer.dart';
 import 'package:p2p_task/network/socket_handler.dart';
+import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/screens/fun_with_sockets/simple_dropdown.dart';
 import 'package:p2p_task/screens/qr_reader_screen.dart';
 import 'package:p2p_task/services/network_info_service.dart';
+import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -39,14 +41,7 @@ class _FunWithSocketsState extends State<FunWithSockets> {
           _buildServerInfo(context),
           Divider(),
           _buildConnectToServerWidgets(context),
-          TextFormField(
-            controller: _sendMessageController,
-            decoration: InputDecoration(labelText: 'Send a message'),
-            onFieldSubmitted: (value) {
-              Provider.of<Peer>(context, listen: false).sendDebugMessage(value);
-              _sendMessageController.text = '';
-            },
-          ),
+          _buildConnectedWidgets(context),
           Consumer<Peer>(
               builder: (context, peer, child) => Column(
                     children:
@@ -148,6 +143,28 @@ class _FunWithSocketsState extends State<FunWithSockets> {
     );
   }
 
+  Widget _buildConnectedWidgets(BuildContext context) {
+    return Consumer<Peer>(
+      builder: (context, peer, child) => Column(
+        children: [
+          if (child != null && (peer.client != null || peer.serverRunning))
+            child,
+        ],
+      ),
+      child: Column(children: [
+        TextFormField(
+          controller: _sendMessageController,
+          decoration: InputDecoration(labelText: 'Send a message'),
+          onFieldSubmitted: (value) {
+            Provider.of<Peer>(context, listen: false).sendDebugMessage(value);
+            _sendMessageController.text = '';
+          },
+        ),
+        ElevatedButton(onPressed: () => _sync(context), child: Text("Sync")),
+      ]),
+    );
+  }
+
   void _displaySnackBar(String message) {
     final snackBar = SnackBar(
       content: Text(message),
@@ -180,11 +197,19 @@ class _FunWithSocketsState extends State<FunWithSockets> {
     }, test: (e) => e is SocketException);
   }
 
+  void _sync(BuildContext context) {
+    final peer = Provider.of<Peer>(context, listen: false);
+    final msg = TaskListMessage(TaskListService.instance.crdtToJson(),
+        requestReply: true);
+    peer.sendToAllClients(msg);
+    peer.sendToServer(msg);
+  }
+
   @override
   void dispose() {
     print('disposing...');
     controller?.dispose();
-    Peer.instance().closeClient();
+    // Peer.instance().closeClient();
 
     super.dispose();
   }
