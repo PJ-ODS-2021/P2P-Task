@@ -11,7 +11,7 @@ class DeviceInfoService {
 
   Future<String> get deviceName async {
     if (kIsWeb)
-      return await (await _deviceInfoPlugin.webBrowserInfo).userAgent;
+      return (await _deviceInfoPlugin.webBrowserInfo).userAgent;
     else if (Platform.isIOS)
       return (await _deviceInfoPlugin.iosInfo).model ?? 'iOS';
     else if (Platform.isAndroid)

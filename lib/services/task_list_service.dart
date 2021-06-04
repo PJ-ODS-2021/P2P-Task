@@ -91,5 +91,6 @@ class TaskListService extends ChangeNotifier with LogMixin {
   }
 
   @override
+  // ignore: must_call_super
   void dispose() {}
 }

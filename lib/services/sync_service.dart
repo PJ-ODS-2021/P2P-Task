@@ -11,6 +11,7 @@ class SyncService extends ChangeNotifier with LogMixin {
   final String _syncOnUpdateKey = 'syncOnUpdate';
 
   KeyValueRepository _repository;
+  // ignore: cancel_subscriptions
   StreamSubscription? _syncJob;
   Function()? _job;
 
@@ -70,5 +71,6 @@ class SyncService extends ChangeNotifier with LogMixin {
   }
 
   @override
+  // ignore: must_call_super
   void dispose() async {}
 }
