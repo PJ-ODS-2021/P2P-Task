@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/models/peer_info.dart';
-import 'package:p2p_task/network/peer.dart';
+import 'package:p2p_task/network/web_socket_peer.dart';
 import 'package:p2p_task/screens/devices/device_form_screen.dart';
 import 'package:p2p_task/screens/qr_scanner_screen.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
@@ -32,7 +32,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final consumerWidget = Consumer2<PeerInfoService, Peer>(
+    final consumerWidget = Consumer2<PeerInfoService, WebSocketPeer>(
       builder: (context, service, webSocketPeer, child) =>
           _buildDeviceList(context, service, webSocketPeer),
     );
@@ -66,8 +66,8 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     );
   }
 
-  Widget _buildDeviceList(
-      BuildContext context, PeerInfoService service, Peer webSocketPeer) {
+  Widget _buildDeviceList(BuildContext context, PeerInfoService service,
+      WebSocketPeer webSocketPeer) {
     return FutureBuilder<List<PeerInfo>>(
       future: service.devices,
       initialData: [],
@@ -110,18 +110,20 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   }
 
   Widget _buildSlidablePeerRow(BuildContext context, PeerInfoService service,
-      Peer webSocketPeer, PeerInfo peerInfo) {
+      WebSocketPeer webSocketPeer, PeerInfo peerInfo) {
     return Slidable(
       actionPane: SlidableDrawerActionPane(),
       actionExtentRatio: 0.20,
       child: _buildPeerEntry(service, peerInfo),
       secondaryActions: <Widget>[
         IconSlideAction(
-            caption: 'Sync',
-            color: Colors.grey.shade400,
-            icon: Icons.sync,
-            onTap: () => null // TODO: Manual sync action,
-            ),
+          caption: 'Sync',
+          color: Colors.grey.shade400,
+          icon: Icons.sync,
+          onTap: () async {
+            await webSocketPeer.sync(peerInfo);
+          },
+        ),
         IconSlideAction(
           caption: 'Delete',
           color: Colors.red.shade400,

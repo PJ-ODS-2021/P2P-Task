@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:p2p_task/network/peer.dart';
-import 'package:p2p_task/network/socket_handler.dart';
+import 'package:p2p_task/network/web_socket_peer.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/widgets/list_section.dart';
 import 'package:p2p_task/widgets/simple_dropdown.dart';
@@ -13,7 +12,7 @@ class SyncListSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final syncService = Provider.of<SyncService>(context);
-    final peer = Provider.of<Peer>(context);
+    final peer = Provider.of<WebSocketPeer>(context);
 
     return FutureBuilder<List<dynamic>>(
         future: Future.wait([
@@ -36,14 +35,12 @@ class SyncListSection extends StatelessWidget {
                 title: Text('Activate server'),
                 leading: Icon(Icons.electrical_services),
                 trailing: Switch.adaptive(
-                  value: peer.serverRunning,
+                  value: peer.isServerRunning,
                   onChanged: kIsWeb
                       ? (value) => null
-                      : (value) => value
-                          ? runServer(7594, (sock) => null)
-                          : peer.dispose(),
+                      : (value) => value ? peer.start() : peer.stopServer(),
                 ),
-                subtitle: peer.serverRunning
+                subtitle: peer.isServerRunning
                     ? Text('Running on ${peer.address}:${peer.port}')
                     : kIsWeb
                         ? Text('Web not supported')

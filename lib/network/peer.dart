@@ -2,10 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_simple_dependency_injection/injector.dart';
+import 'package:p2p_task/network/messages/debug_message.dart';
 import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/network/serializable.dart';
 import 'package:p2p_task/network/socket_handler.dart';
-import 'package:p2p_task/network/messages/debug_message.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 
 void _registerTypes(SocketHandler sock) {
@@ -35,13 +36,14 @@ void _registerClientCallbacks(
   });
 }
 
-void _registerCommonCallbacks(SocketHandler sock, bool isSever,
-    List<String> messages, Function() notifier) {
-  sock.registerCallback<TaskListMessage>((msg) {
+void _registerCommonCallbacks(SocketHandler sock, bool isServer,
+    List<String> messages, Function() notifier) async {
+  sock.registerCallback<TaskListMessage>((msg) async {
+    final taskListService = Injector().get<TaskListService>();
     print('server task list message');
-    TaskListService.instance.mergeCrdtJson(msg.taskListCrdtJson);
+    taskListService.mergeCrdtJson(msg.taskListCrdtJson);
     if (msg.requestReply) {
-      sock.send(TaskListMessage(TaskListService.instance.crdtToJson()));
+      sock.send(TaskListMessage(await taskListService.crdtToJson()));
       messages.add('Received task list message and sent reply');
     } else {
       messages.add('Received task list message');
@@ -60,6 +62,8 @@ class Peer extends ChangeNotifier {
   List<String> get messages => List.unmodifiable(_messageList);
 
   bool get serverRunning => _server != null;
+  get port => _server?.port;
+  get address => _server?.address.address;
   SocketHandler? get client => _client;
 
   static final Peer _instance = Peer._privateConstructor();

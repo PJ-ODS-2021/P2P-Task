@@ -1,25 +1,18 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:uuid/uuid.dart';
+import 'package:p2p_task/utils/data_model.dart';
 
 part 'task.g.dart';
 
 @JsonSerializable()
-class Task {
-  final String id;
-  String title;
-  bool completed;
+class Task extends DataModel {
+  String? id;
+  String title = '';
+  bool completed = false;
   DateTime? due;
   DateTime? dueNotification;
   String? priority;
 
-  Task(
-      {String? id,
-      required this.title,
-      this.completed = false,
-      this.due,
-      this.dueNotification,
-      this.priority})
-      : id = id ?? Uuid().v4();
+  Task();
 
   factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);
 

@@ -2,25 +2,27 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/network/peer.dart';
 import 'package:p2p_task/network/socket_handler.dart';
 import 'package:p2p_task/screens/qr_scanner_screen.dart';
 import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/widgets/simple_dropdown.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 const _port = 7594;
 
-class FunWithSockets extends StatefulWidget {
-  FunWithSockets({Key? key}) : super(key: key);
+class DevPlaygroundScreen extends StatefulWidget {
+  DevPlaygroundScreen({Key? key}) : super(key: key);
 
   @override
-  _FunWithSocketsState createState() => _FunWithSocketsState();
+  _DevPlaygroundScreenState createState() => _DevPlaygroundScreenState();
 }
 
-class _FunWithSocketsState extends State<FunWithSockets> {
+class _DevPlaygroundScreenState extends State<DevPlaygroundScreen> {
   List<String> ips = [];
   String? qrContent;
 
@@ -195,9 +197,10 @@ class _FunWithSocketsState extends State<FunWithSockets> {
     }, test: (e) => e is SocketException);
   }
 
-  void _sync(BuildContext context) {
+  void _sync(BuildContext context) async {
     final peer = Provider.of<Peer>(context, listen: false);
-    final msg = TaskListMessage(TaskListService.instance.crdtToJson(),
+    final msg = TaskListMessage(
+        await Provider.of<TaskListService>(context).crdtToJson(),
         requestReply: true);
     peer.sendToAllClients(msg);
     peer.sendToServer(msg);
@@ -207,7 +210,6 @@ class _FunWithSocketsState extends State<FunWithSockets> {
   void dispose() {
     print('disposing...');
     controller?.dispose();
-    // Peer.instance().closeClient();
 
     super.dispose();
   }

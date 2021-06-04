@@ -30,7 +30,10 @@ class AppModule {
         isSingleton: true);
     injector.map<IdentityService>(
         (i) => IdentityService(i.get<KeyValueRepository>()));
-    injector.map<TaskListService>((i) => TaskListService.instance);
+    injector.map<TaskListService>((i) => TaskListService(
+        i.get<KeyValueRepository>(),
+        i.get<IdentityService>(),
+        i.get<SyncService>()));
     injector.map<PeerInfoService>((i) => PeerInfoService(DataModelRepository(
         _db, (json) => PeerInfo.fromJson(json), 'PeerInfo')));
     injector.map<Peer>((i) => Peer.instance());

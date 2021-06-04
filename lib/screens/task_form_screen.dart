@@ -33,7 +33,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       _task = widget.task;
       _editing = true;
     } else {
-      _task = Task(title: '');
+      _task = Task()..title = '';
     }
   }
 
@@ -51,6 +51,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 horizontal: 15.0,
               ),
               child: TextFormField(
+                autofocus: true,
                 onFieldSubmitted: (value) => _onSubmitPressed(context),
                 decoration: InputDecoration(
                   hintText: 'Title',
