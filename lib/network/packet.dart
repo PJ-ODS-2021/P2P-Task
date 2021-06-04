@@ -6,7 +6,7 @@ part 'packet.g.dart';
 class Packet {
   final String typename;
   final String version;
-  Map<String, Object?> object;
+  Map<String, dynamic> object;
 
   Packet(this.typename, {this.version = '0.1.0', this.object = const {}});
 
