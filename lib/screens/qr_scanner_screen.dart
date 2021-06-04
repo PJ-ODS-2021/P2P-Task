@@ -6,18 +6,18 @@ import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 typedef OnQRCodeRead = Function(String value);
 
-class QrReaderScreen extends StatefulWidget {
+class QrScannerScreen extends StatefulWidget {
   final OnQRCodeRead onQRCodeRead;
 
-  QrReaderScreen({Key? key, required OnQRCodeRead onQRCodeRead})
+  QrScannerScreen({Key? key, required OnQRCodeRead onQRCodeRead})
       : this.onQRCodeRead = onQRCodeRead,
         super(key: key);
 
   @override
-  _QrReaderScreenState createState() => _QrReaderScreenState();
+  _QrScannerScreenState createState() => _QrScannerScreenState();
 }
 
-class _QrReaderScreenState extends State<QrReaderScreen> {
+class _QrScannerScreenState extends State<QrScannerScreen> {
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   QRViewController? controller;
 

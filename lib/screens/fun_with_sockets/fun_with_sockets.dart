@@ -4,9 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:p2p_task/network/peer.dart';
 import 'package:p2p_task/network/socket_handler.dart';
-import 'package:p2p_task/network/messages/task_list_message.dart';
-import 'package:p2p_task/screens/fun_with_sockets/simple_dropdown.dart';
-import 'package:p2p_task/screens/qr_reader_screen.dart';
+import 'package:p2p_task/screens/qr_scanner_screen.dart';
 import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
@@ -131,7 +129,7 @@ class _FunWithSocketsState extends State<FunWithSockets> {
       onPressed: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => QrReaderScreen(
+          builder: (context) => QrScannerScreen(
             onQRCodeRead: (ip) {
               _ipTextController..text = ip; // no need to call setState
               _tryConnect(context, ip, _port);
