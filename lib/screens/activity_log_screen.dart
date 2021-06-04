@@ -15,8 +15,6 @@ class ActivityLogScreen extends StatefulWidget {
 
 class _ActivityLogScreenState extends State<ActivityLogScreen> {
   final _heroFont = TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold);
-  // const IconData file_download_outlined = IconData(0xf05b, fontFamily: 'MaterialIcons');
-  // const IconData file_upload_outlined = IconData(0xf05d, fontFamily: 'MaterialIcons');
   @override
   Widget build(BuildContext context) {
     final activityEntryWidget = Consumer<ActivityEntryService>(
@@ -41,7 +39,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
       ));
     }
     return ListView.separated(
-      padding: EdgeInsets.symmetric(vertical: 8),
+        padding: EdgeInsets.symmetric(vertical: 8),
         itemCount: service.activities.length,
         separatorBuilder: (BuildContext context, int index) => const Divider(),
         itemBuilder: (BuildContext context, int index) {
@@ -77,7 +75,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
 
   Widget _getActivityName(ActivityEntry activity) {
     return Text(
-      activity.event!=null ?activity.event: '',
+      activity.event != null ? activity.event : '',
       style: TextStyle(
         fontWeight: FontWeight.bold,
         color: Colors.black,
@@ -97,9 +95,8 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
   }
 
   Widget getActivityIcon(ActivityEntry activity) {
-    return Icon(activity.device == "My iPad"
-        ? EvaIcons.upload
-        : EvaIcons.download,
+    return Icon(
+      activity.device == "My iPad" ? EvaIcons.upload : EvaIcons.download,
       color: Colors.black,
       size: 22,
     );
