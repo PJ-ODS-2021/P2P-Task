@@ -8,51 +8,9 @@ import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/network/serializable.dart';
 import 'package:p2p_task/network/socket_handler.dart';
 import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/utils/log_mixin.dart';
 
-void _registerTypes(SocketHandler sock) {
-  sock.registerTypename<DebugMessage>(
-      "DebugMessage", (json) => DebugMessage.fromJson(json));
-  sock.registerTypename<TaskListMessage>(
-      "TaskListMessage", (json) => TaskListMessage.fromJson(json));
-}
-
-void _registerServerCallbacks(
-    SocketHandler sock, List<String> messages, Function() notifier) {
-  sock.registerCallback<DebugMessage>((msg) {
-    print('server received debug message "${msg.value}"');
-
-    messages.add('Server received: ${msg.value}');
-    notifier();
-  });
-}
-
-void _registerClientCallbacks(
-    SocketHandler sock, List<String> messages, Function() notifier) {
-  sock.registerCallback<DebugMessage>((msg) {
-    print('client received debug message "${msg.value}"');
-
-    messages.add('Client received: ${msg.value}');
-    notifier();
-  });
-}
-
-void _registerCommonCallbacks(SocketHandler sock, bool isServer,
-    List<String> messages, Function() notifier) async {
-  sock.registerCallback<TaskListMessage>((msg) async {
-    final taskListService = Injector().get<TaskListService>();
-    print('server task list message');
-    taskListService.mergeCrdtJson(msg.taskListCrdtJson);
-    if (msg.requestReply) {
-      sock.send(TaskListMessage(await taskListService.crdtToJson()));
-      messages.add('Received task list message and sent reply');
-    } else {
-      messages.add('Received task list message');
-    }
-    notifier();
-  });
-}
-
-class Peer extends ChangeNotifier {
+class Peer extends ChangeNotifier with LogMixin {
   HttpServer? _server;
   List<SocketHandler> _serverConnections = [];
   SocketHandler? _client;
@@ -74,12 +32,11 @@ class Peer extends ChangeNotifier {
   Future<SocketHandler> connect(String ip, int port) async {
     final url = 'ws://$ip:$port';
     await _client?.close();
-    print('connecting to $url');
+    l.info('connecting to $url');
     return SocketHandler.connect(url).then((sock) {
-      print('client connected to server');
+      l.info('client connected to server');
       _client = sock;
       _registerTypes(sock);
-      _registerClientCallbacks(sock, _messageList, notifyListeners);
       _registerCommonCallbacks(sock, false, _messageList, notifyListeners);
       notifyListeners();
       sock.send(DebugMessage('hello from the client'));
@@ -94,22 +51,21 @@ class Peer extends ChangeNotifier {
   Future<HttpServer> startServer(int port) async {
     await _server?.close();
     return runServer(port, (sock) async {
-      print('server got connection from client!');
+      l.info('server got connection from client!');
       _serverConnections.add(sock);
       _registerTypes(sock);
-      _registerServerCallbacks(sock, _messageList, notifyListeners);
       _registerCommonCallbacks(sock, true, _messageList, notifyListeners);
       sock.send(DebugMessage('hello from the server'));
       await sock.listen();
-      print('closing client connection');
+      l.info('closing client connection');
       _serverConnections.remove(sock);
       await sock.close();
     }, onDone: () {
-      print('server is done');
+      l.info('server is done');
       _server = null;
       notifyListeners();
     }, onError: (err) {
-      print('server got error: $err');
+      l.warning('server got error: $err');
       _server = null;
       notifyListeners();
     }).then((server) {
@@ -121,13 +77,14 @@ class Peer extends ChangeNotifier {
 
   void sendToServer<T extends Serializable>(T msg) {
     if (_client == null) return;
-    print('sending $msg to server');
+    l.info('sending $msg to server');
     _client!.send(msg);
   }
 
   void sendToAllClients<T extends Serializable>(T msg) {
     if (_server == null) return;
-    print('sending message $msg to all clients (${_serverConnections.length})');
+    l.info(
+        'sending message $msg to all clients (${_serverConnections.length})');
     for (final connection in _serverConnections) {
       connection.send(msg);
     }
@@ -151,7 +108,7 @@ class Peer extends ChangeNotifier {
 
   void closeServer() async {
     if (_server != null) {
-      print('closing server on port ${_server!.port}');
+      l.info('closing server on port ${_server!.port}');
       await _server!.close(force: true);
     }
     await Future.wait([for (var client in _serverConnections) client.close()]);
@@ -170,5 +127,34 @@ class Peer extends ChangeNotifier {
     closeServer();
 
     super.dispose();
+  }
+
+  void _registerTypes(SocketHandler sock) {
+    sock.registerTypename<DebugMessage>(
+        "DebugMessage", (json) => DebugMessage.fromJson(json));
+    sock.registerTypename<TaskListMessage>(
+        "TaskListMessage", (json) => TaskListMessage.fromJson(json));
+  }
+
+  void _registerCommonCallbacks(SocketHandler sock, bool isServer,
+      List<String> messages, Function() notifier) async {
+    sock.registerCallback<DebugMessage>((msg) {
+      final socketTypeStr = isServer ? "Server" : "Client";
+      l.info('$socketTypeStr received debug message "${msg.value}"');
+      messages.add('$socketTypeStr received: ${msg.value}');
+      notifier();
+    });
+    sock.registerCallback<TaskListMessage>((msg) async {
+      final taskListService = Injector().get<TaskListService>();
+      l.info('server task list message');
+      taskListService.mergeCrdtJson(msg.taskListCrdtJson);
+      if (msg.requestReply) {
+        sock.send(TaskListMessage(await taskListService.crdtToJson()));
+        messages.add('Received task list message and sent reply');
+      } else {
+        messages.add('Received task list message');
+      }
+      notifier();
+    });
   }
 }
