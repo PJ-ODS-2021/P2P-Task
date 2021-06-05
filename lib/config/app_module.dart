@@ -23,7 +23,7 @@ class AppModule {
     _db = await DatabaseCreator.create();
 
     injector.map<Database>((i) => _db);
-    injector.map<NetworkInfoService>((i) => NetworkInfoService(null, null));
+    injector.map<NetworkInfoService>((i) => NetworkInfoService());
     injector.map<KeyValueRepository>((i) => KeyValueRepository(_db),
         isSingleton: true);
     injector.map<SyncService>((i) => SyncService(i.get<KeyValueRepository>()),

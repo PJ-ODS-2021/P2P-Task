@@ -1,46 +1,64 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-class NetworkInfoService extends ChangeNotifier {
+class NetworkInfoService extends ChangeNotifier with LogMixin {
   late List<String> _ips = [];
-  final NetworkInfo _networkInfo;
-  final Permission _permission;
+  Completer<String?>? _ssidCompleter;
 
-  NetworkInfoService(NetworkInfo? networkInfo, Permission? permission)
-      : _networkInfo = networkInfo ?? NetworkInfo(),
-        _permission = permission ?? Permission.location {
+  NetworkInfoService() {
     _initIps();
   }
 
   UnmodifiableListView<String> get ips => UnmodifiableListView(_ips);
 
-  Future<String> get ssid async {
-    if (kIsWeb || !(Platform.isAndroid || Platform.isIOS)) return 'Unknown';
-    if (Platform.isAndroid && !await _permission.isGranted) {
-      final status = await _permission.request();
-      if (status.isGranted) return 'Unknown';
+  Future<String?> get ssid {
+    l.info('request for getting ssid');
+    if (_ssidCompleter != null && !_ssidCompleter!.isCompleted) {
+      l.warning('waiting for previous ssid request to finish');
+      return _ssidCompleter!.future.then((value) {
+        l.info('completer finished with ssid: "$value"');
+        return value;
+      });
     }
-    if (Platform.isIOS) {
-      final status = await _networkInfo.getLocationServiceAuthorization();
+    _ssidCompleter = Completer();
+    return _detectSsid().then((value) {
+      l.info('detected ssid: "$value"');
+      _ssidCompleter?.complete(value);
+      return value;
+    });
+  }
+
+  Future<String?> _detectSsid() async {
+    l.info('detecting ssid');
+    if (kIsWeb || !(Platform.isAndroid || Platform.isIOS)) return null;
+
+    final networkInfo = NetworkInfo();
+    if (Platform.isAndroid) {
+      // should only be necessary for android 8.0 onwards
+      if (!(await Permission.location.request()).isGranted) return null;
+    } else if (Platform.isIOS) {
+      final status = await networkInfo.getLocationServiceAuthorization();
       if (status.index == 0) {
-        await _networkInfo.requestLocationServiceAuthorization();
+        await networkInfo.requestLocationServiceAuthorization();
       } else if (status.index == 1) {
-        return 'Unknown';
+        return null;
       }
     }
-    return await _networkInfo.getWifiName() ?? 'Unknown';
+    return networkInfo.getWifiName();
   }
 
   void _initIps() async {
     if (kIsWeb) return;
 
     try {
-      final wifiIP = await _networkInfo.getWifiIP();
+      final wifiIp = await NetworkInfo().getWifiIP();
       final networkInterfaces =
           await NetworkInterface.list(type: InternetAddressType.IPv4);
       _ips = [
@@ -50,13 +68,15 @@ class NetworkInfoService extends ChangeNotifier {
             .where((e) => !e.isMulticast)
             .map((e) => e.address)
       ];
-      if (!(wifiIP == null ||
-          wifiIP.isEmpty ||
-          wifiIP == '0.0.0.0' ||
-          _ips.contains(wifiIP))) _ips.add(wifiIP);
+      if (wifiIp != null && ipValid(wifiIp) && !_ips.contains(wifiIp))
+        _ips.add(wifiIp);
     } on PlatformException catch (e) {
-      print(e.toString());
+      l.severe(e.toString());
     }
     notifyListeners();
+  }
+
+  static bool ipValid(String ip) {
+    return ip.isNotEmpty && ip != '0.0.0.0';
   }
 }
