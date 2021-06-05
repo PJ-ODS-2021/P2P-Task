@@ -69,7 +69,7 @@ class TaskListService extends ChangeNotifier with LogMixin {
   }
 
   Future<MapCrdt<String, Task>> get _taskListCrdt async => await _fromJson(
-      await _keyValueRepository.getAsString(_crdtTaskListKey) ?? '{}');
+      await _keyValueRepository.get<String>(_crdtTaskListKey) ?? '{}');
 
   Future<MapCrdt<String, Task>> _fromJson(String json) async {
     final Map<String, dynamic> map = jsonDecode(json);

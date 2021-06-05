@@ -18,7 +18,7 @@ class SyncService extends ChangeNotifier with LogMixin {
   SyncService(KeyValueRepository repository) : this._repository = repository;
 
   Future<int> get interval async =>
-      (await _repository.getAsInt(_syncIntervalKey)) ??
+      (await _repository.get<int>(_syncIntervalKey)) ??
       _syncIntervalDefaultValue;
 
   Future setInterval(int interval) async {
@@ -28,7 +28,7 @@ class SyncService extends ChangeNotifier with LogMixin {
   }
 
   Future<bool> get syncOnStart async =>
-      (await _repository.getAsBool(_syncOnStartKey)) ?? true;
+      (await _repository.get<bool>(_syncOnStartKey)) ?? true;
 
   Future setSyncOnStart(bool syncOnStart) async {
     final updatedValue = await _repository.put(_syncOnStartKey, syncOnStart);
@@ -37,7 +37,7 @@ class SyncService extends ChangeNotifier with LogMixin {
   }
 
   Future<bool> get syncOnUpdate async =>
-      (await _repository.getAsBool(_syncOnUpdateKey)) ?? true;
+      (await _repository.get<bool>(_syncOnUpdateKey)) ?? true;
 
   Future setSyncOnUpdate(bool syncOnUpdate) async {
     final updatedValue = await _repository.put(_syncOnUpdateKey, syncOnUpdate);

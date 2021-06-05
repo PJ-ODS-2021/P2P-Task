@@ -15,7 +15,7 @@ class IdentityService extends ChangeNotifier with LogMixin {
       : this._repository = repository;
 
   Future<String> get peerId async {
-    var peerId = await _repository.getAsString(_PEER_ID_KEY);
+    var peerId = await _repository.get<String>(_PEER_ID_KEY);
     if (peerId != null) {
       l.info('Returning already present peer id "$peerId".');
       return peerId;
@@ -28,7 +28,7 @@ class IdentityService extends ChangeNotifier with LogMixin {
   }
 
   Future<String> get name async =>
-      (await _repository.getAsString(_NAME_KEY)) ?? 'Clementine';
+      (await _repository.get<String>(_NAME_KEY)) ?? 'Clementine';
 
   Future setName(String name) async {
     final updatedName = await _repository.put(_NAME_KEY, name);
@@ -36,7 +36,7 @@ class IdentityService extends ChangeNotifier with LogMixin {
     return updatedName;
   }
 
-  Future<String?> get ip async => await _repository.getAsString(_IP_KEY);
+  Future<String?> get ip async => await _repository.get<String>(_IP_KEY);
 
   Future setIp(String ip) async {
     final updatedIp = await _repository.put(_IP_KEY, ip);
@@ -45,7 +45,7 @@ class IdentityService extends ChangeNotifier with LogMixin {
   }
 
   Future<int> get port async =>
-      (await _repository.getAsInt(_PORT_KEY)) ?? 58241;
+      (await _repository.get<int>(_PORT_KEY)) ?? 58241;
 
   Future<int> setPort(int port) async {
     if (port < 0 || port > 65355)
