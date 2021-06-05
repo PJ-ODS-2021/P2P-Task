@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:p2p_task/network/packet.dart';
+import 'package:p2p_task/network/messages/packet.dart';
 import 'package:p2p_task/network/packet_handler.dart';
 import 'package:p2p_task/network/serializable.dart';
 

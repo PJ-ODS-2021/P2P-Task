@@ -1,4 +1,4 @@
-import 'package:p2p_task/network/packet.dart';
+import 'package:p2p_task/network/messages/packet.dart';
 import 'package:p2p_task/network/serializable.dart';
 
 typedef PacketCallback = void Function(Packet);

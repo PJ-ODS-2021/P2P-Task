@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:p2p_task/models/peer_info.dart';
-import 'package:p2p_task/network/packet.dart';
+import 'package:p2p_task/network/messages/packet.dart';
 import 'package:p2p_task/network/packet_handler.dart';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
 import 'package:p2p_task/network/peer/web_socket_server.dart';
