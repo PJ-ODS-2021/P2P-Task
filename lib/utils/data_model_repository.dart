@@ -33,17 +33,16 @@ class DataModelRepository<T extends DataModel> with LogMixin {
     return entries.map((e) => _converter(e)).toList();
   }
 
-  Future upsert(T object) async {
+  Future<void> upsert(T object) async {
     l.info('Upsert entry with type "${_store.name}"');
     final hasId = object.id != null;
-    final existsInDatabase = await _store.record(object.id!).exists(_dbClient);
-    if (hasId && existsInDatabase) {
-      await _store.record(object.id!).update(_dbClient, object.toJson());
-    } else if (hasId && !existsInDatabase) {
-      await _store.record(object.id!).add(_db, object.toJson());
+    if (!hasId) object.id = Uuid().v4();
+    final record = _store.record(object.id!);
+    final existsInDatabase = hasId ? await record.exists(_dbClient) : false;
+    if (existsInDatabase) {
+      await record.update(_dbClient, object.toJson());
     } else {
-      object.id = Uuid().v4();
-      await _store.record(object.id!).add(_dbClient, object.toJson());
+      await record.add(_db, object.toJson());
     }
     l.info(object.toJson());
   }
