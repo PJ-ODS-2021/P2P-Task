@@ -5,7 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:p2p_task/network/messages/debug_message.dart';
 import 'package:p2p_task/network/messages/task_list_message.dart';
-import 'package:p2p_task/network/serializable.dart';
+import 'package:p2p_task/utils/serializable.dart';
 import 'package:p2p_task/network/socket_handler.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
@@ -138,18 +138,18 @@ class Peer extends ChangeNotifier with LogMixin {
 
   void _registerCommonCallbacks(SocketHandler sock, bool isServer,
       List<String> messages, Function() notifier) async {
-    sock.registerCallback<DebugMessage>((msg) {
+    sock.registerCallback<DebugMessage>((msg, source) {
       final socketTypeStr = isServer ? "Server" : "Client";
       l.info('$socketTypeStr received debug message "${msg.value}"');
       messages.add('$socketTypeStr received: ${msg.value}');
       notifier();
     });
-    sock.registerCallback<TaskListMessage>((msg) async {
+    sock.registerCallback<TaskListMessage>((msg, source) async {
       final taskListService = Injector().get<TaskListService>();
       l.info('server task list message');
       taskListService.mergeCrdtJson(msg.taskListCrdtJson);
       if (msg.requestReply) {
-        sock.send(TaskListMessage(await taskListService.crdtToJson()));
+        source.send(TaskListMessage(await taskListService.crdtToJson()));
         messages.add('Received task list message and sent reply');
       } else {
         messages.add('Received task list message');

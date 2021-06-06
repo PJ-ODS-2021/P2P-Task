@@ -2,55 +2,53 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
+import 'package:p2p_task/network/peer/web_socket_client.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebSocketServer with LogMixin {
-  HttpServer? _server;
+  late HttpServer _server;
   List<WebSocketChannel> _connectedClients = [];
 
-  WebSocketServer._privateConstructor();
-  static final WebSocketServer instance = WebSocketServer._privateConstructor();
+  WebSocketServer._empty();
 
-  bool get isRunning => _server != null;
-  get port => _server?.port;
-  get address => _server?.address.address;
-  get connectedClients => UnmodifiableListView(_connectedClients);
-
-  Future<void> start(int? port,
-      {Function(WebSocketChannel)? onConnected,
-      Function(WebSocketChannel, dynamic)? onData,
-      Function(Error)? onError,
-      Function()? onDone}) async {
-    await close();
-    l.info('Starting server...');
-    _server = await serve(webSocketHandler((webSocketChannel) {
-      webSocketChannel as WebSocketChannel;
-      _connectedClients.add(webSocketChannel);
-      if (onConnected != null) onConnected(webSocketChannel);
+  static Future<WebSocketServer> start(
+      int port,
+      Function(WebSocketClient, dynamic)? Function(WebSocketClient)
+          createOnData) async {
+    final server = WebSocketServer._empty();
+    server.l.info('Starting server on port $port...');
+    server._server = await serve(webSocketHandler((WebSocketChannel channel) {
+      server._connectedClients.add(channel);
+      final channelClient = WebSocketClient.fromChannel(channel);
+      final onData = createOnData(channelClient);
       if (onData != null)
-        webSocketChannel.stream.listen(
-          (data) => onData(webSocketChannel, data),
-          onError: onError,
-          onDone: onDone,
-        );
-    }), InternetAddress.anyIPv4, port ?? 0);
-    l.info('Listening on ${_server!.address}:${_server!.port}');
+        channel.stream.listen((data) => onData(channelClient, data));
+    }), InternetAddress.anyIPv4, port);
+    server.l.info('Listening on ${server.address}:${server.port}');
+    return server;
   }
 
-  void sendToClients<T>(T payload) {
-    if (_server == null) return;
+  int get port => _server.port;
+  String get address => _server.address.address;
+  get connectedClients => UnmodifiableListView(_connectedClients);
+
+  void sendToClients(dynamic payload) {
     _connectedClients
         .map((client) => client.sink)
         .forEach((sink) => sink.add(payload));
   }
 
-  Future close() async {
-    await Future.wait(
-        [for (final client in _connectedClients) client.sink.close()]);
-    await _server?.close(force: true);
-    _server = null;
+  Future<void> close() async {
+    l.info('stopping server');
+    await _server.close(); // stop listening
+    await Future.wait([
+      for (final client in _connectedClients) client.sink.close()
+    ]); // close connected clients
+    await _server.close(
+        force: true); // close every connection that is somehow still open
+    l.info('successfully stopped server');
   }
 }

@@ -7,6 +7,7 @@ import 'package:p2p_task/network/web_socket_peer.dart';
 import 'package:p2p_task/screens/devices/device_form_screen.dart';
 import 'package:p2p_task/screens/qr_scanner_screen.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
+import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/widgets/list_section.dart';
 import 'package:provider/provider.dart';
 
@@ -32,9 +33,9 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final consumerWidget = Consumer2<PeerInfoService, WebSocketPeer>(
-      builder: (context, service, webSocketPeer, child) =>
-          _buildDeviceList(context, service, webSocketPeer),
+    final consumerWidget = Consumer2<PeerInfoService, PeerService>(
+      builder: (context, service, peerService, child) =>
+          _buildDeviceList(context, service, peerService),
     );
 
     return Stack(
@@ -66,8 +67,8 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     );
   }
 
-  Widget _buildDeviceList(BuildContext context, PeerInfoService service,
-      WebSocketPeer webSocketPeer) {
+  Widget _buildDeviceList(
+      BuildContext context, PeerInfoService service, PeerService peerService) {
     return FutureBuilder<List<PeerInfo>>(
       future: service.devices,
       initialData: [],
@@ -98,7 +99,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                 return _buildSlidablePeerRow(
                   context,
                   service,
-                  webSocketPeer,
+                  peerService,
                   e,
                 );
               }).toList(),
@@ -110,7 +111,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   }
 
   Widget _buildSlidablePeerRow(BuildContext context, PeerInfoService service,
-      WebSocketPeer webSocketPeer, PeerInfo peerInfo) {
+      PeerService peerService, PeerInfo peerInfo) {
     return Slidable(
       actionPane: SlidableDrawerActionPane(),
       actionExtentRatio: 0.20,
@@ -121,7 +122,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           color: Colors.grey.shade400,
           icon: Icons.sync,
           onTap: () async {
-            await webSocketPeer.sync(peerInfo);
+            await peerService.syncWithPeer(peerInfo);
           },
         ),
         IconSlideAction(

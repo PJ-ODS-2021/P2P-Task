@@ -1,5 +1,5 @@
-abstract class DataModel {
-  String? id;
+import 'package:p2p_task/utils/serializable.dart';
 
-  Map<String, dynamic> toJson();
+abstract class DataModel implements Serializable {
+  String? id;
 }

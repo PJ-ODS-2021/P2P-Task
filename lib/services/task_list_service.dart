@@ -51,9 +51,10 @@ class TaskListService extends ChangeNotifier with LogMixin {
     return (await tasks).length;
   }
 
-  Future _store(MapCrdt<String, Task> update) async {
+  Future<void> _store(MapCrdt<String, Task> update) async {
     await _keyValueRepository.put(_crdtTaskListKey, update.toJson());
     notifyListeners();
+    l.info('notifying task list change');
   }
 
   Future<String> crdtToJson() async {
@@ -62,8 +63,15 @@ class TaskListService extends ChangeNotifier with LogMixin {
 
   Future mergeCrdtJson(String crdtJson) async {
     l.info('Merging with $crdtJson');
-    final update = (await _taskListCrdt)
-      ..mergeJson(crdtJson, valueDecoder: (key, value) => Task.fromJson(value));
+    final self = (await _taskListCrdt);
+    final other = CrdtJson.decode<String, Task>(
+      crdtJson,
+      self.canonicalTime,
+      valueDecoder: (key, value) => Task.fromJson(value),
+    );
+    // Remove records from this node from the task list. This could also be done in the sender.
+    other.removeWhere((key, value) => value.hlc.nodeId == self.nodeId);
+    final update = self..merge(other);
     l.info('Merge result ${update.toJson()}');
     await _store(update);
   }

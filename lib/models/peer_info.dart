@@ -7,7 +7,7 @@ part 'peer_info.g.dart';
 class PeerInfo implements DataModel {
   String? id;
   String name = '';
-  String networkName = 'Local Supermarket';
+  String networkName = '';
   String ip = '';
   int port = -1;
 
@@ -17,4 +17,21 @@ class PeerInfo implements DataModel {
       _$PeerInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$PeerInfoToJson(this);
+
+  bool get isValid => ip.isNotEmpty && port > 0;
+  Uri get websocketUri => Uri.parse('ws://$ip:$port');
+
+  @override
+  String toString() {
+    final buffer = StringBuffer();
+    final addProperty = (String name, String? property) {
+      if (property == null || property.isEmpty) return;
+      if (buffer.isNotEmpty) buffer.write(' ');
+      buffer.write('$name: "$property"');
+    };
+    addProperty('id', id);
+    addProperty('name', name);
+    addProperty('networkName', networkName);
+    return '$ip:$port' + (buffer.isEmpty ? '' : ' (${buffer.toString()})');
+  }
 }

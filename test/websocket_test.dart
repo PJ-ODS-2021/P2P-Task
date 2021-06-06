@@ -44,7 +44,7 @@ void main() {
       print('client connected to server');
       _registerTypes(sock);
       sock.registerCallback<DebugMessage>(
-          (msg) => completer.complete(msg.value));
+          (msg, source) => completer.complete(msg.value));
       sock.send(DebugMessage('hello from the client'));
       return sock.listen().then((sock) {
         return sock;

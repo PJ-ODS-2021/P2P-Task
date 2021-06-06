@@ -9,6 +9,7 @@ import 'package:p2p_task/services/device_info_service.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
+import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
@@ -68,7 +69,7 @@ class App extends StatelessWidget {
             ChangeNotifierProvider(
                 create: (context) => i.get<IdentityService>()),
             ChangeNotifierProvider(create: (context) => i.get<SyncService>()),
-            ChangeNotifierProvider.value(value: i.get<WebSocketPeer>()),
+            ChangeNotifierProvider.value(value: i.get<PeerService>()),
           ], child: child);
         });
   }

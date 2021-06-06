@@ -10,7 +10,7 @@ void _registerTypes(SocketHandler sock) {
 
 void _registerServerCallbacks(SocketHandler sock) {
   sock.registerCallback<DebugMessage>(
-      (msg) => print('server received debug message "${msg.value}"'));
+      (msg, source) => print('server received debug message "${msg.value}"'));
 }
 
 startServer(SendPort sendPort) async {

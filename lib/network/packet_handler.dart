@@ -1,7 +1,6 @@
 import 'package:p2p_task/network/messages/packet.dart';
-import 'package:p2p_task/network/serializable.dart';
+import 'package:p2p_task/utils/serializable.dart';
 
-typedef PacketCallback = void Function(Packet);
 typedef JsonDecodeFunction = Object? Function(Map<String, dynamic> json);
 
 class _TypeInfo {
@@ -11,12 +10,11 @@ class _TypeInfo {
   _TypeInfo(this.typename, this.fromJsonFunc);
 }
 
-class PacketHandler {
+class PacketHandler<T> {
   static const version = '0.1.0';
 
-  PacketCallback defaultCallback =
-      (packet) => print('[WARNING] no callback for "$packet"');
-  final Map<String, PacketCallback> _callbacks = {};
+  void Function(Packet, T)? defaultCallback;
+  final Map<String, void Function(Packet, T)> _callbacks = {};
   final Map<Type, _TypeInfo> _typenames = {};
 
   Packet toPacket<T extends Serializable>(T value) {
@@ -24,29 +22,43 @@ class PacketHandler {
     return Packet(typename, version: version, object: value.toJson());
   }
 
-  void invokeCallback(Packet packet) {
+  void invokeCallback(Packet packet, T source) {
     var callback = _callbacks[packet.typename];
     if (callback == null) {
-      defaultCallback(packet);
+      if (defaultCallback != null) defaultCallback!(packet, source);
     } else {
-      callback(packet);
+      callback(packet, source);
     }
   }
 
-  void registerCallback<T>(Function(T) callback) {
-    final typeInfo = _getTypeInfo(T);
+  void registerCallback<E>(Function(E, T source) callback) {
+    final typeInfo = _getTypeInfo(E);
     assert(!_callbacks.containsKey(typeInfo.typename),
         'a callback for this typename already exists');
-    _callbacks[typeInfo.typename] = (packet) {
+    _callbacks[typeInfo.typename] = (packet, client) {
       final obj = typeInfo.fromJsonFunc(packet.object);
-      if (obj != null) callback(obj as T);
+      if (obj != null) callback(obj as E, client);
     };
   }
 
-  void registerTypename<T>(String typename,
-      T Function(Map<String, dynamic> json) jsonDecodeFunction) {
-    assert(!_typenames.containsKey(T), 'typename already exists');
-    _typenames[T] = _TypeInfo(typename, jsonDecodeFunction);
+  void registerTypename<E>(String typename,
+      E Function(Map<String, dynamic> json) jsonDecodeFunction) {
+    assert(!_typenames.containsKey(E), 'typename already exists');
+    _typenames[E] = _TypeInfo(typename, jsonDecodeFunction);
+  }
+
+  void clearTypenames() {
+    _typenames.clear();
+  }
+
+  void clearCallbacks() {
+    _callbacks.clear();
+    defaultCallback = null;
+  }
+
+  void clear() {
+    clearTypenames();
+    clearCallbacks();
   }
 
   _TypeInfo _getTypeInfo(Type type) {
