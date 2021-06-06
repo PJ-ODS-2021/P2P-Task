@@ -40,10 +40,9 @@ void main() {
       final message =
           '{"516ca13c-9021-4986-ab97-2d89cc0b3fce":{"hlc":"2021-06-04T07:37:08.946Z-0000-d5726a08-2107-49c0-8b06-167e57f96301","value":{"id":"516ca13c-9021-4986-ab97-2d89cc0b3fce","title":"$taskTitle","completed":false,"due":null,"dueNotification":null,"priority":null}}}';
 
-      final peerInfo = PeerInfo()
-        ..ip = 'localhost'
-        ..port = await identityService.port;
-      final client = WebSocketClient.connect(peerInfo.websocketUri);
+      final peerLocation =
+          PeerLocation('ws://localhost:${await identityService.port}');
+      final client = WebSocketClient.connect(peerLocation.uri);
       var completer = Completer();
       client.dataStream.listen((data) {
         completer.complete(data);

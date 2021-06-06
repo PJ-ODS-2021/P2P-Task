@@ -7,6 +7,7 @@ import 'package:p2p_task/screens/devices/device_form_screen.dart';
 import 'package:p2p_task/screens/qr_scanner_screen.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
+import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:p2p_task/widgets/list_section.dart';
 import 'package:provider/provider.dart';
 
@@ -17,16 +18,19 @@ class DeviceListScreen extends StatefulWidget {
   _DeviceListScreenState createState() => _DeviceListScreenState();
 }
 
-class _DeviceListScreenState extends State<DeviceListScreen> {
-  _onQrCodeRead(String qrContent, BuildContext context) {
+class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
+  void _onQrCodeRead(String qrContent, BuildContext context) {
     List<String> values = qrContent.split(',');
+    if (values.length < 3) {
+      l.warning(
+          'ignoring invalid qr content "$qrContent": less than 3 components');
+      return;
+    }
     Provider.of<PeerInfoService>(context, listen: false).upsert(
       PeerInfo()
-        ..port = int.parse(values[2])
-        ..ip = values[1]
         ..id = values[0]
-        ..networkName = 'Unknown'
-        ..name = values[0],
+        ..name = values[0]
+        ..locations.add(PeerLocation('ws://${values[1]}:${values[2]}')),
     );
   }
 
@@ -88,18 +92,17 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
             ],
           ));
         }
-        final networkMap =
-            groupBy(snapshot.data!, (PeerInfo entry) => entry.networkName);
+        final peerInfos = snapshot.data!;
         return Column(
-          children: networkMap.keys.map((key) {
+          children: peerInfos.map((peerInfo) {
             return ListSection(
-              title: key,
-              children: networkMap[key]!.map((e) {
+              title: peerInfo.name.isNotEmpty ? peerInfo.name : peerInfo.id,
+              children: peerInfo.locations.map((peerLocation) {
                 return _buildSlidablePeerRow(
-                  context,
                   service,
                   peerService,
-                  e,
+                  peerInfo,
+                  peerLocation,
                 );
               }).toList(),
             );
@@ -109,38 +112,39 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     );
   }
 
-  Widget _buildSlidablePeerRow(BuildContext context, PeerInfoService service,
-      PeerService peerService, PeerInfo peerInfo) {
+  Widget _buildSlidablePeerRow(PeerInfoService peerInfoService,
+      PeerService peerService, PeerInfo peerInfo, PeerLocation peerLocation) {
     return Slidable(
       actionPane: SlidableDrawerActionPane(),
       actionExtentRatio: 0.20,
-      child: _buildPeerEntry(service, peerInfo),
+      child: _buildPeerLocationEntry(peerInfoService, peerLocation),
       secondaryActions: <Widget>[
         IconSlideAction(
           caption: 'Sync',
           color: Colors.grey.shade400,
           icon: Icons.sync,
           onTap: () async {
-            await peerService.syncWithPeer(peerInfo);
+            await peerService.syncWithPeer(peerInfo, location: peerLocation);
           },
         ),
         IconSlideAction(
           caption: 'Delete',
           color: Colors.red.shade400,
           icon: Icons.delete,
-          onTap: () => service.remove(peerInfo),
+          onTap: () => peerInfoService.remove(peerInfo),
         ),
       ],
     );
   }
 
-  Widget _buildPeerEntry(PeerInfoService service, PeerInfo peerInfo) {
+  Widget _buildPeerLocationEntry(
+      PeerInfoService service, PeerLocation peerLocation) {
     return ListTile(
       tileColor: Colors.white,
       leading: Icon(Icons.send_to_mobile),
-      title: Text(peerInfo.name.isNotEmpty ? peerInfo.name : peerInfo.id!),
-      subtitle: Text(
-          'In ${peerInfo.networkName} with ${peerInfo.ip}:${peerInfo.port}'),
+      title: Text(peerLocation.networkName == null
+          ? peerLocation.uriStr
+          : '${peerLocation.uriStr} in ${peerLocation.networkName}'),
       trailing: Icon(Icons.keyboard_arrow_left),
     );
   }

@@ -65,10 +65,10 @@ class PeerService extends ChangeNotifier with LogMixin {
     notifyListeners();
   }
 
-  Future<void> syncWithPeer(PeerInfo peerInfo) async {
+  Future<void> syncWithPeer(PeerInfo peerInfo, {PeerLocation? location}) async {
     final packet = TaskListMessage(await _taskListService.crdtToJson(),
         requestReply: true);
-    await _peer.sendPacketToPeer(peerInfo, packet);
+    await _peer.sendPacketToPeer(peerInfo, packet, location: location);
   }
 
   Future<void> syncWithAllKnownPeers() async {

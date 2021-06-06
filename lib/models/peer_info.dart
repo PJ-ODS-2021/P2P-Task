@@ -4,12 +4,30 @@ import 'package:p2p_task/utils/data_model.dart';
 part 'peer_info.g.dart';
 
 @JsonSerializable()
+class PeerLocation {
+  String uriStr;
+  String? networkName;
+
+  PeerLocation(this.uriStr, [this.networkName]);
+
+  factory PeerLocation.fromJson(Map<String, dynamic> json) =>
+      _$PeerLocationFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PeerLocationToJson(this);
+
+  Uri get uri => Uri.parse(uriStr);
+
+  @override
+  String toString() {
+    return networkName == null ? uriStr : '$networkName@$uriStr';
+  }
+}
+
+@JsonSerializable(explicitToJson: true)
 class PeerInfo implements DataModel {
   String? id;
   String name = '';
-  String networkName = '';
-  String ip = '';
-  int port = -1;
+  List<PeerLocation> locations = [];
 
   PeerInfo();
 
@@ -17,9 +35,6 @@ class PeerInfo implements DataModel {
       _$PeerInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$PeerInfoToJson(this);
-
-  bool get isValid => ip.isNotEmpty && port > 0;
-  Uri get websocketUri => Uri.parse('ws://$ip:$port');
 
   @override
   String toString() {
@@ -31,7 +46,7 @@ class PeerInfo implements DataModel {
     };
     addProperty('id', id);
     addProperty('name', name);
-    addProperty('networkName', networkName);
-    return '$ip:$port' + (buffer.isEmpty ? '' : ' (${buffer.toString()})');
+    return '[${locations.join(',')}]' +
+        (buffer.isEmpty ? '' : ' (${buffer.toString()})');
   }
 }

@@ -146,8 +146,8 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
   void _onSubmit() {
     Provider.of<PeerInfoService>(context, listen: false).upsert(PeerInfo()
       ..name = _nameController.text
-      ..ip = _ipController.text
-      ..port = int.parse(_portController.text));
+      ..locations.add(
+          PeerLocation('ws://${_ipController.text}:${_portController.text}')));
     Navigator.of(context).pop();
   }
 }

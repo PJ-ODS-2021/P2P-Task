@@ -45,47 +45,69 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     // The difficulty is that clients can be connected to the server and/or have a server running that we can connect to.
 
     // temporary implementation:
-    _server?.sendToClients(payload);
+    // _server?.sendToClients(payload);
     knownPeerInfos.forEach((peerInfo) => sendToPeer(peerInfo, payload));
   }
 
   Future<void> sendPacketToPeer<T extends Serializable>(
-      PeerInfo peerInfo, T packet) async {
-    await sendToPeer(peerInfo, marshallPacket(packet));
+      PeerInfo peerInfo, T packet,
+      {PeerLocation? location}) async {
+    await sendToPeer(peerInfo, marshallPacket(packet), location: location);
   }
 
-  Future<void> sendToPeer(PeerInfo peerInfo, String payload) async {
+  Future<bool> sendToPeer(PeerInfo peerInfo, String payload,
+      {PeerLocation? location}) async {
     // This method doesn't actually need to be async (at least for now).
     // In theory this should use some sort of routing.
-
-    if (!peerInfo.isValid) {
-      l.warning('Cannot sync with invalid peer $peerInfo...');
-      return;
-    }
 
     // TODO: should first check if there is an open conncetion to the peer
     // - if not open, try to create connection
     // - if open, use it
     // - if a server is running, it can be used if the peer is currently connected to it
 
-    // temporary implementation: always open a connection and close it soon after or when any reply message is received
-    l.info('Starting sync with $peerInfo...');
-    final connection = tryWebSocketClientConnect(peerInfo.websocketUri);
-    if (connection == null) return;
-    connection.dataStream.listen(
-      (data) async {
-        l.info('Received message from server: $data');
-        _handleMessage(connection, data);
-        connection.close();
-      },
-      onError: (error, stackTrace) => l.severe(
-          'Error listening on websocket data stream to $peerInfo',
-          error,
-          stackTrace),
-    );
+    if (location != null) {
+      return _sendToPeerLocation(location, payload);
+    }
+    if (peerInfo.locations.isEmpty) {
+      l.warning('Cannot sync with invalid peer $peerInfo: no locations');
+      return false;
+    }
+
+    for (final location in peerInfo.locations) {
+      final success = await _sendToPeerLocation(location, payload);
+      if (success) {
+        l.info('successfully synced with $peerInfo using $location');
+        return true;
+      }
+      l.info('could not sync with $peerInfo using $location');
+    }
+    return false;
+  }
+
+  Future<bool> _sendToPeerLocation(PeerLocation location, String payload,
+      {Duration timeout = const Duration(seconds: 2)}) async {
+    l.info('Trying to sync with $location...');
+    final connection = tryWebSocketClientConnect(location.uri);
+    if (connection == null) return false;
+    final completer = Completer<bool>();
+    connection.dataStream.listen((data) async {
+      l.info('Received message from server: $data');
+      _handleMessage(connection, data);
+
+      // for now just always close after having received a message
+      connection.close();
+    }, onError: (error, stackTrace) {
+      completer.complete(false);
+      l.severe('Error listening on websocket data stream to $location', error,
+          stackTrace);
+    }, onDone: () => completer.complete(true));
     connection.send(payload);
-    l.info('Client sent message with $payload');
-    Future.delayed(Duration(seconds: 5), () => connection.close());
+    l.info('Client sent message to $location: $payload');
+    Future.delayed(timeout, () {
+      l.info('closing connection to $location due to timeout');
+      connection.close();
+    });
+    return await completer.future;
   }
 
   WebSocketClient? tryWebSocketClientConnect(Uri uri) {
@@ -112,7 +134,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     client.send(payload);
   }
 
-  Future<void> _handleMessage(WebSocketClient source, String message) async {
+  void _handleMessage(WebSocketClient source, String message) {
     Packet? packet;
     try {
       packet = Packet.fromJson(jsonDecode(message));
