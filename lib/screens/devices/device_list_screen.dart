@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/models/peer_info.dart';
-import 'package:p2p_task/network/web_socket_peer.dart';
 import 'package:p2p_task/screens/devices/device_form_screen.dart';
 import 'package:p2p_task/screens/qr_scanner_screen.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
