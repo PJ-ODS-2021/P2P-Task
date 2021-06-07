@@ -87,10 +87,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Widget _buildTaskContainer(TaskListService service, Task task, int index) {
-    String description = task.description.toString();
-    if (task.description == null) {
-      description = "";
-    }
     return Container(
       color: index.isEven ? Colors.white : Colors.white30,
       child: ListTile(
@@ -105,8 +101,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 semanticLabel: "Uncompleted Task",
               ),
         title: Text(task.title),
-        // ToDo Change subtitle to task description
-        subtitle: Text(description),
+        subtitle: Text(task.description ?? ''),
         trailing: Icon(Icons.chevron_left),
         onTap: () {
           setState(() {
