@@ -16,7 +16,7 @@ class BottomNavigation extends StatefulWidget {
 class _BottomNavigationState extends State<BottomNavigation> {
   int _selectedIndex = 0;
 
-  void _onItemTapped(index) {
+  void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });

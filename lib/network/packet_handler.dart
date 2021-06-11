@@ -21,6 +21,7 @@ class PacketHandler {
 
   Packet toPacket<T extends Serializable>(T value) {
     final typename = _getTypeInfo(T).typename;
+
     return Packet(typename, version: version, object: value.toJson());
   }
 
@@ -43,8 +44,10 @@ class PacketHandler {
     };
   }
 
-  void registerTypename<T>(String typename,
-      T Function(Map<String, dynamic> json) jsonDecodeFunction) {
+  void registerTypename<T>(
+    String typename,
+    T Function(Map<String, dynamic> json) jsonDecodeFunction,
+  ) {
     assert(!_typenames.containsKey(T), 'typename already exists');
     _typenames[T] = _TypeInfo(typename, jsonDecodeFunction);
   }

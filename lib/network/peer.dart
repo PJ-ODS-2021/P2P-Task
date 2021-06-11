@@ -2,21 +2,28 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
+import 'package:p2p_task/network/messages/debug_message.dart';
 import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/network/serializable.dart';
 import 'package:p2p_task/network/socket_handler.dart';
-import 'package:p2p_task/network/messages/debug_message.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 
 void _registerTypes(SocketHandler sock) {
   sock.registerTypename<DebugMessage>(
-      "DebugMessage", (json) => DebugMessage.fromJson(json));
+    'DebugMessage',
+    (Map<String, dynamic> json) => DebugMessage.fromJson(json),
+  );
   sock.registerTypename<TaskListMessage>(
-      "TaskListMessage", (json) => TaskListMessage.fromJson(json));
+    'TaskListMessage',
+    (Map<String, dynamic> json) => TaskListMessage.fromJson(json),
+  );
 }
 
 void _registerServerCallbacks(
-    SocketHandler sock, List<String> messages, Function() notifier) {
+  SocketHandler sock,
+  List<String> messages,
+  Function() notifier,
+) {
   sock.registerCallback<DebugMessage>((msg) {
     print('server received debug message "${msg.value}"');
 
@@ -26,7 +33,10 @@ void _registerServerCallbacks(
 }
 
 void _registerClientCallbacks(
-    SocketHandler sock, List<String> messages, Function() notifier) {
+  SocketHandler sock,
+  List<String> messages,
+  Function() notifier,
+) {
   sock.registerCallback<DebugMessage>((msg) {
     print('client received debug message "${msg.value}"');
 
@@ -35,8 +45,12 @@ void _registerClientCallbacks(
   });
 }
 
-void _registerCommonCallbacks(SocketHandler sock, bool isSever,
-    List<String> messages, Function() notifier) {
+void _registerCommonCallbacks(
+  SocketHandler sock,
+  bool isSever,
+  List<String> messages,
+  Function() notifier,
+) {
   sock.registerCallback<TaskListMessage>((msg) {
     print('server task list message');
     TaskListService.instance.mergeCrdtJson(msg.taskListCrdtJson);
@@ -52,10 +66,10 @@ void _registerCommonCallbacks(SocketHandler sock, bool isSever,
 
 class Peer extends ChangeNotifier {
   HttpServer? _server;
-  List<SocketHandler> _serverConnections = [];
+  final List<SocketHandler> _serverConnections = [];
   SocketHandler? _client;
 
-  List<String> _messageList = [];
+  final List<String> _messageList = [];
 
   List<String> get messages => List.unmodifiable(_messageList);
 
@@ -71,6 +85,7 @@ class Peer extends ChangeNotifier {
     final url = 'ws://$ip:$port';
     await _client?.close();
     print('connecting to $url');
+
     return SocketHandler.connect(url).then((sock) {
       print('client connected to server');
       _client = sock;
@@ -79,9 +94,11 @@ class Peer extends ChangeNotifier {
       _registerCommonCallbacks(sock, false, _messageList, notifyListeners);
       notifyListeners();
       sock.send(DebugMessage('hello from the client'));
+
       return sock.listen().then((sock) {
         _client = null;
         notifyListeners();
+
         return sock;
       });
     });
@@ -89,28 +106,35 @@ class Peer extends ChangeNotifier {
 
   Future<HttpServer> startServer(int port) async {
     await _server?.close();
-    return runServer(port, (sock) async {
-      print('server got connection from client!');
-      _serverConnections.add(sock);
-      _registerTypes(sock);
-      _registerServerCallbacks(sock, _messageList, notifyListeners);
-      _registerCommonCallbacks(sock, true, _messageList, notifyListeners);
-      sock.send(DebugMessage('hello from the server'));
-      await sock.listen();
-      print('closing client connection');
-      _serverConnections.remove(sock);
-      await sock.close();
-    }, onDone: () {
-      print('server is done');
-      _server = null;
-      notifyListeners();
-    }, onError: (err) {
-      print('server got error: $err');
-      _server = null;
-      notifyListeners();
-    }).then((server) {
+
+    return runServer(
+      port,
+      (sock) async {
+        print('server got connection from client!');
+        _serverConnections.add(sock);
+        _registerTypes(sock);
+        _registerServerCallbacks(sock, _messageList, notifyListeners);
+        _registerCommonCallbacks(sock, true, _messageList, notifyListeners);
+        sock.send(DebugMessage('hello from the server'));
+        await sock.listen();
+        print('closing client connection');
+        _serverConnections.remove(sock);
+        await sock.close();
+      },
+      onDone: () {
+        print('server is done');
+        _server = null;
+        notifyListeners();
+      },
+      onError: (err) {
+        print('server got error: $err');
+        _server = null;
+        notifyListeners();
+      },
+    ).then((server) {
       _server = server;
       notifyListeners();
+
       return server;
     });
   }
@@ -135,7 +159,8 @@ class Peer extends ChangeNotifier {
       if (_server != null) {
         sendToAllClients(messageObj);
         _messageList.add(
-            'Peer sent: "$message" to ${_serverConnections.length} clients');
+          'Peer sent: "$message" to ${_serverConnections.length} clients',
+        );
       }
       if (_client != null) {
         sendToServer(messageObj);

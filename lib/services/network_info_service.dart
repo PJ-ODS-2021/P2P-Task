@@ -25,10 +25,12 @@ class NetworkInfoService extends ChangeNotifier {
           await NetworkInterface.list(type: InternetAddressType.IPv4);
       _ips = [
         ...networkInterfaces
-            .fold<List<InternetAddress>>(<InternetAddress>[],
-                (previousValue, e) => previousValue..addAll(e.addresses))
+            .fold<List<InternetAddress>>(
+              <InternetAddress>[],
+              (previousValue, e) => previousValue..addAll(e.addresses),
+            )
             .where((e) => !e.isMulticast)
-            .map((e) => e.address)
+            .map((e) => e.address),
       ];
       if (!(wifiIP == null ||
           wifiIP.isEmpty ||

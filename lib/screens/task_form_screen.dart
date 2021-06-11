@@ -6,19 +6,20 @@ import 'package:provider/provider.dart';
 class TaskFormScreen extends StatefulWidget {
   final Task? task;
 
-  TaskFormScreen({Key? key, this.task}) : super(key: key);
+  const TaskFormScreen({Key? key, this.task}) : super(key: key);
 
   @override
   _TaskFormScreenState createState() => _TaskFormScreenState();
 }
 
 class _TaskFormScreenState extends State<TaskFormScreen> {
-  late final _task;
-  final _formKey = GlobalKey<FormState>();
-  late final _formController = TextEditingController(text: _task.title);
+  late final Task _task;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late final TextEditingController _formController =
+      TextEditingController(text: _task.title);
   bool _editing = false;
 
-  void _onSubmitPressed(context) {
+  void _onSubmitPressed(BuildContext context) {
     if (_formKey.currentState!.validate()) {
       Provider.of<TaskListService>(context, listen: false)
           .upsert(_task..title = _formController.text);
@@ -30,7 +31,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   void initState() {
     super.initState();
     if (widget.task != null) {
-      _task = widget.task;
+      _task = widget.task!;
       _editing = true;
     } else {
       _task = Task(title: '');
@@ -60,8 +61,10 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 ),
                 controller: _formController,
                 validator: (value) {
-                  if (value == null || value.length < 1)
+                  if (value == null || value.isEmpty) {
                     return 'Give your task a title.';
+                  }
+
                   return null;
                 },
               ),

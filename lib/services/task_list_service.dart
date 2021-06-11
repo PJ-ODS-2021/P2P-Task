@@ -7,7 +7,7 @@ import 'package:p2p_task/models/task_list.dart';
 import 'package:uuid/uuid.dart';
 
 class TaskListService extends ChangeNotifier {
-  TaskList _taskList = TaskList('List', []);
+  final TaskList _taskList = TaskList('List', []);
   final _taskListCrdt = MapCrdt<String, Task>(Uuid().v4());
 
   TaskListService._privateConstructor();
@@ -20,7 +20,7 @@ class TaskListService extends ChangeNotifier {
       TaskList('List', UnmodifiableListView(_taskList.elements));
 
   void upsert(Task task) {
-    int index =
+    var index =
         _taskList.elements.indexWhere((element) => element.id == task.id);
     if (index > -1) {
       _taskList.elements.removeAt(index);
@@ -44,8 +44,11 @@ class TaskListService extends ChangeNotifier {
 
   void mergeCrdtJson(String crdtJson) {
     print('merging with $crdtJson');
-    _taskListCrdt.mergeJson(crdtJson,
-        valueDecoder: (key, value) => Task.fromJson(value));
+    _taskListCrdt.mergeJson(
+      crdtJson,
+      valueDecoder: (String key, value) =>
+          Task.fromJson(value as Map<String, dynamic>),
+    );
     _updateTaskListFromCrdt();
     notifyListeners();
   }

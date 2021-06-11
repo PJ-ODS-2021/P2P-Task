@@ -22,13 +22,15 @@ class SocketHandler extends PacketHandler {
 
   Future<SocketHandler> listen() async {
     print('listening for data....');
-    await for (final data in websock) {
+    await for (final String data in websock) {
       print('received $data from websock');
-      var packet = Packet.fromJson(jsonDecode(data));
+      var packet = Packet.fromJson(jsonDecode(data) as Map<String, dynamic>);
       invokeCallback(packet);
     }
     print(
-        'done listening (reason: ${websock.closeReason}, code: ${websock.closeCode})');
+      'done listening (reason: ${websock.closeReason}, code: ${websock.closeCode})',
+    );
+
     return this;
   }
 
@@ -45,12 +47,21 @@ class SocketHandler extends PacketHandler {
   }
 }
 
-Future<HttpServer> runServer(int port, Function(SocketHandler) onConnected,
-    {Function? onError, Function()? onDone}) async {
+Future<HttpServer> runServer(
+  int port,
+  Function(SocketHandler) onConnected, {
+  Function? onError,
+  Function()? onDone,
+}) async {
   final server = await HttpServer.bind(InternetAddress.anyIPv4, port);
   print('running server on ${server.address}:${server.port}');
-  server.listen((request) async {
-    onConnected(await SocketHandler.upgrade(request));
-  }, onError: onError, onDone: onDone);
+  server.listen(
+    (request) async {
+      onConnected(await SocketHandler.upgrade(request));
+    },
+    onError: onError,
+    onDone: onDone,
+  );
+
   return server;
 }

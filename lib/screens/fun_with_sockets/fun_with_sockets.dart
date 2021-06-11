@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/network/peer.dart';
 import 'package:p2p_task/network/socket_handler.dart';
-import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/screens/fun_with_sockets/simple_dropdown.dart';
 import 'package:p2p_task/screens/qr_reader_screen.dart';
 import 'package:p2p_task/services/network_info_service.dart';
@@ -43,10 +43,10 @@ class _FunWithSocketsState extends State<FunWithSockets> {
           _buildConnectToServerWidgets(context),
           _buildConnectedWidgets(context),
           Consumer<Peer>(
-              builder: (context, peer, child) => Column(
-                    children:
-                        peer.messages.reversed.map((e) => Text(e)).toList(),
-                  )),
+            builder: (context, peer, child) => Column(
+              children: peer.messages.reversed.map((e) => Text(e)).toList(),
+            ),
+          ),
         ],
       ),
     ]);
@@ -55,74 +55,78 @@ class _FunWithSocketsState extends State<FunWithSockets> {
   Widget _buildIpDropdown(BuildContext context) {
     return Consumer<NetworkInfoService>(
       builder: (context, service, child) => SimpleDropdown(
-          items: service.ips,
-          onItemSelect: (ip) => setState(() {
-                qrContent = ip;
-              })),
+        items: service.ips,
+        onItemSelect: (ip) => setState(() => qrContent = ip),
+      ),
     );
   }
 
   Widget _buildServerInfo(BuildContext context) {
     return Consumer<Peer>(
-        builder: (context, peer, child) => Column(children: [
-              Consumer<NetworkInfoService>(
-                  builder: (context, networkService, child) {
-                if (peer.serverRunning) {
-                  final qrStr = qrContent ??
-                      (networkService.ips.isEmpty
-                          ? null
-                          : networkService.ips[0]);
-                  if (qrStr == null) {
-                    return Text("Could not find IP");
-                  } else {
-                    return QrImage(
-                      data: qrStr,
-                      version: QrVersions.auto,
-                      size: 200,
-                    );
-                  }
-                } else {
-                  return Text("Server is not running");
-                }
-              }),
-              ElevatedButton(
-                onPressed: !peer.serverRunning
-                    ? () => peer.startServer(_port)
-                    : peer.closeServer,
-                child: peer.serverRunning
-                    ? Text('Stop Server')
-                    : Text('Start Server'),
-              )
-            ]));
+      builder: (context, peer, child) => Column(
+        children: [
+          Consumer<NetworkInfoService>(
+            builder: (context, networkService, child) {
+              if (peer.serverRunning) {
+                final qrStr = qrContent ??
+                    (networkService.ips.isEmpty ? null : networkService.ips[0]);
+
+                return qrStr == null
+                    ? Text('Could not find IP')
+                    : QrImage(
+                        data: qrStr,
+                        version: QrVersions.auto,
+                        size: 200,
+                      );
+              } else {
+                return Text('Server is not running');
+              }
+            },
+          ),
+          ElevatedButton(
+            onPressed: !peer.serverRunning
+                ? () => peer.startServer(_port)
+                : peer.closeServer,
+            child:
+                peer.serverRunning ? Text('Stop Server') : Text('Start Server'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildConnectToServerWidgets(BuildContext context) {
     return Consumer<Peer>(
-      builder: (context, peer, child) => Column(children: [
-        if (peer.client == null) _buildQrReaderButton(context),
-        Row(children: [
-          new Flexible(
+      builder: (context, peer, child) => Column(
+        children: [
+          if (peer.client == null) _buildQrReaderButton(context),
+          Row(children: [
+            Flexible(
               child: TextFormField(
-            controller: _ipTextController,
-            decoration: InputDecoration(labelText: 'IP'),
-            enabled: peer.client == null,
-            validator: (value) =>
-                (value != null && value.isEmpty) ? 'IP is empty' : null,
-          )),
-          peer.client == null
-              ? ElevatedButton(
-                  onPressed: () =>
-                      _tryConnect(context, _ipTextController.text, _port),
-                  child: Text("Connect"))
-              : ElevatedButton(
-                  onPressed: () =>
-                      Provider.of<Peer>(context, listen: false).closeClient(),
-                  child: Text("Disconnect")),
-        ]),
-        Text(peer.client == null
-            ? 'Not connected'
-            : 'Connected to ${peer.client!.url ?? "Unknown"}'),
-      ]),
+                controller: _ipTextController,
+                decoration: InputDecoration(labelText: 'IP'),
+                enabled: peer.client == null,
+                validator: (value) =>
+                    (value != null && value.isEmpty) ? 'IP is empty' : null,
+              ),
+            ),
+            peer.client == null
+                ? ElevatedButton(
+                    onPressed: () =>
+                        _tryConnect(context, _ipTextController.text, _port),
+                    child: Text('Connect'),
+                  )
+                : ElevatedButton(
+                    onPressed: () =>
+                        Provider.of<Peer>(context, listen: false).closeClient(),
+                    child: Text('Disconnect'),
+                  ),
+          ]),
+          Text(peer.client == null
+              ? 'Not connected'
+              : 'Connected to ${peer.client!.url ?? "Unknown"}'),
+        ],
+      ),
     );
   }
 
@@ -133,7 +137,7 @@ class _FunWithSocketsState extends State<FunWithSockets> {
         MaterialPageRoute(
           builder: (context) => QrReaderScreen(
             onQRCodeRead: (ip) {
-              _ipTextController..text = ip; // no need to call setState
+              _ipTextController.text = ip; // no need to call setState
               _tryConnect(context, ip, _port);
             },
           ),
@@ -160,7 +164,7 @@ class _FunWithSocketsState extends State<FunWithSockets> {
             _sendMessageController.text = '';
           },
         ),
-        ElevatedButton(onPressed: () => _sync(context), child: Text("Sync")),
+        ElevatedButton(onPressed: () => _sync(context), child: Text('Sync')),
       ]),
     );
   }
@@ -170,7 +174,7 @@ class _FunWithSocketsState extends State<FunWithSockets> {
       content: Text(message),
       action: SnackBarAction(
         label: 'Close',
-        onPressed: () {},
+        onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
       ),
     );
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
@@ -179,28 +183,34 @@ class _FunWithSocketsState extends State<FunWithSockets> {
   void _tryConnect(BuildContext context, String ip, int port) {
     if (ip.isEmpty) return;
     final peer = Provider.of<Peer>(context, listen: false);
-    peer.connect(ip, port).catchError((e) {
-      var socketException = e as SocketException;
-      print('got socket exception: $socketException');
-      if (socketException.osError != null) {
-        switch (socketException.osError!.errorCode) {
-          case -2: // Name or service not known
-            _displaySnackBar('Name or service not known');
-            break;
-          default:
-            _displaySnackBar('OS Error: ${socketException.osError}');
+    peer.connect(ip, port).catchError(
+      (e) {
+        var socketException = e as SocketException;
+        print('got socket exception: $socketException');
+        if (socketException.osError != null) {
+          switch (socketException.osError!.errorCode) {
+            case -2: // Name or service not known
+              _displaySnackBar('Name or service not known');
+              break;
+            default:
+              _displaySnackBar('OS Error: ${socketException.osError}');
+          }
+        } else {
+          _displaySnackBar('Error: $socketException');
         }
-      } else {
-        _displaySnackBar('Error: $socketException');
-      }
-      return Future<SocketHandler>.error(e);
-    }, test: (e) => e is SocketException);
+
+        return Future<SocketHandler>.error(e);
+      },
+      test: (e) => e is SocketException,
+    );
   }
 
   void _sync(BuildContext context) {
     final peer = Provider.of<Peer>(context, listen: false);
-    final msg = TaskListMessage(TaskListService.instance.crdtToJson(),
-        requestReply: true);
+    final msg = TaskListMessage(
+      TaskListService.instance.crdtToJson(),
+      requestReply: true,
+    );
     peer.sendToAllClients(msg);
     peer.sendToServer(msg);
   }

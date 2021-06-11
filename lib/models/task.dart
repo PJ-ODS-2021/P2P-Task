@@ -12,14 +12,14 @@ class Task {
   DateTime? dueNotification;
   String? priority;
 
-  Task(
-      {String? id,
-      required this.title,
-      this.completed = false,
-      this.due,
-      this.dueNotification,
-      this.priority})
-      : id = id ?? Uuid().v4();
+  Task({
+    String? id,
+    required this.title,
+    this.completed = false,
+    this.due,
+    this.dueNotification,
+    this.priority,
+  }) : id = id ?? Uuid().v4();
 
   factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);
 
