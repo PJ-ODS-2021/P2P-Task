@@ -51,10 +51,12 @@ class IdentityListSection extends StatelessWidget {
               title: Text('Name'),
               subtitle: Text(name),
               onTap: () => showDialog(
-                  context: context,
-                  builder: (context) => UpdateSingleValueDialog(
-                      Text('Set Name'),
-                      (name) => identityService.setName(name),),),
+                context: context,
+                builder: (context) => UpdateSingleValueDialog(
+                  Text('Set Name'),
+                  (name) => identityService.setName(name),
+                ),
+              ),
             );
           },
         ),

@@ -9,8 +9,7 @@ typedef OnQRCodeRead = Function(String value);
 class QrScannerScreen extends StatefulWidget {
   final OnQRCodeRead onQRCodeRead;
 
-  QrScannerScreen({Key? key, required this.onQRCodeRead})
-      : super(key: key);
+  QrScannerScreen({Key? key, required this.onQRCodeRead}) : super(key: key);
 
   @override
   _QrScannerScreenState createState() => _QrScannerScreenState();
