@@ -8,6 +8,7 @@ class Task {
   final String id;
   String title;
   bool completed;
+  String? description;
   DateTime? due;
   DateTime? dueNotification;
   String? priority;
@@ -15,6 +16,7 @@ class Task {
   Task(
       {String? id,
       required this.title,
+      this.description,
       this.completed = false,
       this.due,
       this.dueNotification,
