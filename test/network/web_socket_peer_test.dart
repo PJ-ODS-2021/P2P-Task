@@ -8,8 +8,11 @@ import 'package:p2p_task/network/messages/packet.dart';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
 import 'package:p2p_task/services/identity_service.dart';
+import 'package:p2p_task/services/peer_info_service.dart';
+import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/utils/data_model_repository.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:sembast/sembast.dart';
 import 'package:sembast/sembast_memory.dart';
@@ -20,7 +23,8 @@ void main() {
   late IdentityService identityService;
   late TaskListService taskListService;
   late SyncService syncService;
-  late WebSocketPeer peer;
+  late PeerInfoService peerInfoService;
+  late PeerService peerService;
 
   setUp(() async {
     db = await databaseFactoryMemory.openDatabase('');
@@ -30,8 +34,11 @@ void main() {
     await syncService.setInterval(0);
     taskListService =
         TaskListService(keyValueRepository, identityService, syncService);
-    peer = WebSocketPeer();
-    peer.startServer(await identityService.port);
+    peerInfoService = PeerInfoService(
+        DataModelRepository(db, (json) => PeerInfo.fromJson(json), 'PeerInfo'));
+    peerService = PeerService(WebSocketPeer(), taskListService, peerInfoService,
+        identityService, syncService);
+    await peerService.startServer();
   });
 
   group('Synchronization', () {
@@ -65,7 +72,7 @@ void main() {
   });
 
   tearDown(() async {
-    await peer.stopServer();
+    await peerService.stopServer();
     await db.close();
   });
 }
