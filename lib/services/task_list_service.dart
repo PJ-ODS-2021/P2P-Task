@@ -1,78 +1,108 @@
-import 'dart:collection';
+import 'dart:convert';
 
 import 'package:crdt/crdt.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:p2p_task/models/task.dart';
-import 'package:p2p_task/models/task_list.dart';
+import 'package:p2p_task/services/identity_service.dart';
+import 'package:p2p_task/services/sync_service.dart';
+import 'package:p2p_task/utils/key_value_repository.dart';
+import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
 
-class TaskListService extends ChangeNotifier {
-  final TaskList _taskList = TaskList('List', []);
-  final _taskListCrdt = MapCrdt<String, Task>(Uuid().v4());
+class TaskListService extends ChangeNotifier with LogMixin {
+  final String _crdtTaskListKey = 'crdtTaskList';
 
-  TaskListService._privateConstructor();
-  static final TaskListService instance = TaskListService._privateConstructor();
+  final KeyValueRepository _keyValueRepository;
+  final IdentityService _identityService;
+  final SyncService _syncService;
 
-  UnmodifiableListView<Task> get tasks =>
-      UnmodifiableListView(_taskList.elements);
+  TaskListService(
+    KeyValueRepository keyValueRepository,
+    IdentityService identityService,
+    SyncService syncService,
+  )   : _keyValueRepository = keyValueRepository,
+        _identityService = identityService,
+        _syncService = syncService;
 
-  TaskList get taskList =>
-      TaskList('List', UnmodifiableListView(_taskList.elements));
+  Future<List<Task>> get tasks async {
+    return (await _taskListCrdt).values;
+  }
 
-  void upsert(Task task) {
-    var index =
-        _taskList.elements.indexWhere((element) => element.id == task.id);
-    if (index > -1) {
-      _taskList.elements.removeAt(index);
-      _taskList.elements.insert(index, task);
-    } else {
-      _taskList.elements.add(task);
-    }
-    _taskListCrdt.put(task.id, task);
+  Future upsert(Task task) async {
+    l.info('Upsert task ${task.toJson()}');
+    final id = Uuid().v4();
+    final update = (await _taskListCrdt)
+      ..put(task.id ?? id, task..id = (task.id ?? id));
+    await _store(update);
+    await _syncService.run();
+  }
+
+  Future remove(Task task) async {
+    final update = (await _taskListCrdt)..delete(task.id!);
+    await _store(update);
+    await _syncService.run();
+  }
+
+  Future delete() async {
+    await _keyValueRepository.purge(key: _crdtTaskListKey);
     notifyListeners();
+    await _syncService.run();
   }
 
-  void remove(Task task) {
-    _taskList.elements.remove(task);
-    _taskListCrdt.delete(task.id);
+  Future<int> count() async {
+    return (await tasks).length;
+  }
+
+  Future<void> _store(MapCrdt<String, Task> update) async {
+    await _keyValueRepository.put(_crdtTaskListKey, update.toJson());
     notifyListeners();
+    l.info('notifying task list change');
   }
 
-  String crdtToJson() {
-    return _taskListCrdt.toJson();
+  Future<String> crdtToJson() async {
+    return (await _taskListCrdt).toJson();
   }
 
-  void mergeCrdtJson(String crdtJson) {
-    print('merging with $crdtJson');
-    _taskListCrdt.mergeJson(
+  Future mergeCrdtJson(String crdtJson) async {
+    l.info('Merging with $crdtJson');
+    final self = (await _taskListCrdt);
+    final other = CrdtJson.decode<String, Task>(
       crdtJson,
-      valueDecoder: (String key, value) =>
-          Task.fromJson(value as Map<String, dynamic>),
+      self.canonicalTime,
+      valueDecoder: (key, value) => Task.fromJson(value),
     );
-    _updateTaskListFromCrdt();
-    notifyListeners();
+    // Remove records from this node from the task list. This could also be done in the sender.
+    other.removeWhere((key, value) => value.hlc.nodeId == self.nodeId);
+    final update = self..merge(other);
+    l.info('Merge result ${update.toJson()}');
+    await _store(update);
   }
 
-  void _updateTaskListFromCrdt() {
-    // unefficient method
-    print('current crdt value: ${_taskListCrdt.toJson()}');
-    for (var i = 0; i < _taskList.elements.length;) {
-      final task = _taskList.elements[i];
-      final crdtTask = _taskListCrdt.getRecord(task.id);
-      print('checking local ${task.toJson()}');
-      if (crdtTask == null || crdtTask.isDeleted) {
-        print('-> will be removed');
-        _taskList.elements.removeAt(i);
-      } else {
-        print('-> will be updated');
-        _taskList.elements[i++] = crdtTask.value!;
-      }
+  Future<MapCrdt<String, Task>> get _taskListCrdt async => await _fromJson(
+        await _keyValueRepository.get<String>(_crdtTaskListKey) ?? '{}',
+      );
+
+  Future<MapCrdt<String, Task>> _fromJson(String json) async {
+    final Map<String, dynamic> map = jsonDecode(json);
+    final keys = map.keys.toList();
+    final recordMap = <String, Record<Task>>{};
+    for (var i = 0; i < map.length; ++i) {
+      recordMap.putIfAbsent(
+        keys[i],
+        () => Record(
+          Hlc.parse(map[keys[i]]['hlc']),
+          map[keys[i]]['value'] == null
+              ? null
+              : Task.fromJson(map[keys[i]]['value']),
+          Hlc.parse(map[keys[i]]['modified'] ?? map[keys[i]]['hlc']),
+        ),
+      );
     }
-    _taskListCrdt.map.forEach((key, value) {
-      if (!_taskList.elements.any((element) => element.id == value.id)) {
-        print('adding new task ${value.toJson()}');
-        _taskList.elements.add(value);
-      }
-    });
+
+    return MapCrdt(await _identityService.peerId, recordMap);
   }
+
+  @override
+  // ignore: must_call_super, no-empty-block
+  void dispose() {}
 }

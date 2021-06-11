@@ -56,6 +56,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 horizontal: 15.0,
               ),
               child: TextFormField(
+                autofocus: true,
                 onFieldSubmitted: (value) => _onSubmitPressed(context),
                 decoration: InputDecoration(
                   hintText: 'Title',

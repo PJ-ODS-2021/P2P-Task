@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:p2p_task/network/packet.dart';
+import 'package:p2p_task/network/messages/packet.dart';
 import 'package:p2p_task/network/packet_handler.dart';
-import 'package:p2p_task/network/serializable.dart';
+import 'package:p2p_task/utils/serializable.dart';
 
-class SocketHandler extends PacketHandler {
+class SocketHandler extends PacketHandler<SocketHandler> {
   final String? url;
   final WebSocket websock;
 
@@ -25,7 +25,7 @@ class SocketHandler extends PacketHandler {
     await for (final String data in websock) {
       print('received $data from websock');
       var packet = Packet.fromJson(jsonDecode(data) as Map<String, dynamic>);
-      invokeCallback(packet);
+      invokeCallback(packet, this);
     }
     print(
       'done listening (reason: ${websock.closeReason}, code: ${websock.closeCode})',

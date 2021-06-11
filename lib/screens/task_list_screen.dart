@@ -1,32 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/screens/task_form_screen.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 
-class TaskListScreen extends StatefulWidget {
-  const TaskListScreen({Key? key}) : super(key: key);
-
-  @override
-  _TaskListScreenState createState() => _TaskListScreenState();
-}
-
-class _TaskListScreenState extends State<TaskListScreen> {
-  final TextStyle _heroFont =
-      const TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold);
-
+class TaskListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final consumerWidget = Consumer<TaskListService>(
-      builder: (BuildContext context, TaskListService service, Widget? child) =>
-          _buildTaskList(context, service),
+    final taskListService = Provider.of<TaskListService>(context);
+
+    final futureBuilder = FutureBuilder<List<Task>>(
+      initialData: [],
+      future: taskListService.tasks,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Column(
+            children: [
+              Text('Error'),
+              Text(snapshot.error.toString()),
+            ],
+          );
+        }
+
+        return _buildTaskList(context, taskListService, snapshot.data!);
+      },
     );
 
     return Stack(
       alignment: const Alignment(0, 0.9),
       children: [
-        consumerWidget,
+        futureBuilder,
         ElevatedButton(
           onPressed: () => Navigator.push(
             context,
@@ -45,27 +50,28 @@ class _TaskListScreenState extends State<TaskListScreen> {
   Widget _buildTaskList(
     BuildContext context,
     TaskListService service,
+    List<Task> tasks,
   ) {
-    if (service.tasks.isEmpty) {
+    if (tasks.isEmpty) {
       return Center(
         child: Column(
           children: [
-            const Spacer(),
-            Text('🎉 Nothing to do.', style: _heroFont),
-            const Text('Click the plus button below to add a ToDo.'),
-            const Spacer(flex: 2),
+            Spacer(),
+            Text('🎉 Nothing to do.', style: kHeroFont),
+            Text('Click the plus button below to add a ToDo.'),
+            Spacer(flex: 2),
           ],
         ),
       );
     }
 
     return ListView.builder(
-      itemCount: service.tasks.length,
+      itemCount: tasks.length,
       itemBuilder: (context, index) {
         return _buildSlidableTaskRow(
           context,
           service,
-          service.tasks[index],
+          tasks[index],
           index,
         );
       },
@@ -97,8 +103,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
           caption: 'Delete',
           color: Colors.red,
           icon: Icons.delete,
-          onTap: () =>
-              Provider.of<TaskListService>(context, listen: false).remove(task),
+          onTap: () => service.remove(task),
         ),
       ],
       child: _buildTaskContainer(service, task, index),
@@ -107,7 +112,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   Widget _buildTaskContainer(TaskListService service, Task task, int index) {
     return Container(
-      color: index.isEven ? Colors.white : Colors.white30,
+      color: index.isEven ? Colors.white : Colors.white60,
       child: ListTile(
         leading: task.completed
             ? const Icon(
@@ -123,10 +128,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
         subtitle: Text(task.description ?? ''),
         trailing: Icon(Icons.chevron_left),
         onTap: () {
-          setState(() {
-            task.completed = !task.completed;
-            service.upsert(task);
-          });
+          task.completed = !task.completed;
+          service.upsert(task);
         },
       ),
     );

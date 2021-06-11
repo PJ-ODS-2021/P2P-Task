@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:p2p_task/network/serializable.dart';
+import 'package:p2p_task/utils/serializable.dart';
 
 part 'debug_message.g.dart';
 
