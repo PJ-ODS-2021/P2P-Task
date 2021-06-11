@@ -1,20 +1,42 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:p2p_task/utils/data_model.dart';
 
 part 'task.g.dart';
 
 @JsonSerializable()
-class Task extends DataModel {
+class Task {
   String? id;
-  String title = '';
-  bool completed = false;
+  String title;
+  bool completed;
+  String? description;
   DateTime? due;
   DateTime? dueNotification;
   String? priority;
 
-  Task();
+  Task(
+      {this.id,
+      required this.title,
+      this.description,
+      this.completed = false,
+      this.due,
+      this.dueNotification,
+      this.priority});
 
   factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);
 
   Map<String, dynamic> toJson() => _$TaskToJson(this);
+
+  @override
+  int get hashCode => id == null ? title.hashCode : id.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (!(other is Task)) return false;
+    return other.id == id &&
+        other.title == title &&
+        other.completed == completed &&
+        other.description == description &&
+        other.due == due &&
+        other.dueNotification == dueNotification &&
+        other.priority == priority;
+  }
 }

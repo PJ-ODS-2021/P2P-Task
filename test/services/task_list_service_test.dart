@@ -27,10 +27,10 @@ void main() {
     final taskTitle = 'Drink a cold cat';
 
     await taskListService
-        .upsert(Task()..title = 'Catch a cat falling from the sky');
+        .upsert(Task(title: 'Catch a cat falling from the sky'));
     final task = (await taskListService.tasks).first;
     await taskListService.remove(task);
-    await taskListService.upsert(Task()..title = taskTitle);
+    await taskListService.upsert(Task(title: taskTitle));
     final tasks = await taskListService.tasks;
 
     expect(tasks.length, equals(1));

@@ -15,13 +15,18 @@ class TaskFormScreen extends StatefulWidget {
 class _TaskFormScreenState extends State<TaskFormScreen> {
   late final _task;
   final _formKey = GlobalKey<FormState>();
-  late final _formController = TextEditingController(text: _task.title);
+  late final _formTitleController = TextEditingController(text: _task.title);
+  late final _formDescriptionController =
+      TextEditingController(text: _task.description);
   bool _editing = false;
 
   void _onSubmitPressed(context) {
     if (_formKey.currentState!.validate()) {
-      Provider.of<TaskListService>(context, listen: false)
-          .upsert(_task..title = _formController.text);
+      final taskListService =
+          Provider.of<TaskListService>(context, listen: false);
+      taskListService.upsert(_task
+        ..title = _formTitleController.text
+        ..description = _formDescriptionController.text);
       Navigator.pop(context);
     }
   }
@@ -33,7 +38,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       _task = widget.task;
       _editing = true;
     } else {
-      _task = Task()..title = '';
+      _task = Task(title: '');
     }
   }
 
@@ -59,12 +64,30 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   fillColor: Colors.purple[50],
                   border: OutlineInputBorder(borderSide: BorderSide.none),
                 ),
-                controller: _formController,
+                controller: _formTitleController,
                 validator: (value) {
                   if (value == null || value.length < 1)
                     return 'Give your task a title.';
                   return null;
                 },
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: 10.0,
+                horizontal: 15.0,
+              ),
+              child: Container(
+                child: TextFormField(
+                  onFieldSubmitted: (value) => _onSubmitPressed(context),
+                  decoration: InputDecoration(
+                    hintText: 'Description',
+                    filled: true,
+                    fillColor: Colors.purple[50],
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                  ),
+                  controller: _formDescriptionController,
+                ),
               ),
             ),
             Spacer(flex: 5),
@@ -81,7 +104,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
   @override
   void dispose() {
-    _formController.dispose();
+    _formTitleController.dispose();
+    _formDescriptionController.dispose();
     super.dispose();
   }
 }

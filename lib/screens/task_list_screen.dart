@@ -104,8 +104,7 @@ class TaskListScreen extends StatelessWidget {
                 semanticLabel: "Uncompleted Task",
               ),
         title: Text(task.title),
-        // ToDo Change subtitle to task description
-        subtitle: Text(task.title),
+        subtitle: Text(task.description ?? ''),
         trailing: Icon(Icons.chevron_left),
         onTap: () {
           task.completed = !task.completed;

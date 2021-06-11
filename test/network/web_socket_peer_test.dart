@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/peer_info.dart';
+import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/network/messages/packet.dart';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
@@ -43,9 +44,15 @@ void main() {
 
   group('Synchronization', () {
     test('should sync with connecting client', () async {
-      final taskTitle = 'Eat a hot dog';
-      final message =
-          '{"516ca13c-9021-4986-ab97-2d89cc0b3fce":{"hlc":"2021-06-04T07:37:08.946Z-0000-d5726a08-2107-49c0-8b06-167e57f96301","value":{"id":"516ca13c-9021-4986-ab97-2d89cc0b3fce","title":"$taskTitle","completed":false,"due":null,"dueNotification":null,"priority":null}}}';
+      final task = Task(
+          title: 'Eat a hot dog', id: '16ca13c-9021-4986-ab97-2d89cc0b3fce');
+      final message = <String, dynamic>{
+        '516ca13c-9021-4986-ab97-2d89cc0b3fce': {
+          'hlc':
+              '2021-06-04T07:37:08.946Z-0000-d5726a08-2107-49c0-8b06-167e57f96301',
+          'value': task.toJson()
+        }
+      };
 
       final peerLocation =
           PeerLocation('ws://localhost:${await identityService.port}');
@@ -55,7 +62,8 @@ void main() {
         completer.complete(data);
       });
       client.send(jsonEncode(Packet('TaskListMessage',
-          object: TaskListMessage(message, requestReply: true).toJson())));
+          object: TaskListMessage(jsonEncode(message), requestReply: true)
+              .toJson())));
       final serverData = await completer.future
           .timeout(Duration(seconds: 5), onTimeout: () => null);
       expect(serverData, isNot(equals(null)),
@@ -64,10 +72,10 @@ void main() {
       final unmarshalledData = TaskListMessage.fromJson(
               Packet.fromJson(jsonDecode(serverData)).object)
           .taskListCrdtJson;
-      expect(unmarshalledData, message);
+      expect(jsonDecode(unmarshalledData), message);
       final tasks = await taskListService.tasks;
       expect(tasks.length, equals(1));
-      expect(tasks.first.title, equals(taskTitle));
+      expect(tasks.first, task);
     });
   });
 
