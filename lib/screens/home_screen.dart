@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:p2p_task/screens/counter_example_screen.dart';
-import 'package:p2p_task/screens/dev_playground_screen.dart';
 import 'package:p2p_task/screens/devices/device_list_screen.dart';
 import 'package:p2p_task/screens/qr_code_dialog.dart';
 import 'package:p2p_task/screens/settings/settings_screen.dart';
@@ -45,9 +44,6 @@ class _HomeScreenState extends State<HomeScreen> {
               return DeviceListScreen();
             case 3:
               return SettingsScreen();
-            case 4:
-              if (!kReleaseMode) return DevPlaygroundScreen();
-              break;
           }
           return Center(child: Text('Default.'));
         },

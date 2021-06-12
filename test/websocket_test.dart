@@ -3,8 +3,9 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:p2p_task/network/socket_handler.dart';
+import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/network/messages/debug_message.dart';
+import 'package:p2p_task/network/web_socket_peer.dart';
 
 import 'websocket_server_custom.dart';
 
@@ -24,34 +25,32 @@ void main() {
     expect(value, equals('Hello, world!'));
   });
 
-  test('connects to a custom-made WebSocket server', () async {
-    final _registerTypes = (SocketHandler sock) {
-      sock.registerTypename<DebugMessage>(
-          "DebugMessage", (json) => DebugMessage.fromJson(json));
-    };
-    const serverMessage = 'hello from the server';
+  test('connects to a custom-made WebSocketPeer', () async {
+    const messageContent = 'hello from the server';
     var receivePort = ReceivePort();
 
-    await Isolate.spawn(startServer, receivePort.sendPort);
-    var c = Completer<int>();
-    receivePort.listen((message) {
-      c.complete(message);
-    });
-    int port = await c.future;
+    await Isolate.spawn(startServer,
+        ServerOptions(sendPort: receivePort.sendPort, echoDebugMessages: true));
+    var serverPortCompleter = Completer<int>();
+    receivePort
+        .listen((message) => serverPortCompleter.complete(message as int));
+    int port = await serverPortCompleter.future;
 
-    var completer = Completer<String>();
-    SocketHandler.connect('ws://localhost:$port').then((sock) {
-      print('client connected to server');
-      _registerTypes(sock);
-      sock.registerCallback<DebugMessage>(
-          (msg, source) => completer.complete(msg.value));
-      sock.send(DebugMessage('hello from the client'));
-      return sock.listen().then((sock) {
-        return sock;
-      });
-    });
-    var message = await completer.future;
+    final serverDebugMessageCompleter = Completer<String?>();
+    final client = WebSocketPeer();
+    client.registerTypename<DebugMessage>(
+        "DebugMessage", (json) => DebugMessage.fromJson(json));
+    client.registerCallback<DebugMessage>(
+        (msg, source) => serverDebugMessageCompleter.complete(msg.value));
+    final bool sendSucceeded = await client.sendPacketToPeer(
+        PeerInfo()..locations.add(PeerLocation('ws://localhost:$port')),
+        DebugMessage(messageContent));
+    expect(sendSucceeded, true);
+    final message = await serverDebugMessageCompleter.future
+        .timeout(Duration(seconds: 5), onTimeout: () => null);
+    expect(message, isNot(equals(null)),
+        reason: 'server did not answer within 5s');
 
-    expect(message, equals(serverMessage));
+    expect(message, equals(messageContent));
   });
 }

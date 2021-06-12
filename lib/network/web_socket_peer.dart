@@ -49,10 +49,10 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     knownPeerInfos.forEach((peerInfo) => sendToPeer(peerInfo, payload));
   }
 
-  Future<void> sendPacketToPeer<T extends Serializable>(
+  Future<bool> sendPacketToPeer<T extends Serializable>(
       PeerInfo peerInfo, T packet,
       {PeerLocation? location}) async {
-    await sendToPeer(peerInfo, marshallPacket(packet), location: location);
+    return sendToPeer(peerInfo, marshallPacket(packet), location: location);
   }
 
   Future<bool> sendToPeer(PeerInfo peerInfo, String payload,
