@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 class DeviceInfoService {
   final DeviceInfoPlugin _deviceInfoPlugin;
 
-  DeviceInfoService(DeviceInfoPlugin? deviceInfoPlugin)
+  DeviceInfoService([DeviceInfoPlugin? deviceInfoPlugin])
       : this._deviceInfoPlugin = deviceInfoPlugin ?? DeviceInfoPlugin();
 
   Future<String> get deviceName async {

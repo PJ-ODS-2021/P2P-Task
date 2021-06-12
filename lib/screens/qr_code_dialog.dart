@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/services/identity_service.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -7,7 +8,8 @@ class QrCodeDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final identityService =
-        Provider.of<IdentityService>(context, listen: false);
+        Provider.of<ChangeCallbackNotifier<IdentityService>>(context)
+            .callbackProvider;
     final size = MediaQuery.of(context).size;
     final smallestSide =
         (size.width < size.height ? size.width : size.height) - 175;

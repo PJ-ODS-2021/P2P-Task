@@ -5,6 +5,7 @@ import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/screens/home_screen.dart';
 import 'package:p2p_task/services/device_info_service.dart';
 import 'package:p2p_task/services/identity_service.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
@@ -53,20 +54,26 @@ class App extends StatelessWidget {
             );
           final i = snapshot.data!;
           return MultiProvider(providers: [
-            Provider(
-              create: (context) => DeviceInfoService(null),
-            ),
+            Provider(create: (context) => i.get<DeviceInfoService>()),
             Provider(create: (context) => i.get<Database>()),
             ChangeNotifierProvider(
-                create: (context) => i.get<TaskListService>()),
+                create: (context) => ChangeCallbackNotifier<TaskListService>(
+                    i.get<TaskListService>())),
             ChangeNotifierProvider(
-                create: (context) => i.get<NetworkInfoService>()),
+                create: (context) => ChangeCallbackNotifier<NetworkInfoService>(
+                    i.get<NetworkInfoService>())),
             ChangeNotifierProvider(
-                create: (context) => i.get<PeerInfoService>()),
+                create: (context) => ChangeCallbackNotifier<PeerInfoService>(
+                    i.get<PeerInfoService>())),
             ChangeNotifierProvider(
-                create: (context) => i.get<IdentityService>()),
-            ChangeNotifierProvider(create: (context) => i.get<SyncService>()),
-            ChangeNotifierProvider.value(value: i.get<PeerService>()),
+                create: (context) => ChangeCallbackNotifier<IdentityService>(
+                    i.get<IdentityService>())),
+            ChangeNotifierProvider(
+                create: (context) =>
+                    ChangeCallbackNotifier<PeerService>(i.get<PeerService>())),
+            ChangeNotifierProvider(
+                create: (context) =>
+                    ChangeCallbackNotifier<SyncService>(i.get<SyncService>())),
           ], child: child);
         });
   }

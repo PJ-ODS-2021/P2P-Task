@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/widgets/list_section.dart';
@@ -11,8 +12,11 @@ class SyncListSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final syncService = Provider.of<SyncService>(context);
-    final peer = Provider.of<PeerService>(context);
+    final syncService =
+        Provider.of<ChangeCallbackNotifier<SyncService>>(context)
+            .callbackProvider;
+    final peer = Provider.of<ChangeCallbackNotifier<PeerService>>(context)
+        .callbackProvider;
 
     return FutureBuilder<List<dynamic>>(
         future: Future.wait([

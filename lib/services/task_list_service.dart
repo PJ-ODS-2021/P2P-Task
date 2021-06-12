@@ -1,26 +1,23 @@
 import 'dart:convert';
 
 import 'package:crdt/crdt.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:p2p_task/models/task.dart';
+import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
 
-class TaskListService extends ChangeNotifier with LogMixin {
+class TaskListService with LogMixin, ChangeCallbackProvider {
   final String _crdtTaskListKey = 'crdtTaskList';
 
   KeyValueRepository _keyValueRepository;
   IdentityService _identityService;
   SyncService _syncService;
 
-  TaskListService(KeyValueRepository keyValueRepository,
-      IdentityService identityService, SyncService syncService)
-      : this._keyValueRepository = keyValueRepository,
-        this._identityService = identityService,
-        this._syncService = syncService;
+  TaskListService(
+      this._keyValueRepository, this._identityService, this._syncService);
 
   Future<List<Task>> get tasks async {
     return (await _taskListCrdt).values;
@@ -43,7 +40,7 @@ class TaskListService extends ChangeNotifier with LogMixin {
 
   Future delete() async {
     await _keyValueRepository.purge(key: _crdtTaskListKey);
-    notifyListeners();
+    invokeChangeCallback();
     await _syncService.run();
   }
 
@@ -53,7 +50,7 @@ class TaskListService extends ChangeNotifier with LogMixin {
 
   Future<void> _store(MapCrdt<String, Task> update) async {
     await _keyValueRepository.put(_crdtTaskListKey, update.toJson());
-    notifyListeners();
+    invokeChangeCallback();
     l.info('notifying task list change');
   }
 
@@ -97,8 +94,4 @@ class TaskListService extends ChangeNotifier with LogMixin {
     }
     return MapCrdt(await _identityService.peerId, recordMap);
   }
-
-  @override
-  // ignore: must_call_super
-  void dispose() {}
 }
