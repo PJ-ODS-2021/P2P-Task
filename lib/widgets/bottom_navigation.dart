@@ -48,11 +48,6 @@ class _BottomNavigationState extends State<BottomNavigation> {
             icon: Icon(Icons.settings),
             label: 'Settings',
           ),
-          if (!kReleaseMode)
-            BottomNavigationBarItem(
-              icon: Icon(Icons.developer_mode_outlined),
-              label: 'Dev',
-            ),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.deepPurple,

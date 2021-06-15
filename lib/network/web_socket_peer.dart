@@ -19,7 +19,9 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
   // Therefore, we don't need to store the WebSocketClient as a member variable.
 
   int? get serverPort => _server?.port;
+
   String? get serverAddress => _server?.address;
+
   bool get isServerRunning => _server != null;
 
   /// Calling this function while it is already running could lead to an error.
@@ -53,12 +55,12 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     knownPeerInfos.forEach((peerInfo) => sendToPeer(peerInfo, payload));
   }
 
-  Future<void> sendPacketToPeer<T extends Serializable>(
+  Future<bool> sendPacketToPeer<T extends Serializable>(
     PeerInfo peerInfo,
     T packet, {
     PeerLocation? location,
   }) async {
-    await sendToPeer(peerInfo, marshallPacket(packet), location: location);
+    return sendToPeer(peerInfo, marshallPacket(packet), location: location);
   }
 
   Future<bool> sendToPeer(

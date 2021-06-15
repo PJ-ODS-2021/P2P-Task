@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:p2p_task/config/app_module.dart';
 import 'package:p2p_task/config/style_constants.dart';
-import 'package:p2p_task/network/peer.dart';
 import 'package:p2p_task/screens/home_screen.dart';
 import 'package:p2p_task/services/device_info_service.dart';
 import 'package:p2p_task/services/identity_service.dart';
@@ -74,9 +73,6 @@ class App extends StatelessWidget {
             ),
             ChangeNotifierProvider(
               create: (context) => i.get<NetworkInfoService>(),
-            ),
-            ChangeNotifierProvider.value(
-              value: i.get<Peer>(),
             ),
             ChangeNotifierProvider(
               create: (context) => i.get<PeerInfoService>(),

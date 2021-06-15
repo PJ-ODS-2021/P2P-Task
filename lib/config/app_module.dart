@@ -1,7 +1,6 @@
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:p2p_task/config/database_creator.dart';
 import 'package:p2p_task/models/peer_info.dart';
-import 'package:p2p_task/network/peer.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/network_info_service.dart';
@@ -44,14 +43,11 @@ class AppModule {
       isSingleton: true,
     );
     injector.map<PeerInfoService>(
-      (i) => PeerInfoService(DataModelRepository(
-        _db,
-        (json) => PeerInfo.fromJson(json),
-        'PeerInfo',
-      )),
+      (i) => PeerInfoService(
+        DataModelRepository(_db, (json) => PeerInfo.fromJson(json), 'PeerInfo'),
+      ),
       isSingleton: true,
     );
-    injector.map<Peer>((i) => Peer.instance());
     injector.map<WebSocketPeer>((i) => WebSocketPeer(), isSingleton: true);
     injector.map<PeerService>(
       (i) => PeerService(
