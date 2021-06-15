@@ -79,11 +79,16 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
         l.info('successfully synced with $peerInfo using $location');
         return true;
       }
-      l.info('could not sync with $peerInfo using $location');
+      l.info(
+          'could not sync with $location in peer with id "${peerInfo.id}" ("${peerInfo.name}")');
     }
     return false;
   }
 
+  /// Returns true if a message was received after the message was sent.
+  /// Returns false if an error occured or no message was received after timeout.
+  ///
+  /// Closes the connection after having received the first message.
   Future<bool> _sendToPeerLocation(PeerLocation location, String payload,
       {Duration timeout = const Duration(seconds: 2)}) async {
     l.info('Trying to sync with $location...');
@@ -93,6 +98,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     connection.dataStream.listen((data) async {
       l.info('Received message from server: $data');
       _handleMessage(connection, data);
+      completer.complete(true);
 
       // for now just always close after having received a message
       connection.close();
@@ -100,7 +106,10 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
       completer.complete(false);
       l.severe('Error listening on websocket data stream to $location', error,
           stackTrace);
-    }, onDone: () => completer.complete(true));
+    }, onDone: () {
+      l.info('Completed connection to $location');
+      if (!completer.isCompleted) completer.complete(false);
+    }, cancelOnError: true);
     connection.send(payload);
     l.info('Client sent message to $location: $payload');
     Future.delayed(timeout, () {

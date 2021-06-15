@@ -5,10 +5,10 @@ part 'peer_info.g.dart';
 
 @JsonSerializable()
 class PeerLocation {
-  String uriStr;
-  String? networkName;
+  final String uriStr;
+  final String? networkName;
 
-  PeerLocation(this.uriStr, [this.networkName]);
+  const PeerLocation(this.uriStr, [this.networkName]);
 
   factory PeerLocation.fromJson(Map<String, dynamic> json) =>
       _$PeerLocationFromJson(json);
@@ -20,6 +20,15 @@ class PeerLocation {
   @override
   String toString() {
     return networkName == null ? uriStr : '$networkName@$uriStr';
+  }
+
+  @override
+  int get hashCode => uriStr.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (!(other is PeerLocation)) return false;
+    return other.uriStr == uriStr && other.networkName == networkName;
   }
 }
 
@@ -35,6 +44,10 @@ class PeerInfo implements DataModel {
       _$PeerInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$PeerInfoToJson(this);
+
+  void addPeerLocation(PeerLocation location) {
+    if (!locations.contains(location)) locations.add(location);
+  }
 
   @override
   String toString() {

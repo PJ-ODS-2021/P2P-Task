@@ -43,7 +43,7 @@ void main() {
     client.registerCallback<DebugMessage>(
         (msg, source) => serverDebugMessageCompleter.complete(msg.value));
     final bool sendSucceeded = await client.sendPacketToPeer(
-        PeerInfo()..locations.add(PeerLocation('ws://localhost:$port')),
+        PeerInfo()..addPeerLocation(PeerLocation('ws://localhost:$port')),
         DebugMessage(messageContent));
     expect(sendSucceeded, true);
     final message = await serverDebugMessageCompleter.future

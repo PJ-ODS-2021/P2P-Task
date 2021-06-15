@@ -147,10 +147,8 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
   void _onSubmit() {
     Provider.of<ChangeCallbackNotifier<PeerInfoService>>(context, listen: false)
         .callbackProvider
-        .upsert(PeerInfo()
-          ..name = _nameController.text
-          ..locations.add(PeerLocation(
-              'ws://${_ipController.text}:${_portController.text}')));
+        .addPeerLocation(PeerInfo()..name = _nameController.text,
+            PeerLocation('ws://${_ipController.text}:${_portController.text}'));
     Navigator.of(context).pop();
   }
 }

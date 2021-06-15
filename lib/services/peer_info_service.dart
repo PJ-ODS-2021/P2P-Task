@@ -14,6 +14,22 @@ class PeerInfoService with ChangeCallbackProvider {
     invokeChangeCallback();
   }
 
+  Future<void> addPeerLocation(PeerInfo peerInfo, PeerLocation location) async {
+    // TODO: make this function work in a concurrent environment
+
+    if (peerInfo.id == null) return upsert(peerInfo..addPeerLocation(location));
+    final existingPeerInfo = await _repository.get(peerInfo.id!);
+    if (existingPeerInfo == null)
+      return upsert(peerInfo..addPeerLocation(location));
+
+    // use new name if it not emty
+    existingPeerInfo.name =
+        peerInfo.name.isEmpty ? existingPeerInfo.name : peerInfo.name;
+
+    existingPeerInfo.addPeerLocation(location);
+    return upsert(existingPeerInfo);
+  }
+
   Future<void> remove(PeerInfo peerInfo) async {
     if (peerInfo.id == null) return;
     await _repository.remove(peerInfo.id!);

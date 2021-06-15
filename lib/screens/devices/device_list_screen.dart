@@ -26,14 +26,15 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
           'ignoring invalid qr content "$qrContent": less than 3 components');
       return;
     }
-    Provider.of<ChangeCallbackNotifier<PeerInfoService>>(context, listen: false)
-        .callbackProvider
-        .upsert(
-          PeerInfo()
-            ..id = values[0]
-            ..name = values[0]
-            ..locations.add(PeerLocation('ws://${values[1]}:${values[2]}')),
-        );
+    final peerInfoService =
+        Provider.of<ChangeCallbackNotifier<PeerInfoService>>(context,
+                listen: false)
+            .callbackProvider;
+    peerInfoService.addPeerLocation(
+        PeerInfo()
+          ..id = values[0]
+          ..name = values[0],
+        PeerLocation('ws://${values[1]}:${values[2]}'));
   }
 
   @override
