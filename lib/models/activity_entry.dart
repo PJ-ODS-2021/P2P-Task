@@ -6,6 +6,7 @@ class ActivityEntry {
   DateTime? timestamp;
   final String event;
   final String? device;
+  final bool? isPhone;
   final String? network;
   final TaskList? list;
 
@@ -14,6 +15,7 @@ class ActivityEntry {
       this.timestamp,
       this.event = "",
       this.device,
+      this.isPhone,
       this.network,
       this.list}) {
     if (this.id == null) this.id = Uuid().v4();

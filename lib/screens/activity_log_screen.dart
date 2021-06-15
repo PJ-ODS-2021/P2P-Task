@@ -38,10 +38,10 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
         ],
       ));
     }
-    return ListView.separated(
-        padding: EdgeInsets.symmetric(vertical: 8),
+    return ListView.builder(
+        padding: EdgeInsets.zero,
         itemCount: service.activities.length,
-        separatorBuilder: (BuildContext context, int index) => const Divider(),
+        // separatorBuilder: (BuildContext context, int index) => const Divider(),
         itemBuilder: (BuildContext context, int index) {
           final activity = service.activities[index];
           return _buildActivityEntry(context, activity);
@@ -49,27 +49,36 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
   }
 
   Widget _buildActivityEntry(BuildContext context, ActivityEntry activity) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _getActivityName(activity),
-              _getActivityDate(activity),
-            ],
+    return Column(
+      children: [
+        Container(
+          color: Color(0xFFe8d8e0),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _getActivityName(activity),
+                    _getActivityDate(activity),
+                  ],
+                ),
+                const SizedBox(height: 8.0),
+                Row(
+                  children: [
+                    getActivityIcon(activity),
+                    const SizedBox(width: 8.0),
+                    _getActivityDescription(activity),
+                  ],
+                ),
+                const SizedBox(height: 8.0),
+              ],
+            ),
           ),
-          const SizedBox(height: 8.0),
-          Row(
-            children: [
-              getActivityIcon(activity),
-              const SizedBox(width: 8.0),
-              _getActivityDescription(activity),
-            ],
-          ),
-        ],
-      ),
+        ),
+        Container(height: 0.5, color: Colors.grey),
+      ],
     );
   }
 
@@ -77,7 +86,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
     return Text(
       activity.event != null ? activity.event : '',
       style: TextStyle(
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.normal,
         color: Colors.black,
         fontSize: 18,
       ),
@@ -95,41 +104,49 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
   }
 
   Widget getActivityIcon(ActivityEntry activity) {
-    return Icon(
-      activity.device == "My iPad" ? EvaIcons.upload : EvaIcons.download,
-      color: Colors.black,
-      size: 22,
-    );
+    // return Icon(
+    //   activity.device == "Windows Phone"
+    //       ? Icons.arrow_upward
+    //       : Icons.arrow_downward,
+    //   color: Colors.black,
+    //   size: 22,
+    // );
+    return Image.asset(
+        activity.device == "Windows Phone"
+            ? "assets/up_arrow_icon.png"
+            : "assets/down_arrow_icon.png",
+        width: 22,
+        height: 22);
   }
 
   Widget _getActivityDescription(ActivityEntry activity) {
     return RichText(
       text: TextSpan(
         text: "On ",
-        style: TextStyle(color: Colors.grey),
+        style: TextStyle(color: Colors.black, fontSize: 18),
         children: [
           TextSpan(
-            text: activity.event == "Task Completed"
+            text: activity.device == "Windows Phone"
                 ? "this device"
                 : activity.device,
             style: TextStyle(
-              color: activity.event == "Task Completed"
-                  ? Colors.black.withOpacity(0.5)
-                  : Colors.black.withOpacity(0.6),
-              fontWeight: activity.event == "Task Completed"
+              color: Colors.black,
+              fontWeight: activity.device == "Windows Phone"
                   ? FontWeight.normal
                   : FontWeight.bold,
+              fontSize: 18,
             ),
           ),
           TextSpan(
             text: " in ",
-            style: TextStyle(color: Colors.black.withOpacity(0.5)),
+            style: TextStyle(color: Colors.black, fontSize: 18),
           ),
           TextSpan(
-            text: activity.device,
+            text: activity.network,
             style: TextStyle(
-              color: Colors.black.withOpacity(0.6),
+              color: Colors.black,
               fontWeight: FontWeight.bold,
+              fontSize: 18,
             ),
           ),
         ],

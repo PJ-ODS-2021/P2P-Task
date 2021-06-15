@@ -11,23 +11,24 @@ class ActivityEntryService extends ChangeNotifier {
     //  It should be removed before deployment!
     this.add(ActivityEntry(
         event: "Task Created",
-        device: "My iPad",
-        network: "Housework",
-        timestamp: DateTime(2021, 03, 05)));
+        device: "Windows Phone",
+        network: "House Work",
+        timestamp: DateTime(2021, 05, 25)));
     this.add(ActivityEntry(
         event: "Task Updated",
-        device: "My iPad",
-        network: "Housework",
-        timestamp: DateTime(2021, 03, 02)));
+        device: "iPad",
+        network: "House Work",
+        timestamp: DateTime(2021, 06, 02)));
     this.add(ActivityEntry(
         event: "Task Created",
-        device: "My MacBook",
-        network: "Housework",
-        timestamp: DateTime(2021, 02, 17)));
+        device: "Windows PC",
+        network: "Work",
+        timestamp: DateTime(2021, 06, 13)));
     this.add(ActivityEntry(
         event: "Task Completed",
+        device: "iPad",
         network: "Work",
-        timestamp: DateTime(2021, 01, 19)));
+        timestamp: DateTime(2021, 06, 14)));
   }
 
   UnmodifiableListView<ActivityEntry> get activities =>
