@@ -6,6 +6,7 @@ part 'task.g.dart';
 class Task {
   String? id;
   String title;
+  String listID;
   bool completed;
   String? description;
   DateTime? due;
@@ -15,6 +16,7 @@ class Task {
   Task(
       {this.id,
       required this.title,
+      required this.listID,
       this.description,
       this.completed = false,
       this.due,
@@ -32,6 +34,7 @@ class Task {
   bool operator ==(Object other) {
     if (!(other is Task)) return false;
     return other.id == id &&
+        other.listID == other.listID &&
         other.title == title &&
         other.completed == completed &&
         other.description == description &&

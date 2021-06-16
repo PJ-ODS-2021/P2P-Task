@@ -1,33 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:p2p_task/models/task.dart';
-import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/models/task_list.dart';
+import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:provider/provider.dart';
 
-class TaskFormScreen extends StatefulWidget {
-  final Task? task;
-  final String listID;
+class TaskListFormScreen extends StatefulWidget {
+  final TaskList? taskList;
 
-  TaskFormScreen({Key? key, this.task, required this.listID}) : super(key: key);
+  TaskListFormScreen({Key? key, this.taskList}) : super(key: key);
 
   @override
-  _TaskFormScreenState createState() => _TaskFormScreenState();
+  _TaskListFormScreenState createState() => _TaskListFormScreenState();
 }
 
-class _TaskFormScreenState extends State<TaskFormScreen> {
-  late final _task;
+class _TaskListFormScreenState extends State<TaskListFormScreen> {
+  late final _taskList;
   final _formKey = GlobalKey<FormState>();
-  late final _formTitleController = TextEditingController(text: _task.title);
-  late final _formDescriptionController =
-      TextEditingController(text: _task.description);
+  late final _formTitleController =
+      TextEditingController(text: _taskList.title);
+
   bool _editing = false;
 
   void _onSubmitPressed(context) {
     if (_formKey.currentState!.validate()) {
-      final taskListService =
-          Provider.of<TaskListService>(context, listen: false);
-      taskListService.upsert(_task
-        ..title = _formTitleController.text
-        ..description = _formDescriptionController.text);
+      print("submited: ${_formTitleController.text}");
+      final taskListsService =
+          Provider.of<TaskListsService>(context, listen: false);
+      taskListsService.upsert(_taskList..title = _formTitleController.text);
       Navigator.pop(context);
     }
   }
@@ -35,11 +33,11 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.task != null) {
-      _task = widget.task;
+    if (widget.taskList != null) {
+      _taskList = widget.taskList;
       _editing = true;
     } else {
-      _task = Task(title: '', listID: widget.listID);
+      _taskList = TaskList(title: '');
     }
   }
 
@@ -78,23 +76,11 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 vertical: 10.0,
                 horizontal: 15.0,
               ),
-              child: Container(
-                child: TextFormField(
-                  onFieldSubmitted: (value) => _onSubmitPressed(context),
-                  decoration: InputDecoration(
-                    hintText: 'Description',
-                    filled: true,
-                    fillColor: Colors.purple[50],
-                    border: OutlineInputBorder(borderSide: BorderSide.none),
-                  ),
-                  controller: _formDescriptionController,
-                ),
-              ),
             ),
             Spacer(flex: 5),
             ElevatedButton(
               onPressed: () => _onSubmitPressed(context),
-              child: Text(_editing ? 'Update Task' : 'Create Task'),
+              child: Text(_editing ? 'Update List' : 'Create List'),
             ),
             Spacer(),
           ],
@@ -106,7 +92,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   @override
   void dispose() {
     _formTitleController.dispose();
-    _formDescriptionController.dispose();
     super.dispose();
   }
 }

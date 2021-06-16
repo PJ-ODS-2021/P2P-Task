@@ -2,18 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/models/task.dart';
+import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/screens/task_form_screen.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
+import 'package:p2p_task/widgets/bottom_navigation.dart';
 
-class TaskListScreen extends StatelessWidget {
+class TaskListScreen extends StatefulWidget {
+  final TaskList taskList;
+  TaskListScreen(this.taskList);
+
+  @override
+  _TaskListScreenState createState() => _TaskListScreenState();
+}
+
+class _TaskListScreenState extends State<TaskListScreen> {
+  int _selectedIndex = 0;
+
   @override
   Widget build(BuildContext context) {
     final taskListService = Provider.of<TaskListService>(context);
 
     final futureBuilder = FutureBuilder<List<Task>>(
         initialData: [],
-        future: taskListService.tasks,
+        future: taskListService.getTasksByListID(widget.taskList.id!),
         builder: (context, snapshot) {
           if (snapshot.hasError)
             return Column(
@@ -25,20 +37,35 @@ class TaskListScreen extends StatelessWidget {
           return _buildTaskList(context, taskListService, snapshot.data!);
         });
 
-    return Stack(
-      alignment: const Alignment(0, 0.9),
-      children: [
-        futureBuilder,
-        ElevatedButton(
-          onPressed: () => Navigator.push(context,
-              MaterialPageRoute(builder: (context) => TaskFormScreen())),
-          child: Icon(Icons.add),
-          style: ElevatedButton.styleFrom(
-            shape: CircleBorder(),
-            padding: EdgeInsets.all(24),
-          ),
-        )
-      ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.taskList.title),
+        centerTitle: true,
+      ),
+      body: Stack(
+        alignment: const Alignment(0, 0.9),
+        children: [
+          futureBuilder,
+          ElevatedButton(
+            onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => TaskFormScreen(
+                          listID: widget.taskList.id!,
+                        ))),
+            child: Icon(Icons.add),
+            style: ElevatedButton.styleFrom(
+              shape: CircleBorder(),
+              padding: EdgeInsets.all(24),
+            ),
+          )
+        ],
+      ),
+      bottomNavigationBar: BottomNavigation(
+        onTap: (index) => setState(() {
+          _selectedIndex = index;
+        }),
+      ),
     );
   }
 
@@ -77,7 +104,10 @@ class TaskListScreen extends StatelessWidget {
           onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => TaskFormScreen(task: task))),
+                  builder: (context) => TaskFormScreen(
+                        task: task,
+                        listID: widget.taskList.id!,
+                      ))),
         ),
         IconSlideAction(
           caption: 'Delete',

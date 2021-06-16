@@ -4,6 +4,8 @@ import 'package:p2p_task/screens/counter_example_screen.dart';
 import 'package:p2p_task/screens/devices/device_list_screen.dart';
 import 'package:p2p_task/screens/qr_code_dialog.dart';
 import 'package:p2p_task/screens/settings/settings_screen.dart';
+import 'package:p2p_task/screens/task_lists_screen.dart';
+import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/screens/task_list_screen.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
 
@@ -37,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context) {
           switch (_selectedIndex) {
             case 0:
-              return TaskListScreen();
+              return TaskListsScreen();
             case 1:
               return CounterExampleScreen();
             case 2:
