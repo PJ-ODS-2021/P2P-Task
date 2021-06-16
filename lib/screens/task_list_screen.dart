@@ -8,19 +8,17 @@ import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
 import 'package:intl/intl.dart';
-import 'package:p2p_task/widgets/simple_dropdown.dart';
 
 class TaskListScreen extends StatefulWidget {
   final TaskList taskList;
-  Filter filter;
-  TaskListScreen({required this.taskList, this.filter = Filter.Default});
+  TaskListScreen(this.taskList);
 
   @override
   _TaskListScreenState createState() => _TaskListScreenState();
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
-  int _selectedIndex = 0;
+  Filter _filter = Filter.Default;
 
   @override
   Widget build(BuildContext context) {
@@ -28,8 +26,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
     final futureBuilder = FutureBuilder<List<Task>>(
         initialData: [],
-        future: taskListService.getTasksByListID(
-            widget.taskList.id!, widget.filter),
+        future: taskListService.getTasksByListID(widget.taskList.id!, _filter),
         builder: (context, snapshot) {
           final data = snapshot.data;
           if (snapshot.hasError)
@@ -70,11 +67,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
           )
         ],
       ),
-      // don't work yet
+      // ToDo: onTap
       bottomNavigationBar: BottomNavigation(
-        onTap: (index) => setState(() {
-          _selectedIndex = index;
-        }),
+        onTap: (index) {},
       ),
     );
   }
@@ -125,7 +120,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     return SimpleDialogOption(
       onPressed: () {
         setState(() {
-          widget.filter = filter;
+          _filter = filter;
         });
         Navigator.pop(context);
       },

@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/network/messages/task_list_message.dart';
-import 'package:p2p_task/network/messages/task_lists_message.dart';
 import 'package:p2p_task/network/messages/packet.dart';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
