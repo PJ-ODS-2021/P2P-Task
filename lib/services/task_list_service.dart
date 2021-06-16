@@ -66,11 +66,39 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
       self.canonicalTime,
       valueDecoder: (key, value) => Task.fromJson(value),
     );
+
+    _mergeCrdt(self, other);
+    l.info('Merge result ${self.toJson()}');
+    await _store(self);
+  }
+
+  void _mergeCrdt(
+      MapCrdt<String, Task> crdt, Map<String, Record<Task>> remoteRecords) {
     // Remove records from this node from the task list. This could also be done in the sender.
-    other.removeWhere((key, value) => value.hlc.nodeId == self.nodeId);
-    final update = self..merge(other);
-    l.info('Merge result ${update.toJson()}');
-    await _store(update);
+    remoteRecords.removeWhere((key, value) => value.hlc.nodeId == crdt.nodeId);
+    try {
+      crdt.merge(remoteRecords);
+    } on ClockDriftException {
+      _fixClockDrift(remoteRecords);
+      _mergeCrdt(crdt, remoteRecords);
+    }
+  }
+
+  void _fixClockDrift(Map<String, Record<Task>> records) {
+    const maxClockDrift = 60000; // 1min in ms (hard-coded in the crdt library)
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final maxMillis = now + maxClockDrift;
+    List<_Tuple<String, Record<Task>>> invalidRecords = [];
+    records.forEach((key, value) {
+      if (value.hlc.millis > maxMillis) invalidRecords.add(_Tuple(key, value));
+    });
+    invalidRecords.sort((a, b) => a.second.hlc.compareTo(b.second.hlc));
+    var counter = 0;
+    invalidRecords.forEach((tuple) {
+      final newHlc = Hlc(maxMillis, counter++, tuple.second.hlc.nodeId);
+      records[tuple.first] =
+          Record(newHlc, tuple.second.value, tuple.second.modified);
+    });
   }
 
   Future<MapCrdt<String, Task>> get _taskListCrdt async => await _fromJson(
@@ -94,4 +122,11 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     }
     return MapCrdt(await _identityService.peerId, recordMap);
   }
+}
+
+class _Tuple<T, U> {
+  final T first;
+  final U second;
+
+  const _Tuple(this.first, this.second);
 }
