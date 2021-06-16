@@ -98,6 +98,34 @@ void main() {
         [task1, task2].toSet());
   });
 
+  test('crdt update less recent task', () async {
+    final task1 = Task(title: 'task1');
+    await devices[0].taskListService.upsert(task1);
+    final task2 = Task(
+        id: (await devices[0].taskListService.tasks).first.id, title: 'task2');
+    await devices[1].taskListService.upsert(task2);
+
+    await devices[0]
+        .taskListService
+        .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
+    expect(await devices[1].taskListService.tasks, [task2]);
+    expect(await devices[0].taskListService.tasks, [task2]);
+  });
+
+  test('crdt keep more recent task', () async {
+    final task1 = Task(title: 'task1');
+    await devices[0].taskListService.upsert(task1);
+    final task2 = Task(
+        id: (await devices[0].taskListService.tasks).first.id, title: 'task2');
+    await devices[1].taskListService.upsert(task2);
+
+    await devices[1]
+        .taskListService
+        .mergeCrdtJson(await devices[0].taskListService.crdtToJson());
+    expect(await devices[0].taskListService.tasks, [task1]);
+    expect(await devices[1].taskListService.tasks, [task2]);
+  });
+
   tearDown(() async {
     await Future.wait(devices.map((device) => device.close()));
   });
