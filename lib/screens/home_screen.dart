@@ -29,10 +29,11 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text(widget.title),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () => _openQrCodeDialog(context),
-            icon: Icon(Icons.qr_code),
-          ),
+          if (!kIsWeb)
+            IconButton(
+              onPressed: () => _openQrCodeDialog(context),
+              icon: Icon(Icons.qr_code),
+            ),
         ],
       ),
       body: Builder(
@@ -59,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openQrCodeDialog(BuildContext context) {
+    if (kIsWeb) return;
     final peerService =
         Provider.of<ChangeCallbackNotifier<PeerService>>(context, listen: false)
             .callbackProvider;
