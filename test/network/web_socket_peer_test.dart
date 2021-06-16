@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/network/messages/task_list_message.dart';
+import 'package:p2p_task/network/messages/task_lists_message.dart';
 import 'package:p2p_task/network/messages/packet.dart';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
@@ -13,6 +14,7 @@ import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:p2p_task/utils/data_model_repository.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:sembast/sembast.dart';
@@ -23,6 +25,7 @@ void main() {
   late KeyValueRepository keyValueRepository;
   late IdentityService identityService;
   late TaskListService taskListService;
+  late TaskListsService taskListsService;
   late SyncService syncService;
   late PeerInfoService peerInfoService;
   late PeerService peerService;
@@ -35,17 +38,21 @@ void main() {
     await syncService.setInterval(0);
     taskListService =
         TaskListService(keyValueRepository, identityService, syncService);
+    taskListsService =
+        TaskListsService(keyValueRepository, identityService, syncService);
     peerInfoService = PeerInfoService(
         DataModelRepository(db, (json) => PeerInfo.fromJson(json), 'PeerInfo'));
-    peerService = PeerService(WebSocketPeer(), taskListService, peerInfoService,
-        identityService, syncService);
+    peerService = PeerService(WebSocketPeer(), taskListService,
+        taskListsService, peerInfoService, identityService, syncService);
     await peerService.startServer();
   });
 
   group('Synchronization', () {
     test('should sync with connecting client', () async {
       final task = Task(
-          title: 'Eat a hot dog', id: '16ca13c-9021-4986-ab97-2d89cc0b3fce');
+          title: 'Eat a hot dog',
+          id: '16ca13c-9021-4986-ab97-2d89cc0b3fce',
+          listID: "1");
       final message = <String, dynamic>{
         '516ca13c-9021-4986-ab97-2d89cc0b3fce': {
           'hlc':

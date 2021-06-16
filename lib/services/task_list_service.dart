@@ -9,6 +9,14 @@ import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
 
+enum Filter {
+  Title,
+  Priority,
+  Status,
+  DueDate,
+  Default,
+}
+
 class TaskListService extends ChangeNotifier with LogMixin {
   final String _crdtTaskListKey = 'crdtTaskList';
 
@@ -26,7 +34,7 @@ class TaskListService extends ChangeNotifier with LogMixin {
     return (await _taskListCrdt).values;
   }
 
-  Future<List<Task>> getTasksByListID(String listID) async {
+  Future<List<Task>> getTasksByListID(String listID, Filter filter) async {
     List<Task> tasks = [];
 
     for (var i = 0; i < (await _taskListCrdt).values.length; i++) {
@@ -35,7 +43,46 @@ class TaskListService extends ChangeNotifier with LogMixin {
       }
     }
 
-    tasks.sort((a, b) => a.title.toString().compareTo(b.title.toString()));
+    switch (filter) {
+      case Filter.Title:
+        tasks.sort((a, b) => a.title.toString().compareTo(b.title.toString()));
+        break;
+      case Filter.Priority:
+        tasks.sort((a, b) {
+          if (b.priority) {
+            return 1;
+          }
+          return -1;
+        });
+        break;
+      case Filter.Status:
+        tasks.sort((a, b) {
+          if (b.completed) {
+            return -1;
+          }
+          return 1;
+        });
+        break;
+      case Filter.DueDate:
+        tasks.sort((a, b) {
+          if (b.due == null) {
+            return -1;
+          }
+          if (a.due == null) {
+            return 1;
+          }
+          return a.due!.compareTo(b.due!);
+        });
+        break;
+      default:
+        tasks.sort((a, b) {
+          if (b.completed) {
+            return -1;
+          }
+          return 1;
+        });
+        break;
+    }
 
     return tasks;
   }

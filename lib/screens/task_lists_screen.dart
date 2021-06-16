@@ -114,7 +114,8 @@ class TaskListsScreen extends StatelessWidget {
         trailing: Icon(Icons.chevron_left),
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => TaskListScreen(taskList)),
+          MaterialPageRoute(
+              builder: (context) => TaskListScreen(taskList: taskList)),
         ),
       ),
     );

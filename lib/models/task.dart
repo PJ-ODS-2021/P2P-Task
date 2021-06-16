@@ -11,17 +11,18 @@ class Task {
   String? description;
   DateTime? due;
   DateTime? dueNotification;
-  String? priority;
+  bool priority;
 
-  Task(
-      {this.id,
-      required this.title,
-      required this.listID,
-      this.description,
-      this.completed = false,
-      this.due,
-      this.dueNotification,
-      this.priority});
+  Task({
+    this.id,
+    required this.title,
+    required this.listID,
+    this.description,
+    this.completed = false,
+    this.due,
+    this.dueNotification,
+    this.priority = false,
+  });
 
   factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);
 

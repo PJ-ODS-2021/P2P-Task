@@ -7,10 +7,13 @@ import 'package:p2p_task/screens/task_form_screen.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
+import 'package:intl/intl.dart';
+import 'package:p2p_task/widgets/simple_dropdown.dart';
 
 class TaskListScreen extends StatefulWidget {
   final TaskList taskList;
-  TaskListScreen(this.taskList);
+  Filter filter;
+  TaskListScreen({required this.taskList, this.filter = Filter.Default});
 
   @override
   _TaskListScreenState createState() => _TaskListScreenState();
@@ -25,8 +28,10 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
     final futureBuilder = FutureBuilder<List<Task>>(
         initialData: [],
-        future: taskListService.getTasksByListID(widget.taskList.id!),
+        future: taskListService.getTasksByListID(
+            widget.taskList.id!, widget.filter),
         builder: (context, snapshot) {
+          final data = snapshot.data;
           if (snapshot.hasError)
             return Column(
               children: [
@@ -34,13 +39,17 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 Text(snapshot.error.toString()),
               ],
             );
-          return _buildTaskList(context, taskListService, snapshot.data!);
+          return _buildTaskList(context, taskListService, data!);
         });
 
     return Scaffold(
       appBar: AppBar(
+        // needs leading overwrite or a functional BottomNavigation
         title: Text(widget.taskList.title),
         centerTitle: true,
+        actions: [
+          _getFilterButton(),
+        ],
       ),
       body: Stack(
         alignment: const Alignment(0, 0.9),
@@ -61,6 +70,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
           )
         ],
       ),
+      // don't work yet
       bottomNavigationBar: BottomNavigation(
         onTap: (index) => setState(() {
           _selectedIndex = index;
@@ -87,6 +97,39 @@ class _TaskListScreenState extends State<TaskListScreen> {
       itemBuilder: (context, index) {
         return _buildSlidableTaskRow(context, service, tasks[index], index);
       },
+    );
+  }
+
+  Widget _getFilterButton() {
+    return IconButton(
+      onPressed: () {
+        showDialog(
+            context: context,
+            builder: (context) {
+              return SimpleDialog(
+                title: Text('Filter by'),
+                children: [
+                  _getSimpleDialog(Filter.Title),
+                  _getSimpleDialog(Filter.Priority),
+                  _getSimpleDialog(Filter.Status),
+                  _getSimpleDialog(Filter.DueDate),
+                ],
+              );
+            });
+      },
+      icon: Icon(Icons.filter_alt_sharp),
+    );
+  }
+
+  SimpleDialogOption _getSimpleDialog(Filter filter) {
+    return SimpleDialogOption(
+      onPressed: () {
+        setState(() {
+          widget.filter = filter;
+        });
+        Navigator.pop(context);
+      },
+      child: Text(filter.toString().replaceAll('Filter.', '')),
     );
   }
 
@@ -120,24 +163,55 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Widget _buildTaskContainer(TaskListService service, Task task, int index) {
+    String subtitle = task.description ?? '';
+    if (subtitle != '') {
+      subtitle = subtitle + '\n';
+    }
+    if (task.due != null) {
+      subtitle = subtitle + DateFormat('dd.MM.yyyy hh:mm').format(task.due!);
+    }
+
     return Container(
       color: index.isEven ? Colors.white : Colors.white60,
       child: ListTile(
-        leading: task.completed
-            ? Icon(
-                Icons.check_circle,
-                color: Colors.green,
-                semanticLabel: "Completed Task",
-              )
-            : Icon(
-                Icons.circle_outlined,
-                semanticLabel: "Uncompleted Task",
-              ),
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            task.completed
+                ? Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    semanticLabel: "Completed Task",
+                  )
+                : Icon(
+                    Icons.circle_outlined,
+                    semanticLabel: "Uncompleted Task",
+                  ),
+            SizedBox(
+              width: 15,
+            ),
+            task.priority
+                ? Icon(
+                    Icons.flag,
+                    color: Colors.red,
+                    semanticLabel: "High Priority",
+                  )
+                : Icon(
+                    Icons.flag,
+                    color: Colors.grey[300],
+                    semanticLabel: "Low Priority",
+                  ),
+          ],
+        ),
         title: Text(task.title),
-        subtitle: Text(task.description ?? ''),
+        subtitle: Text(subtitle),
         trailing: Icon(Icons.chevron_left),
         onTap: () {
           task.completed = !task.completed;
+          service.upsert(task);
+        },
+        onLongPress: () {
+          task.priority = !task.priority;
           service.upsert(task);
         },
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 class TaskFormScreen extends StatefulWidget {
   final Task? task;
@@ -15,6 +16,7 @@ class TaskFormScreen extends StatefulWidget {
 
 class _TaskFormScreenState extends State<TaskFormScreen> {
   late final _task;
+  DateTime? _due;
   final _formKey = GlobalKey<FormState>();
   late final _formTitleController = TextEditingController(text: _task.title);
   late final _formDescriptionController =
@@ -27,7 +29,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           Provider.of<TaskListService>(context, listen: false);
       taskListService.upsert(_task
         ..title = _formTitleController.text
-        ..description = _formDescriptionController.text);
+        ..description = _formDescriptionController.text
+        ..due = _due);
       Navigator.pop(context);
     }
   }
@@ -37,6 +40,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     super.initState();
     if (widget.task != null) {
       _task = widget.task;
+      _due = widget.task!.due;
       _editing = true;
     } else {
       _task = Task(title: '', listID: widget.listID);
@@ -91,6 +95,29 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 ),
               ),
             ),
+            Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: 10.0,
+                horizontal: 15.0,
+              ),
+              child: Container(
+                child: TextButton(
+                  style: ButtonStyle(
+                    //minimumSize: Size.fromHeight(50),
+                    backgroundColor:
+                        MaterialStateProperty.all(Colors.purple[50]),
+                  ),
+                  child: Text(
+                    _due != null
+                        ? DateFormat('dd.MM.yyyy hh:mm').format(_due!)
+                        : "Due Date",
+                    textAlign: TextAlign.left,
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  onPressed: () => pickDateTime(context),
+                ),
+              ),
+            ),
             Spacer(flex: 5),
             ElevatedButton(
               onPressed: () => _onSubmitPressed(context),
@@ -101,6 +128,67 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         ),
       ),
     );
+  }
+
+  Future pickDateTime(BuildContext context) async {
+    final date = await pickDate(context);
+    if (date == null) {
+      setState(() {
+        _due = null;
+      });
+      return;
+    }
+
+    final time = await pickTime(context);
+    if (time == null) {
+      setState(() {
+        _due = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          0,
+          0,
+        );
+      });
+      return;
+    }
+
+    setState(() {
+      _due = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+    });
+  }
+
+  Future pickDate(BuildContext context) async {
+    final initialDate = DateTime.now();
+    final newDate = await showDatePicker(
+        context: context,
+        initialDate: initialDate,
+        firstDate: initialDate,
+        lastDate: DateTime(initialDate.year + 10));
+
+    if (newDate == null) return;
+
+    return newDate;
+  }
+
+  Future pickTime(BuildContext context) async {
+    final initialTime = TimeOfDay(hour: 0, minute: 0);
+    final newTime = await showTimePicker(
+      context: context,
+      initialTime: _due != null
+          ? TimeOfDay(hour: _due!.hour, minute: _due!.minute)
+          : initialTime,
+    );
+
+    if (newTime == null) return;
+
+    return newTime;
   }
 
   @override
