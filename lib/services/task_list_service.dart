@@ -35,6 +35,8 @@ class TaskListService extends ChangeNotifier with LogMixin {
       }
     }
 
+    tasks.sort((a, b) => a.title.toString().compareTo(b.title.toString()));
+
     return tasks;
   }
 

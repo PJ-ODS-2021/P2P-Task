@@ -25,7 +25,15 @@ class TaskListsService extends ChangeNotifier with LogMixin {
         this._syncService = syncService;
 
   Future<List<TaskList>> get lists async {
-    return (await _taskListsCrdt).values;
+    List<TaskList> lists = [];
+
+    for (var i = 0; i < (await _taskListsCrdt).values.length; i++) {
+      lists.add((await _taskListsCrdt).values[i]);
+    }
+
+    lists.sort((a, b) => a.title.toString().compareTo(b.title.toString()));
+
+    return lists;
   }
 
   Future upsert(TaskList taskList) async {
