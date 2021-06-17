@@ -12,14 +12,15 @@ class Task {
   DateTime? dueNotification;
   String? priority;
 
-  Task(
-      {this.id,
-      required this.title,
-      this.description,
-      this.completed = false,
-      this.due,
-      this.dueNotification,
-      this.priority});
+  Task({
+    this.id,
+    required this.title,
+    this.description,
+    this.completed = false,
+    this.due,
+    this.dueNotification,
+    this.priority,
+  });
 
   factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);
 
@@ -31,6 +32,7 @@ class Task {
   @override
   bool operator ==(Object other) {
     if (!(other is Task)) return false;
+
     return other.id == id &&
         other.title == title &&
         other.completed == completed &&

@@ -11,16 +11,16 @@ import 'websocket_server_custom.dart';
 
 void main() {
   test('connects to a server-side WebSocket', () async {
-    var channel = spawnHybridUri('websocket_server.dart');
-    var port = await channel.stream.first;
-    WebSocket webSocket = await WebSocket.connect('ws://localhost:$port');
+    final channel = spawnHybridUri('websocket_server.dart');
+    final port = await channel.stream.first;
+    final webSocket = await WebSocket.connect('ws://localhost:$port');
 
-    var completer = Completer<String>();
+    final completer = Completer<String>();
     webSocket.listen((data) {
-      completer.complete(data);
+      completer.complete(data as String);
     });
-    webSocket.close();
-    var value = await completer.future;
+    await webSocket.close();
+    final value = await completer.future;
 
     expect(value, equals('Hello, world!'));
   });
@@ -29,27 +29,36 @@ void main() {
     const messageContent = 'hello from the server';
     var receivePort = ReceivePort();
 
-    await Isolate.spawn(startServer,
-        ServerOptions(sendPort: receivePort.sendPort, echoDebugMessages: true));
+    await Isolate.spawn(
+      startServer,
+      ServerOptions(sendPort: receivePort.sendPort, echoDebugMessages: true),
+    );
     var serverPortCompleter = Completer<int>();
     receivePort
         .listen((message) => serverPortCompleter.complete(message as int));
-    int port = await serverPortCompleter.future;
+    var port = await serverPortCompleter.future;
 
     final serverDebugMessageCompleter = Completer<String?>();
     final client = WebSocketPeer();
     client.registerTypename<DebugMessage>(
-        "DebugMessage", (json) => DebugMessage.fromJson(json));
+      'DebugMessage',
+      (json) => DebugMessage.fromJson(json),
+    );
     client.registerCallback<DebugMessage>(
-        (msg, source) => serverDebugMessageCompleter.complete(msg.value));
-    final bool sendSucceeded = await client.sendPacketToPeer(
-        PeerInfo()..locations.add(PeerLocation('ws://localhost:$port')),
-        DebugMessage(messageContent));
+      (msg, source) => serverDebugMessageCompleter.complete(msg.value),
+    );
+    final sendSucceeded = await client.sendPacketToPeer(
+      PeerInfo()..locations.add(PeerLocation('ws://localhost:$port')),
+      DebugMessage(messageContent),
+    );
     expect(sendSucceeded, true);
     final message = await serverDebugMessageCompleter.future
         .timeout(Duration(seconds: 5), onTimeout: () => null);
-    expect(message, isNot(equals(null)),
-        reason: 'server did not answer within 5s');
+    expect(
+      message,
+      isNot(equals(null)),
+      reason: 'server did not answer within 5s',
+    );
 
     expect(message, equals(messageContent));
   });

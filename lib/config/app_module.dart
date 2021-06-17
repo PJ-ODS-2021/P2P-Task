@@ -22,32 +22,46 @@ class AppModule {
 
     injector.map<Database>((i) => _db);
     injector.map<NetworkInfoService>((i) => NetworkInfoService());
-    injector.map<KeyValueRepository>((i) => KeyValueRepository(_db),
-        isSingleton: true);
-    injector.map<SyncService>((i) => SyncService(i.get<KeyValueRepository>()),
-        isSingleton: true);
+    injector.map<KeyValueRepository>(
+      (i) => KeyValueRepository(_db),
+      isSingleton: true,
+    );
+    injector.map<SyncService>(
+      (i) => SyncService(i.get<KeyValueRepository>()),
+      isSingleton: true,
+    );
     injector.map<IdentityService>(
-        (i) => IdentityService(i.get<KeyValueRepository>()),
-        isSingleton: true);
+      (i) => IdentityService(i.get<KeyValueRepository>()),
+      isSingleton: true,
+    );
     injector.map<TaskListService>(
-        (i) => TaskListService(i.get<KeyValueRepository>(),
-            i.get<IdentityService>(), i.get<SyncService>()),
-        isSingleton: true);
+      (i) => TaskListService(
+        i.get<KeyValueRepository>(),
+        i.get<IdentityService>(),
+        i.get<SyncService>(),
+      ),
+      isSingleton: true,
+    );
     injector.map<PeerInfoService>(
-        (i) => PeerInfoService(DataModelRepository(
-            _db, (json) => PeerInfo.fromJson(json), 'PeerInfo')),
-        isSingleton: true);
+      (i) => PeerInfoService(
+        DataModelRepository(_db, (json) => PeerInfo.fromJson(json), 'PeerInfo'),
+      ),
+      isSingleton: true,
+    );
     injector.map<WebSocketPeer>((i) => WebSocketPeer(), isSingleton: true);
     injector.map<PeerService>(
-        (i) => PeerService(
-            i.get<WebSocketPeer>(),
-            i.get<TaskListService>(),
-            i.get<PeerInfoService>(),
-            i.get<IdentityService>(),
-            i.get<SyncService>()),
-        isSingleton: true);
+      (i) => PeerService(
+        i.get<WebSocketPeer>(),
+        i.get<TaskListService>(),
+        i.get<PeerInfoService>(),
+        i.get<IdentityService>(),
+        i.get<SyncService>(),
+      ),
+      isSingleton: true,
+    );
 
     _initialized = true;
+
     return injector;
   }
 }

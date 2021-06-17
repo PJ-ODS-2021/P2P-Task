@@ -12,15 +12,17 @@ import 'package:uuid/uuid.dart';
 class TaskListService extends ChangeNotifier with LogMixin {
   final String _crdtTaskListKey = 'crdtTaskList';
 
-  KeyValueRepository _keyValueRepository;
-  IdentityService _identityService;
-  SyncService _syncService;
+  final KeyValueRepository _keyValueRepository;
+  final IdentityService _identityService;
+  final SyncService _syncService;
 
-  TaskListService(KeyValueRepository keyValueRepository,
-      IdentityService identityService, SyncService syncService)
-      : this._keyValueRepository = keyValueRepository,
-        this._identityService = identityService,
-        this._syncService = syncService;
+  TaskListService(
+    KeyValueRepository keyValueRepository,
+    IdentityService identityService,
+    SyncService syncService,
+  )   : _keyValueRepository = keyValueRepository,
+        _identityService = identityService,
+        _syncService = syncService;
 
   Future<List<Task>> get tasks async {
     return (await _taskListCrdt).values;
@@ -77,13 +79,14 @@ class TaskListService extends ChangeNotifier with LogMixin {
   }
 
   Future<MapCrdt<String, Task>> get _taskListCrdt async => await _fromJson(
-      await _keyValueRepository.get<String>(_crdtTaskListKey) ?? '{}');
+        await _keyValueRepository.get<String>(_crdtTaskListKey) ?? '{}',
+      );
 
   Future<MapCrdt<String, Task>> _fromJson(String json) async {
     final Map<String, dynamic> map = jsonDecode(json);
     final keys = map.keys.toList();
-    final recordMap = Map<String, Record<Task>>();
-    for (int i = 0; i < map.length; ++i) {
+    final recordMap = <String, Record<Task>>{};
+    for (var i = 0; i < map.length; ++i) {
       recordMap.putIfAbsent(
         keys[i],
         () => Record(
@@ -95,10 +98,11 @@ class TaskListService extends ChangeNotifier with LogMixin {
         ),
       );
     }
+
     return MapCrdt(await _identityService.peerId, recordMap);
   }
 
   @override
-  // ignore: must_call_super
+  // ignore: must_call_super, no-empty-block
   void dispose() {}
 }

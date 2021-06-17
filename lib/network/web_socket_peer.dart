@@ -6,8 +6,9 @@ import 'package:p2p_task/network/messages/packet.dart';
 import 'package:p2p_task/network/packet_handler.dart';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
 import 'package:p2p_task/network/peer/web_socket_server.dart';
-import 'package:p2p_task/utils/serializable.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
+import 'package:p2p_task/utils/serializable.dart';
+import 'package:pedantic/pedantic.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 /// Represents one peer in the network.
@@ -18,7 +19,9 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
   // Therefore, we don't need to store the WebSocketClient as a member variable.
 
   int? get serverPort => _server?.port;
+
   String? get serverAddress => _server?.address;
+
   bool get isServerRunning => _server != null;
 
   /// Calling this function while it is already running could lead to an error.
@@ -27,6 +30,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     await _server?.close();
     _server = await WebSocketServer.start(port, (client) {
       l.info('a client connected to the server');
+
       return _onData;
     });
   }
@@ -36,8 +40,10 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     _handleMessage(client, data);
   }
 
-  Future<void> sendPacketToAllPeers<T extends Serializable>(T packet,
-      [List<PeerInfo> knownPeerInfos = const []]) async {
+  Future<void> sendPacketToAllPeers<T extends Serializable>(
+    T packet, [
+    List<PeerInfo> knownPeerInfos = const [],
+  ]) async {
     final payload = marshallPacket(packet);
     l.info('sending packet to all peers');
 
@@ -50,13 +56,18 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
   }
 
   Future<bool> sendPacketToPeer<T extends Serializable>(
-      PeerInfo peerInfo, T packet,
-      {PeerLocation? location}) async {
+    PeerInfo peerInfo,
+    T packet, {
+    PeerLocation? location,
+  }) async {
     return sendToPeer(peerInfo, marshallPacket(packet), location: location);
   }
 
-  Future<bool> sendToPeer(PeerInfo peerInfo, String payload,
-      {PeerLocation? location}) async {
+  Future<bool> sendToPeer(
+    PeerInfo peerInfo,
+    String payload, {
+    PeerLocation? location,
+  }) async {
     // This method doesn't actually need to be async (at least for now).
     // In theory this should use some sort of routing.
 
@@ -70,6 +81,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     }
     if (peerInfo.locations.isEmpty) {
       l.warning('Cannot sync with invalid peer $peerInfo: no locations');
+
       return false;
     }
 
@@ -77,36 +89,49 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
       final success = await _sendToPeerLocation(location, payload);
       if (success) {
         l.info('successfully synced with $peerInfo using $location');
+
         return true;
       }
       l.info('could not sync with $peerInfo using $location');
     }
+
     return false;
   }
 
-  Future<bool> _sendToPeerLocation(PeerLocation location, String payload,
-      {Duration timeout = const Duration(seconds: 2)}) async {
+  Future<bool> _sendToPeerLocation(
+    PeerLocation location,
+    String payload, {
+    Duration timeout = const Duration(seconds: 2),
+  }) async {
     l.info('Trying to sync with $location...');
     final connection = tryWebSocketClientConnect(location.uri);
     if (connection == null) return false;
     final completer = Completer<bool>();
-    connection.dataStream.listen((data) async {
-      l.info('Received message from server: $data');
-      _handleMessage(connection, data);
+    connection.dataStream.listen(
+      (data) async {
+        l.info('Received message from server: $data');
+        _handleMessage(connection, data);
 
-      // for now just always close after having received a message
-      connection.close();
-    }, onError: (error, stackTrace) {
-      completer.complete(false);
-      l.severe('Error listening on websocket data stream to $location', error,
-          stackTrace);
-    }, onDone: () => completer.complete(true));
+        // for now just always close after having received a message
+        unawaited(connection.close());
+      },
+      onError: (error, stackTrace) {
+        completer.complete(false);
+        l.severe(
+          'Error listening on websocket data stream to $location',
+          error,
+          stackTrace,
+        );
+      },
+      onDone: () => completer.complete(true),
+    );
     connection.send(payload);
     l.info('Client sent message to $location: $payload');
     Future.delayed(timeout, () {
       l.info('closing connection to $location due to timeout');
       connection.close();
     });
+
     return await completer.future;
   }
 
@@ -116,6 +141,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     } on WebSocketChannelException catch (error, stackTrace) {
       l.severe('could not create websocket channel to $uri', error, stackTrace);
     }
+
     return null;
   }
 
@@ -140,6 +166,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
       packet = Packet.fromJson(jsonDecode(message));
     } on FormatException catch (e) {
       l.severe('could not decode received json: $e');
+
       return;
     }
     invokeCallback(packet, source);

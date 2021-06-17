@@ -19,10 +19,12 @@ class DeviceListScreen extends StatefulWidget {
 
 class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
   void _onQrCodeRead(String qrContent, BuildContext context) {
-    List<String> values = qrContent.split(',');
+    var values = qrContent.split(',');
     if (values.length < 3) {
       l.warning(
-          'ignoring invalid qr content "$qrContent": less than 3 components');
+        'ignoring invalid qr content "$qrContent": less than 3 components',
+      );
+
       return;
     }
     Provider.of<PeerInfoService>(context, listen: false).upsert(
@@ -59,39 +61,45 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
               builder: (context) => DeviceFormScreen(),
             ),
           ),
-          child: Icon(Icons.qr_code_scanner),
           style: ElevatedButton.styleFrom(
             shape: CircleBorder(),
             padding: EdgeInsets.all(24),
           ),
-        )
+          child: Icon(Icons.qr_code_scanner),
+        ),
       ],
     );
   }
 
   Widget _buildDeviceList(
-      BuildContext context, PeerInfoService service, PeerService peerService) {
+    BuildContext context,
+    PeerInfoService service,
+    PeerService peerService,
+  ) {
     return FutureBuilder<List<PeerInfo>>(
       future: service.devices,
       initialData: [],
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting)
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: CircularProgressIndicator(),
           );
-        if (!snapshot.hasData || snapshot.data!.length < 1) {
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(
-              child: Column(
-            children: [
-              Spacer(),
-              Text('📪 No devices yet.', style: kHeroFont),
-              Text('Press the button below to scan a QR code.'),
-              Text('Longpress the button below to manually add a device.'),
-              Spacer(flex: 2),
-            ],
-          ));
+            child: Column(
+              children: [
+                Spacer(),
+                Text('📪 No devices yet.', style: kHeroFont),
+                Text('Press the button below to scan a QR code.'),
+                Text('Longpress the button below to manually add a device.'),
+                Spacer(flex: 2),
+              ],
+            ),
+          );
         }
         final peerInfos = snapshot.data!;
+
         return Column(
           children: peerInfos.map((peerInfo) {
             return ListSection(
@@ -111,12 +119,15 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
     );
   }
 
-  Widget _buildSlidablePeerRow(PeerInfoService peerInfoService,
-      PeerService peerService, PeerInfo peerInfo, PeerLocation peerLocation) {
+  Widget _buildSlidablePeerRow(
+    PeerInfoService peerInfoService,
+    PeerService peerService,
+    PeerInfo peerInfo,
+    PeerLocation peerLocation,
+  ) {
     return Slidable(
       actionPane: SlidableDrawerActionPane(),
       actionExtentRatio: 0.20,
-      child: _buildPeerLocationEntry(peerInfoService, peerLocation),
       secondaryActions: <Widget>[
         IconSlideAction(
           caption: 'Sync',
@@ -133,11 +144,14 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
           onTap: () => peerInfoService.remove(peerInfo),
         ),
       ],
+      child: _buildPeerLocationEntry(peerInfoService, peerLocation),
     );
   }
 
   Widget _buildPeerLocationEntry(
-      PeerInfoService service, PeerLocation peerLocation) {
+    PeerInfoService service,
+    PeerLocation peerLocation,
+  ) {
     return ListTile(
       tileColor: Colors.white,
       leading: Icon(Icons.send_to_mobile),

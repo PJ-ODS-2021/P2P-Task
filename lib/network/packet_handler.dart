@@ -17,8 +17,9 @@ class PacketHandler<T> {
   final Map<String, void Function(Packet, T)> _callbacks = {};
   final Map<Type, _TypeInfo> _typenames = {};
 
-  Packet toPacket<T extends Serializable>(T value) {
-    final typename = _getTypeInfo(T).typename;
+  Packet toPacket<S extends Serializable>(S value) {
+    final typename = _getTypeInfo(S).typename;
+
     return Packet(typename, version: version, object: value.toJson());
   }
 
@@ -41,8 +42,10 @@ class PacketHandler<T> {
     };
   }
 
-  void registerTypename<E>(String typename,
-      E Function(Map<String, dynamic> json) jsonDecodeFunction) {
+  void registerTypename<E>(
+    String typename,
+    E Function(Map<String, dynamic> json) jsonDecodeFunction,
+  ) {
     assert(!_typenames.containsKey(E), 'typename already exists');
     _typenames[E] = _TypeInfo(typename, jsonDecodeFunction);
   }

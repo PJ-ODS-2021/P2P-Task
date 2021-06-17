@@ -18,11 +18,13 @@ class IdentityListSection extends StatelessWidget {
           initialData: 'Loading...',
           future: identityService.peerId,
           builder: (context, snapshot) {
-            if (snapshot.hasError)
+            if (snapshot.hasError) {
               return ListTile(
                 title: Text('Error'),
               );
+            }
             final peerId = snapshot.data!;
+
             return ListTile(
               tileColor: Colors.white,
               leading: Icon(Icons.perm_identity),
@@ -35,22 +37,26 @@ class IdentityListSection extends StatelessWidget {
           initialData: 'Loading...',
           future: identityService.name,
           builder: (context, snapshot) {
-            if (snapshot.hasError)
+            if (snapshot.hasError) {
               return ListTile(
                 tileColor: Colors.white,
                 title: Text('Error'),
               );
+            }
             final name = snapshot.data!;
+
             return ListTile(
               tileColor: Colors.white,
               leading: Icon(Icons.call_to_action_outlined),
               title: Text('Name'),
               subtitle: Text(name),
               onTap: () => showDialog(
-                  context: context,
-                  builder: (context) => UpdateSingleValueDialog(
-                      Text('Set Name'),
-                      (name) => identityService.setName(name))),
+                context: context,
+                builder: (context) => UpdateSingleValueDialog(
+                  Text('Set Name'),
+                  (name) => identityService.setName(name),
+                ),
+              ),
             );
           },
         ),
@@ -58,11 +64,13 @@ class IdentityListSection extends StatelessWidget {
           initialData: 'Loading...',
           future: deviceInfoService.deviceName,
           builder: (context, snapshot) {
-            if (snapshot.hasError)
+            if (snapshot.hasError) {
               return ListTile(
                 title: Text('Error'),
               );
+            }
             final deviceName = snapshot.data!;
+
             return ListTile(
               tileColor: Colors.white,
               leading: Icon(Icons.device_unknown),
