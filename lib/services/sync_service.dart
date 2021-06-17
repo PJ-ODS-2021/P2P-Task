@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
+import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:pedantic/pedantic.dart';
 
-class SyncService extends ChangeNotifier with LogMixin {
+class SyncService with LogMixin, ChangeCallbackProvider {
   final String _syncIntervalKey = 'syncInterval';
   final int _syncIntervalDefaultValue = 15;
   final String _syncOnStartKey = 'syncOnStart';
@@ -24,7 +24,7 @@ class SyncService extends ChangeNotifier with LogMixin {
 
   Future setInterval(int interval) async {
     final updatedInterval = await _repository.put(_syncIntervalKey, interval);
-    notifyListeners();
+    invokeChangeCallback();
 
     return updatedInterval;
   }
@@ -34,7 +34,7 @@ class SyncService extends ChangeNotifier with LogMixin {
 
   Future setSyncOnStart(bool syncOnStart) async {
     final updatedValue = await _repository.put(_syncOnStartKey, syncOnStart);
-    notifyListeners();
+    invokeChangeCallback();
 
     return updatedValue;
   }
@@ -44,7 +44,7 @@ class SyncService extends ChangeNotifier with LogMixin {
 
   Future setSyncOnUpdate(bool syncOnUpdate) async {
     final updatedValue = await _repository.put(_syncOnUpdateKey, syncOnUpdate);
-    notifyListeners();
+    invokeChangeCallback();
 
     return updatedValue;
   }
@@ -73,8 +73,4 @@ class SyncService extends ChangeNotifier with LogMixin {
       _job!();
     }
   }
-
-  @override
-  // ignore: must_call_super, no-empty-block
-  void dispose() async {}
 }

@@ -5,6 +5,7 @@ import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/screens/home_screen.dart';
 import 'package:p2p_task/services/device_info_service.dart';
 import 'package:p2p_task/services/identity_service.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
@@ -36,15 +37,10 @@ class App extends StatelessWidget {
 
   Widget _buildProviders(BuildContext context, Widget child) {
     return FutureBuilder<Injector>(
-      future: AppModule().initialize(
-        Injector(),
-      ),
+      future: AppModule().initialize(Injector()),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildSkeleton(
-            context,
-            CircularProgressIndicator(),
-          );
+          return _buildSkeleton(context, CircularProgressIndicator());
         }
         if (snapshot.hasError) {
           return _buildSkeleton(
@@ -62,29 +58,37 @@ class App extends StatelessWidget {
 
         return MultiProvider(
           providers: [
-            Provider(
-              create: (context) => DeviceInfoService(null),
-            ),
-            Provider(
-              create: (context) => i.get<Database>(),
+            Provider(create: (context) => i.get<DeviceInfoService>()),
+            Provider(create: (context) => i.get<Database>()),
+            ChangeNotifierProvider(
+              create: (context) => ChangeCallbackNotifier<TaskListService>(
+                i.get<TaskListService>(),
+              ),
             ),
             ChangeNotifierProvider(
-              create: (context) => i.get<TaskListService>(),
+              create: (context) => ChangeCallbackNotifier<NetworkInfoService>(
+                i.get<NetworkInfoService>(),
+              ),
             ),
             ChangeNotifierProvider(
-              create: (context) => i.get<NetworkInfoService>(),
+              create: (context) => ChangeCallbackNotifier<PeerInfoService>(
+                i.get<PeerInfoService>(),
+              ),
             ),
             ChangeNotifierProvider(
-              create: (context) => i.get<PeerInfoService>(),
+              create: (context) => ChangeCallbackNotifier<IdentityService>(
+                i.get<IdentityService>(),
+              ),
             ),
             ChangeNotifierProvider(
-              create: (context) => i.get<IdentityService>(),
+              create: (context) => ChangeCallbackNotifier<PeerService>(
+                i.get<PeerService>(),
+              ),
             ),
             ChangeNotifierProvider(
-              create: (context) => i.get<SyncService>(),
-            ),
-            ChangeNotifierProvider.value(
-              value: i.get<PeerService>(),
+              create: (context) => ChangeCallbackNotifier<SyncService>(
+                i.get<SyncService>(),
+              ),
             ),
           ],
           child: child,

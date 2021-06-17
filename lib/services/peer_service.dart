@@ -1,16 +1,16 @@
-import 'package:flutter/widgets.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/network/messages/debug_message.dart';
 import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
+import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 
-class PeerService extends ChangeNotifier with LogMixin {
+class PeerService with LogMixin, ChangeCallbackProvider {
   final WebSocketPeer _peer;
   final TaskListService _taskListService;
   final PeerInfoService _peerInfoService;
@@ -70,12 +70,12 @@ class PeerService extends ChangeNotifier with LogMixin {
   Future<void> startServer() async {
     final port = await _identityService.port;
     await _peer.startServer(port);
-    notifyListeners();
+    invokeChangeCallback();
   }
 
   Future<void> stopServer() async {
     await _peer.stopServer();
-    notifyListeners();
+    invokeChangeCallback();
   }
 
   Future<void> syncWithPeer(PeerInfo peerInfo, {PeerLocation? location}) async {

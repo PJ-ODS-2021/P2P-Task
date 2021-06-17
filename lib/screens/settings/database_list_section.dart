@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/widgets/list_section.dart';
 import 'package:provider/provider.dart';
@@ -6,7 +7,9 @@ import 'package:provider/provider.dart';
 class DatabaseListSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final taskListService = Provider.of<TaskListService>(context);
+    final taskListService =
+        Provider.of<ChangeCallbackNotifier<TaskListService>>(context)
+            .callbackProvider;
 
     return FutureBuilder<int>(
       initialData: -1,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/models/peer_info.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:provider/provider.dart';
 
@@ -151,13 +152,13 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
   }
 
   void _onSubmit() {
-    Provider.of<PeerInfoService>(context, listen: false).upsert(PeerInfo()
-      ..name = _nameController.text
-      ..locations.add(
-        PeerLocation(
-          'ws://${_ipController.text}:${_portController.text}',
-        ),
-      ));
+    Provider.of<ChangeCallbackNotifier<PeerInfoService>>(context, listen: false)
+        .callbackProvider
+        .upsert(PeerInfo()
+          ..name = _nameController.text
+          ..locations.add(
+            PeerLocation('ws://${_ipController.text}:${_portController.text}'),
+          ));
     Navigator.of(context).pop();
   }
 }

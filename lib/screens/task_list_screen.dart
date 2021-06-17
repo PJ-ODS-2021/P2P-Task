@@ -3,13 +3,16 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/screens/task_form_screen.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 
 class TaskListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final taskListService = Provider.of<TaskListService>(context);
+    final taskListService =
+        Provider.of<ChangeCallbackNotifier<TaskListService>>(context)
+            .callbackProvider;
 
     final futureBuilder = FutureBuilder<List<Task>>(
       initialData: [],

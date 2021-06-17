@@ -5,10 +5,11 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-class NetworkInfoService extends ChangeNotifier with LogMixin {
+class NetworkInfoService with LogMixin, ChangeCallbackProvider {
   late List<String> _ips = [];
   Completer<String?>? _ssidCompleter;
 
@@ -81,7 +82,7 @@ class NetworkInfoService extends ChangeNotifier with LogMixin {
     } on PlatformException catch (e) {
       l.severe(e.toString());
     }
-    notifyListeners();
+    invokeChangeCallback();
   }
 
   static bool ipValid(String ip) {

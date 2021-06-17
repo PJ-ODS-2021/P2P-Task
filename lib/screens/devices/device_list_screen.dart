@@ -4,6 +4,7 @@ import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/screens/devices/device_form_screen.dart';
 import 'package:p2p_task/screens/qr_scanner_screen.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
@@ -27,19 +28,25 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
 
       return;
     }
-    Provider.of<PeerInfoService>(context, listen: false).upsert(
-      PeerInfo()
-        ..id = values[0]
-        ..name = values[0]
-        ..locations.add(PeerLocation('ws://${values[1]}:${values[2]}')),
-    );
+    Provider.of<ChangeCallbackNotifier<PeerInfoService>>(context, listen: false)
+        .callbackProvider
+        .upsert(
+          PeerInfo()
+            ..id = values[0]
+            ..name = values[0]
+            ..locations.add(PeerLocation('ws://${values[1]}:${values[2]}')),
+        );
   }
 
   @override
   Widget build(BuildContext context) {
-    final consumerWidget = Consumer2<PeerInfoService, PeerService>(
-      builder: (context, service, peerService, child) =>
-          _buildDeviceList(context, service, peerService),
+    final consumerWidget = Consumer2<ChangeCallbackNotifier<PeerInfoService>,
+        ChangeCallbackNotifier<PeerService>>(
+      builder: (context, service, peerService, child) => _buildDeviceList(
+        context,
+        service.callbackProvider,
+        peerService.callbackProvider,
+      ),
     );
 
     return Stack(

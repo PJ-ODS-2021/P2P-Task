@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/services/identity_service.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/widgets/list_section.dart';
 import 'package:p2p_task/widgets/update_single_value_dialog.dart';
@@ -9,8 +10,12 @@ import 'package:provider/provider.dart';
 class NetworkListSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final networkInfoService = Provider.of<NetworkInfoService>(context);
-    final identityService = Provider.of<IdentityService>(context);
+    final networkInfoService =
+        Provider.of<ChangeCallbackNotifier<NetworkInfoService>>(context)
+            .callbackProvider;
+    final identityService =
+        Provider.of<ChangeCallbackNotifier<IdentityService>>(context)
+            .callbackProvider;
 
     return FutureBuilder<List>(
       initialData: [
