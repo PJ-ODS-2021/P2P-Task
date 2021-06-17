@@ -18,12 +18,12 @@ class UpdateSingleValueDialog extends StatelessWidget {
       ),
       actions: [
         TextButton(
-          child: Text('Cancel'),
           onPressed: () => Navigator.pop(context),
+          child: Text('Cancel'),
         ),
         TextButton(
-          child: Text('Save'),
           onPressed: () => _onSubmit(context, controller.text),
+          child: Text('Save'),
         ),
       ],
     );

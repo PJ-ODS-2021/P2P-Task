@@ -7,15 +7,12 @@ class SimpleDropdown extends StatefulWidget {
   final int initialIndex;
   final OnItemSelect onItemSelect;
 
-  SimpleDropdown(
-      {Key? key,
-      required List<String> items,
-      int initialIndex = 0,
-      required OnItemSelect onItemSelect})
-      : this.items = items,
-        this.initialIndex = initialIndex,
-        this.onItemSelect = onItemSelect,
-        super(key: key);
+  SimpleDropdown({
+    Key? key,
+    required this.items,
+    this.initialIndex = 0,
+    required this.onItemSelect,
+  }) : super(key: key);
 
   @override
   _SimpleDropdownState createState() => _SimpleDropdownState();
@@ -27,7 +24,7 @@ class _SimpleDropdownState extends State<SimpleDropdown> {
   @override
   Widget build(BuildContext context) {
     return DropdownButton<String>(
-      value: widget.items.length > 0 ? item : '',
+      value: widget.items.isNotEmpty ? item : '',
       icon: const Icon(Icons.arrow_drop_down),
       iconSize: 24,
       elevation: 16,

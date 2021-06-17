@@ -23,15 +23,19 @@ class NetworkInfoService with LogMixin, ChangeCallbackProvider {
     l.info('request for getting ssid');
     if (_ssidCompleter != null && !_ssidCompleter!.isCompleted) {
       l.warning('waiting for previous ssid request to finish');
+
       return _ssidCompleter!.future.then((value) {
         l.info('completer finished with ssid: "$value"');
+
         return value;
       });
     }
     _ssidCompleter = Completer();
+
     return _detectSsid().then((value) {
       l.info('detected ssid: "$value"');
       _ssidCompleter?.complete(value);
+
       return value;
     });
   }
@@ -52,6 +56,7 @@ class NetworkInfoService with LogMixin, ChangeCallbackProvider {
         return null;
       }
     }
+
     return networkInfo.getWifiName();
   }
 
@@ -64,13 +69,16 @@ class NetworkInfoService with LogMixin, ChangeCallbackProvider {
           await NetworkInterface.list(type: InternetAddressType.IPv4);
       _ips = [
         ...networkInterfaces
-            .fold<List<InternetAddress>>(<InternetAddress>[],
-                (previousValue, e) => previousValue..addAll(e.addresses))
+            .fold<List<InternetAddress>>(
+              <InternetAddress>[],
+              (previousValue, e) => previousValue..addAll(e.addresses),
+            )
             .where((e) => !e.isMulticast)
-            .map((e) => e.address)
+            .map((e) => e.address),
       ];
-      if (wifiIp != null && ipValid(wifiIp) && !_ips.contains(wifiIp))
+      if (wifiIp != null && ipValid(wifiIp) && !_ips.contains(wifiIp)) {
         _ips.add(wifiIp);
+      }
     } on PlatformException catch (e) {
       l.severe(e.toString());
     }

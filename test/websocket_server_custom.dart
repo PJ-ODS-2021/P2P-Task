@@ -8,17 +8,23 @@ class ServerOptions {
   final int? port;
   final bool echoDebugMessages;
 
-  const ServerOptions(
-      {required this.sendPort, this.port, this.echoDebugMessages = false});
+  const ServerOptions({
+    required this.sendPort,
+    this.port,
+    this.echoDebugMessages = false,
+  });
 }
 
 Future<void> startServer(ServerOptions options) async {
   final peer = WebSocketPeer();
   if (options.echoDebugMessages) {
     peer.registerTypename<DebugMessage>(
-        'DebugMessage', (json) => DebugMessage.fromJson(json));
+      'DebugMessage',
+      (json) => DebugMessage.fromJson(json),
+    );
     peer.registerCallback<DebugMessage>(
-        (debugMessage, source) => peer.sendPacketTo(source, debugMessage));
+      (debugMessage, source) => peer.sendPacketTo(source, debugMessage),
+    );
   }
   await peer.startServer(options.port ?? 1234);
   options.sendPort.send(peer.serverPort);

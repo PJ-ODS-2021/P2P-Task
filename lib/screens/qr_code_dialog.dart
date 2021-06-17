@@ -18,17 +18,26 @@ class QrCodeDialog extends StatelessWidget {
       title: Text('Scan QR Code'),
       children: [
         FutureBuilder<List<dynamic>>(
-          future: Future.wait(
-              [identityService.name, identityService.ip, identityService.port]),
+          future: Future.wait([
+            identityService.name,
+            identityService.ip,
+            identityService.port,
+          ]),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting)
+            if (snapshot.connectionState == ConnectionState.waiting) {
               return CircularProgressIndicator();
-            if (snapshot.hasError)
+            }
+            if (snapshot.hasError) {
               return Column(
-                children: [Text('Error'), Text(snapshot.error.toString())],
+                children: [
+                  Text('Error'),
+                  Text(snapshot.error.toString()),
+                ],
               );
+            }
             final content =
                 snapshot.data!.reduce((value, element) => '$value,$element');
+
             return Center(
               child: SizedBox(
                 width: smallestSide,
@@ -42,7 +51,9 @@ class QrCodeDialog extends StatelessWidget {
           },
         ),
         TextButton(
-            onPressed: () => Navigator.pop(context), child: Text('Close')),
+          onPressed: () => Navigator.pop(context),
+          child: Text('Close'),
+        ),
       ],
     );
   }

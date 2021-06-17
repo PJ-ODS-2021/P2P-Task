@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
+import 'package:pedantic/pedantic.dart';
 
 class SyncService with LogMixin, ChangeCallbackProvider {
   final String _syncIntervalKey = 'syncInterval';
@@ -10,12 +11,12 @@ class SyncService with LogMixin, ChangeCallbackProvider {
   final String _syncOnStartKey = 'syncOnStart';
   final String _syncOnUpdateKey = 'syncOnUpdate';
 
-  KeyValueRepository _repository;
+  final KeyValueRepository _repository;
   // ignore: cancel_subscriptions
   StreamSubscription? _syncJob;
   Function()? _job;
 
-  SyncService(KeyValueRepository repository) : this._repository = repository;
+  SyncService(KeyValueRepository repository) : _repository = repository;
 
   Future<int> get interval async =>
       (await _repository.get<int>(_syncIntervalKey)) ??
@@ -24,6 +25,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
   Future setInterval(int interval) async {
     final updatedInterval = await _repository.put(_syncIntervalKey, interval);
     invokeChangeCallback();
+
     return updatedInterval;
   }
 
@@ -33,6 +35,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
   Future setSyncOnStart(bool syncOnStart) async {
     final updatedValue = await _repository.put(_syncOnStartKey, syncOnStart);
     invokeChangeCallback();
+
     return updatedValue;
   }
 
@@ -42,6 +45,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
   Future setSyncOnUpdate(bool syncOnUpdate) async {
     final updatedValue = await _repository.put(_syncOnUpdateKey, syncOnUpdate);
     invokeChangeCallback();
+
     return updatedValue;
   }
 
@@ -53,7 +57,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
     if (await syncOnStart && currentInterval > 1) job();
     _syncJob = Stream.periodic(Duration(seconds: 1), (count) => count)
         .listen((count) async {
-      _runJob(count);
+      unawaited(_runJob(count));
     });
   }
 
