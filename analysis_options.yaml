@@ -1,6 +1,12 @@
 include: package:pedantic/analysis_options.1.11.0.yaml
 
 analyzer:
+  exclude:
+    - linux/**
+    - windows/**
+    - macos/**
+    - ios/**
+    - android/**
   plugins:
     - dart_code_metrics
 
