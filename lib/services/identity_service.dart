@@ -31,7 +31,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
 
   Future setName(String name) async {
     final updatedName = await _repository.put(_NAME_KEY, name);
-    if (changeCallback != null) changeCallback!();
+    invokeChangeCallback();
     return updatedName;
   }
 
