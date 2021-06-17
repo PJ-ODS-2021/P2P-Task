@@ -37,45 +37,64 @@ class App extends StatelessWidget {
 
   Widget _buildProviders(BuildContext context, Widget child) {
     return FutureBuilder<Injector>(
-        future: AppModule().initialize(Injector()),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting)
-            return _buildSkeleton(context, CircularProgressIndicator());
-          if (snapshot.hasError)
-            return _buildSkeleton(
-              context,
-              Column(
-                children: [
-                  Text('Error'),
-                  Text(snapshot.error.toString()),
-                  Text(snapshot.stackTrace.toString()),
-                ],
-              ),
-            );
-          final i = snapshot.data!;
-          return MultiProvider(providers: [
+      future: AppModule().initialize(Injector()),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildSkeleton(context, CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return _buildSkeleton(
+            context,
+            Column(
+              children: [
+                Text('Error'),
+                Text(snapshot.error.toString()),
+                Text(snapshot.stackTrace.toString()),
+              ],
+            ),
+          );
+        }
+        final i = snapshot.data!;
+
+        return MultiProvider(
+          providers: [
             Provider(create: (context) => i.get<DeviceInfoService>()),
             Provider(create: (context) => i.get<Database>()),
             ChangeNotifierProvider(
-                create: (context) => ChangeCallbackNotifier<TaskListService>(
-                    i.get<TaskListService>())),
+              create: (context) => ChangeCallbackNotifier<TaskListService>(
+                i.get<TaskListService>(),
+              ),
+            ),
             ChangeNotifierProvider(
-                create: (context) => ChangeCallbackNotifier<NetworkInfoService>(
-                    i.get<NetworkInfoService>())),
+              create: (context) => ChangeCallbackNotifier<NetworkInfoService>(
+                i.get<NetworkInfoService>(),
+              ),
+            ),
             ChangeNotifierProvider(
-                create: (context) => ChangeCallbackNotifier<PeerInfoService>(
-                    i.get<PeerInfoService>())),
+              create: (context) => ChangeCallbackNotifier<PeerInfoService>(
+                i.get<PeerInfoService>(),
+              ),
+            ),
             ChangeNotifierProvider(
-                create: (context) => ChangeCallbackNotifier<IdentityService>(
-                    i.get<IdentityService>())),
+              create: (context) => ChangeCallbackNotifier<IdentityService>(
+                i.get<IdentityService>(),
+              ),
+            ),
             ChangeNotifierProvider(
-                create: (context) =>
-                    ChangeCallbackNotifier<PeerService>(i.get<PeerService>())),
+              create: (context) => ChangeCallbackNotifier<PeerService>(
+                i.get<PeerService>(),
+              ),
+            ),
             ChangeNotifierProvider(
-                create: (context) =>
-                    ChangeCallbackNotifier<SyncService>(i.get<SyncService>())),
-          ], child: child);
-        });
+              create: (context) => ChangeCallbackNotifier<SyncService>(
+                i.get<SyncService>(),
+              ),
+            ),
+          ],
+          child: child,
+        );
+      },
+    );
   }
 
   Widget _buildSkeleton(BuildContext context, Widget child) {

@@ -25,6 +25,7 @@ class PeerLocation {
 
 @JsonSerializable(explicitToJson: true)
 class PeerInfo implements DataModel {
+  @override
   String? id;
   String name = '';
   List<PeerLocation> locations = [];
@@ -34,6 +35,7 @@ class PeerInfo implements DataModel {
   factory PeerInfo.fromJson(Map<String, dynamic> json) =>
       _$PeerInfoFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$PeerInfoToJson(this);
 
   @override
@@ -46,6 +48,7 @@ class PeerInfo implements DataModel {
     };
     addProperty('id', id);
     addProperty('name', name);
+
     return '[${locations.join(',')}]' +
         (buffer.isEmpty ? '' : ' (${buffer.toString()})');
   }

@@ -32,12 +32,18 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
       title: Text('Scan QR Code'),
       children: [
         FutureBuilder<List<dynamic>>(
-          future: Future.wait(
-              [identityService.name, identityService.ip, identityService.port]),
+          future: Future.wait([
+            identityService.name,
+            identityService.ip,
+            identityService.port,
+          ]),
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Column(
-                children: [Text('Error'), Text(snapshot.error.toString())],
+                children: [
+                  Text('Error'),
+                  Text(snapshot.error.toString()),
+                ],
               );
             }
             if (snapshot.connectionState == ConnectionState.waiting ||
@@ -51,8 +57,9 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
 
             final ips = networkInfoService.ips;
             final selectedIp = _selectIp(ips, storedIp);
-            if (selectedIp != storedIp && selectedIp != null)
+            if (selectedIp != storedIp && selectedIp != null) {
               identityService.setIp(selectedIp);
+            }
 
             return Column(children: [
               if (!peerService.isServerRunning)
@@ -62,23 +69,26 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
                     children: const [
                       WidgetSpan(child: Icon(Icons.warning_outlined)),
                       TextSpan(
-                          text: ' The server is not running',
-                          style: TextStyle(fontSize: 20.0)),
+                        text: ' The server is not running',
+                        style: TextStyle(fontSize: 20.0),
+                      ),
                     ],
                   ),
                 ),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text('IP: '),
                 DropdownButton<String>(
-                    value: selectedIp,
-                    items: ips
-                        .map((e) =>
-                            DropdownMenuItem<String>(value: e, child: Text(e)))
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null && value != selectedIp)
-                        identityService.setIp(value);
-                    }),
+                  value: selectedIp,
+                  items: ips
+                      .map((e) =>
+                          DropdownMenuItem<String>(value: e, child: Text(e)))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null && value != selectedIp) {
+                      identityService.setIp(value);
+                    }
+                  },
+                ),
                 Padding(padding: EdgeInsets.symmetric(horizontal: 10.0)),
                 Text('Port: $storedPort'),
               ]),
@@ -88,22 +98,29 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
                     width: smallestSide,
                     height: smallestSide,
                     child: QrImage(
-                        data: _makeQrContent(
-                            storedDeviceName, selectedIp, storedPort),
-                        version: QrVersions.auto),
+                      data: _makeQrContent(
+                        storedDeviceName,
+                        selectedIp,
+                        storedPort,
+                      ),
+                      version: QrVersions.auto,
+                    ),
                   ),
-                )
+                ),
             ]);
           },
         ),
         TextButton(
-            onPressed: () => Navigator.pop(context), child: Text('Close')),
+          onPressed: () => Navigator.pop(context),
+          child: Text('Close'),
+        ),
       ],
     );
   }
 
   String? _selectIp(UnmodifiableListView<String> ips, String? storedIp) {
     if (ips.contains(storedIp)) return storedIp;
+
     return ips.isNotEmpty ? ips.first : null;
   }
 

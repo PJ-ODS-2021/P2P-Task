@@ -13,5 +13,6 @@ class TaskListMessage extends Serializable {
   factory TaskListMessage.fromJson(Map<String, dynamic> json) =>
       _$TaskListMessageFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$TaskListMessageToJson(this);
 }

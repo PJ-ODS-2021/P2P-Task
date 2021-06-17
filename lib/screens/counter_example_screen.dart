@@ -57,7 +57,10 @@ class _CounterExampleScreenState extends State<CounterExampleScreen> {
             '$_counter',
             style: Theme.of(context).textTheme.headline4,
           ),
-          ElevatedButton(onPressed: _incrementCounter, child: Text('Increment'))
+          ElevatedButton(
+            onPressed: _incrementCounter,
+            child: Text('Increment'),
+          ),
         ],
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
