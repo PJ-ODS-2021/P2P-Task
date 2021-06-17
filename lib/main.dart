@@ -60,6 +60,7 @@ class App extends StatelessWidget {
             Provider(create: (context) => i.get<Database>()),
             ChangeNotifierProvider(
                 create: (context) => i.get<TaskListService>()),
+            ChangeNotifierProvider(create: (context) => ActivityEntryService()),
             ChangeNotifierProvider(
                 create: (context) => i.get<NetworkInfoService>()),
             ChangeNotifierProvider(
