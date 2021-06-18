@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:p2p_task/models/activity_entry.dart';
 import 'package:p2p_task/services/activity_entry_service.dart';
 import 'package:provider/provider.dart';
-import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 
 import '../models/activity_entry.dart';
 
