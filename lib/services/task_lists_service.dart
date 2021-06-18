@@ -3,13 +3,15 @@ import 'dart:convert';
 import 'package:crdt/crdt.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:p2p_task/models/task_list.dart';
+import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
 
-class TaskListsService extends ChangeNotifier with LogMixin {
+class TaskListsService extends ChangeNotifier
+    with LogMixin, ChangeCallbackProvider {
   final String _crdtTaskLisstKey = 'crdtTaskLists';
   KeyValueRepository _keyValueRepository;
   IdentityService _identityService;
