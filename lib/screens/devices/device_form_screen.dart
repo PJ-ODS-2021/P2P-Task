@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/models/peer_info.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:provider/provider.dart';
 
@@ -42,8 +43,10 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                   ),
                   controller: _nameController,
                   validator: (value) {
-                    if (value == null || value.length < 1)
+                    if (value == null || value.isEmpty) {
                       return 'Give the device a name.';
+                    }
+
                     return null;
                   },
                   onFieldSubmitted: (value) {
@@ -64,8 +67,10 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                   ),
                   controller: _ipController,
                   validator: (value) {
-                    if (value == null || value.length < 1)
+                    if (value == null || value.isEmpty) {
                       return 'The IP address is missing.';
+                    }
+
                     return null;
                   },
                   onFieldSubmitted: (value) {
@@ -86,11 +91,14 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                   ),
                   controller: _portController,
                   validator: (value) {
-                    if (value == null || value.length < 1)
+                    if (value == null || value.isEmpty) {
                       return 'The port is missing.';
-                    int port = int.parse(value);
-                    if (port < 49152 || port > 65535)
+                    }
+                    var port = int.parse(value);
+                    if (port < 49152 || port > 65535) {
                       return 'The port must be in the range 49152 to 65535';
+                    }
+
                     return null;
                   },
                   onFieldSubmitted: (value) {
@@ -107,16 +115,16 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                       child: MaterialButton(
                         padding: EdgeInsets.symmetric(vertical: 15),
                         color: Theme.of(context).accentColor,
-                        child: Text(
-                          "Submit",
-                          style: TextStyle(color: Colors.white),
-                        ),
                         onPressed: () {
                           _formKey.currentState?.save();
                           if (_formKey.currentState!.validate()) {
                             _onSubmit();
                           }
                         },
+                        child: Text(
+                          'Submit',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
                     SizedBox(width: 20),
@@ -124,13 +132,13 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                       child: MaterialButton(
                         padding: EdgeInsets.symmetric(vertical: 15),
                         color: Theme.of(context).accentColor,
-                        child: Text(
-                          "Reset",
-                          style: TextStyle(color: Colors.white),
-                        ),
                         onPressed: () {
                           _formKey.currentState?.reset();
                         },
+                        child: Text(
+                          'Reset',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
                   ],
@@ -144,10 +152,13 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
   }
 
   void _onSubmit() {
-    Provider.of<PeerInfoService>(context, listen: false).upsert(PeerInfo()
-      ..name = _nameController.text
-      ..locations.add(
-          PeerLocation('ws://${_ipController.text}:${_portController.text}')));
+    Provider.of<ChangeCallbackNotifier<PeerInfoService>>(context, listen: false)
+        .callbackProvider
+        .upsert(PeerInfo()
+          ..name = _nameController.text
+          ..locations.add(
+            PeerLocation('ws://${_ipController.text}:${_portController.text}'),
+          ));
     Navigator.of(context).pop();
   }
 }

@@ -28,7 +28,9 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             onPressed: () => showDialog(
-                context: context, builder: (context) => QrCodeDialog()),
+              context: context,
+              builder: (context) => QrCodeDialog(),
+            ),
             icon: Icon(Icons.qr_code),
           ),
         ],
@@ -45,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
             case 3:
               return SettingsScreen();
           }
+
           return Center(child: Text('Default.'));
         },
       ),

@@ -4,8 +4,8 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/models/task.dart';
-import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/network/messages/packet.dart';
+import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
 import 'package:p2p_task/services/identity_service.dart';
@@ -37,12 +37,22 @@ void main() {
     await syncService.setInterval(0);
     taskListService =
         TaskListService(keyValueRepository, identityService, syncService);
+    peerInfoService = PeerInfoService(DataModelRepository(
+      db,
+      (json) => PeerInfo.fromJson(json),
+      'PeerInfo',
+    ));
+
     taskListsService =
         TaskListsService(keyValueRepository, identityService, syncService);
-    peerInfoService = PeerInfoService(
-        DataModelRepository(db, (json) => PeerInfo.fromJson(json), 'PeerInfo'));
-    peerService = PeerService(WebSocketPeer(), taskListService,
-        taskListsService, peerInfoService, identityService, syncService);
+    peerService = PeerService(
+      WebSocketPeer(),
+      taskListService,
+      taskListsService,
+      peerInfoService,
+      identityService,
+      syncService,
+    );
     await peerService.startServer();
   });
 
@@ -56,8 +66,8 @@ void main() {
         '516ca13c-9021-4986-ab97-2d89cc0b3fce': {
           'hlc':
               '2021-06-04T07:37:08.946Z-0000-d5726a08-2107-49c0-8b06-167e57f96301',
-          'value': task.toJson()
-        }
+          'value': task.toJson(),
+        },
       };
 
       final peerLocation =
@@ -67,17 +77,24 @@ void main() {
       client.dataStream.listen((data) {
         completer.complete(data);
       });
-      client.send(jsonEncode(Packet('TaskListMessage',
-          object: TaskListMessage(jsonEncode(message), requestReply: true)
-              .toJson())));
+      client.send(jsonEncode(Packet(
+        'TaskListMessage',
+        object: TaskListMessage(
+          jsonEncode(message),
+          requestReply: true,
+        ).toJson(),
+      )));
       final serverData = await completer.future
           .timeout(Duration(seconds: 5), onTimeout: () => null);
-      expect(serverData, isNot(equals(null)),
-          reason: 'server did not answer within 5s');
+      expect(
+        serverData,
+        isNot(equals(null)),
+        reason: 'server did not answer within 5s',
+      );
 
       final unmarshalledData = TaskListMessage.fromJson(
-              Packet.fromJson(jsonDecode(serverData)).object)
-          .taskListCrdtJson;
+        Packet.fromJson(jsonDecode(serverData)).object,
+      ).taskListCrdtJson;
       expect(jsonDecode(unmarshalledData), message);
       final tasks = await taskListService.tasks;
       expect(tasks.length, equals(1));

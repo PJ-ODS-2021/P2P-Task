@@ -1,29 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/services/identity_service.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/widgets/list_section.dart';
 import 'package:p2p_task/widgets/update_single_value_dialog.dart';
+import 'package:pedantic/pedantic.dart';
 import 'package:provider/provider.dart';
 
 class NetworkListSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final networkInfoService = Provider.of<NetworkInfoService>(context);
-    final identityService = Provider.of<IdentityService>(context);
+    final networkInfoService =
+        Provider.of<ChangeCallbackNotifier<NetworkInfoService>>(context)
+            .callbackProvider;
+    final identityService =
+        Provider.of<ChangeCallbackNotifier<IdentityService>>(context)
+            .callbackProvider;
 
     return FutureBuilder<List>(
-      initialData: ['Loading...', 'Loading...', 'Loading...'],
-      future: Future.wait(
-          [networkInfoService.ssid, identityService.ip, identityService.port]),
+      initialData: [
+        'Loading...',
+        'Loading...',
+        'Loading...',
+      ],
+      future: Future.wait([
+        networkInfoService.ssid,
+        identityService.ip,
+        identityService.port,
+      ]),
       builder: (context, snapshot) {
-        if (snapshot.hasError)
+        if (snapshot.hasError) {
           return Center(
             child: Text('Error'),
           );
+        }
         final data = snapshot.data!;
         final ssid = data[0] ?? 'Unknown';
         final ip = data[1] ?? 'Unknown';
         final port = data[2] ?? 'Unknown';
+
         return ListSection(
           title: 'Network',
           children: [
@@ -47,8 +62,8 @@ class NetworkListSection extends StatelessWidget {
                       children: networkInfoService.ips
                           .map(
                             (ip) => SimpleDialogOption(
-                              child: Text(ip),
                               onPressed: () => Navigator.pop(context, ip),
+                              child: Text(ip),
                             ),
                           )
                           .toList(),
@@ -56,7 +71,7 @@ class NetworkListSection extends StatelessWidget {
                   },
                 );
                 if (result != null && result.isNotEmpty) {
-                  identityService.setIp(result);
+                  unawaited(identityService.setIp(result));
                 }
               },
             ),
@@ -68,8 +83,12 @@ class NetworkListSection extends StatelessWidget {
               onTap: () => showDialog<int>(
                 context: context,
                 builder: (context) {
-                  return UpdateSingleValueDialog(Text('Set Port'),
-                      (portStr) => identityService.setPort(int.parse(portStr)));
+                  return UpdateSingleValueDialog(
+                    Text('Set Port'),
+                    (portStr) => identityService.setPort(
+                      int.parse(portStr),
+                    ),
+                  );
                 },
               ),
             ),

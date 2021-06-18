@@ -16,7 +16,6 @@ class Task {
   Task({
     this.id,
     required this.title,
-    required this.listID,
     this.description,
     this.completed = false,
     this.due,
@@ -34,6 +33,7 @@ class Task {
   @override
   bool operator ==(Object other) {
     if (!(other is Task)) return false;
+
     return other.id == id &&
         other.listID == other.listID &&
         other.title == title &&

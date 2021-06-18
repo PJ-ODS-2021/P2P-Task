@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/services/identity_service.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -7,7 +8,8 @@ class QrCodeDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final identityService =
-        Provider.of<IdentityService>(context, listen: false);
+        Provider.of<ChangeCallbackNotifier<IdentityService>>(context)
+            .callbackProvider;
     final size = MediaQuery.of(context).size;
     final smallestSide =
         (size.width < size.height ? size.width : size.height) - 175;
@@ -16,17 +18,26 @@ class QrCodeDialog extends StatelessWidget {
       title: Text('Scan QR Code'),
       children: [
         FutureBuilder<List<dynamic>>(
-          future: Future.wait(
-              [identityService.name, identityService.ip, identityService.port]),
+          future: Future.wait([
+            identityService.name,
+            identityService.ip,
+            identityService.port,
+          ]),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting)
+            if (snapshot.connectionState == ConnectionState.waiting) {
               return CircularProgressIndicator();
-            if (snapshot.hasError)
+            }
+            if (snapshot.hasError) {
               return Column(
-                children: [Text('Error'), Text(snapshot.error.toString())],
+                children: [
+                  Text('Error'),
+                  Text(snapshot.error.toString()),
+                ],
               );
+            }
             final content =
                 snapshot.data!.reduce((value, element) => '$value,$element');
+
             return Center(
               child: SizedBox(
                 width: smallestSide,
@@ -40,7 +51,9 @@ class QrCodeDialog extends StatelessWidget {
           },
         ),
         TextButton(
-            onPressed: () => Navigator.pop(context), child: Text('Close')),
+          onPressed: () => Navigator.pop(context),
+          child: Text('Close'),
+        ),
       ],
     );
   }

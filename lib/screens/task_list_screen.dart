@@ -4,6 +4,7 @@ import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/screens/task_form_screen.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
@@ -22,7 +23,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final taskListService = Provider.of<TaskListService>(context);
+    final taskListService =
+        Provider.of<ChangeCallbackNotifier<TaskListService>>(context)
+            .callbackProvider;
 
     final futureBuilder = FutureBuilder<List<Task>>(
         initialData: [],
@@ -75,22 +78,32 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Widget _buildTaskList(
-      BuildContext context, TaskListService service, List<Task> tasks) {
-    if (tasks.length == 0) {
+    BuildContext context,
+    TaskListService service,
+    List<Task> tasks,
+  ) {
+    if (tasks.isEmpty) {
       return Center(
-          child: Column(
-        children: [
-          Spacer(),
-          Text('🎉 Nothing to do.', style: kHeroFont),
-          Text('Click the plus button below to add a ToDo.'),
-          Spacer(flex: 2),
-        ],
-      ));
+        child: Column(
+          children: [
+            Spacer(),
+            Text('🎉 Nothing to do.', style: kHeroFont),
+            Text('Click the plus button below to add a ToDo.'),
+            Spacer(flex: 2),
+          ],
+        ),
+      );
     }
+
     return ListView.builder(
       itemCount: tasks.length,
       itemBuilder: (context, index) {
-        return _buildSlidableTaskRow(context, service, tasks[index], index);
+        return _buildSlidableTaskRow(
+          context,
+          service,
+          tasks[index],
+          index,
+        );
       },
     );
   }
@@ -129,11 +142,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Widget _buildSlidableTaskRow(
-      BuildContext context, TaskListService service, Task task, int index) {
+    BuildContext context,
+    TaskListService service,
+    Task task,
+    int index,
+  ) {
     return Slidable(
       actionPane: SlidableDrawerActionPane(),
       actionExtentRatio: 0.20,
-      child: _buildTaskContainer(service, task, index),
       secondaryActions: <Widget>[
         IconSlideAction(
           caption: 'Edit',
@@ -154,6 +170,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
           onTap: () => service.remove(task),
         ),
       ],
+      child: _buildTaskContainer(service, task, index),
     );
   }
 
