@@ -12,16 +12,19 @@ class DataModelRepository<T extends DataModel> with LogMixin {
   final StoreRef<String, Map<String, dynamic>> _store;
 
   DataModelRepository(
-      Database database, Converter<T> converter, String typeName)
-      : this._db = database,
-        this._converter = converter,
-        this._store = StoreRef(typeName);
+    Database database,
+    Converter<T> converter,
+    String typeName,
+  )   : _db = database,
+        _converter = converter,
+        _store = StoreRef(typeName);
 
   Future<T?> get(String id) async {
     l.info('Get entry with type "${_store.name}" and id "$id"');
     final entry = await _store.record(id).get(_dbClient);
     if (entry == null) return null;
     l.info(entry);
+
     return _converter(entry);
   }
 
@@ -30,6 +33,7 @@ class DataModelRepository<T extends DataModel> with LogMixin {
     final entries =
         (await _store.find(_dbClient, finder: finder)).map((e) => e.value);
     l.info(entries);
+
     return entries.map((e) => _converter(e)).toList();
   }
 
@@ -49,8 +53,9 @@ class DataModelRepository<T extends DataModel> with LogMixin {
 
   Future remove(String id) async {
     l.info('Remove entry with type "${_store.name}" and id "$id"');
-    if (await _store.record(id).exists(_dbClient))
+    if (await _store.record(id).exists(_dbClient)) {
       await _store.record(id).delete(_dbClient);
+    }
     l.info('Removed entry with type "${_store.name}" and id "$id"');
   }
 
@@ -66,7 +71,10 @@ class DataModelRepository<T extends DataModel> with LogMixin {
       } catch (error, stackTrace) {
         _transaction = null;
         l.severe(
-            'Error occurred while running a transaction.', error, stackTrace);
+          'Error occurred while running a transaction.',
+          error,
+          stackTrace,
+        );
       }
       _transaction = null;
     });

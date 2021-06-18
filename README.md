@@ -21,3 +21,9 @@ A few resources to get you started:
 - [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
 - [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
 - [Online Documentation](https://flutter.dev/docs)
+
+## Run code metrics locally
+
+Run the following command to get information about the code metrics
+
+    flutter pub run dart_code_metrics:metrics lib

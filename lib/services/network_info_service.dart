@@ -5,10 +5,11 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-class NetworkInfoService extends ChangeNotifier with LogMixin {
+class NetworkInfoService with LogMixin, ChangeCallbackProvider {
   late List<String> _ips = [];
   Completer<String?>? _ssidCompleter;
 
@@ -22,15 +23,19 @@ class NetworkInfoService extends ChangeNotifier with LogMixin {
     l.info('request for getting ssid');
     if (_ssidCompleter != null && !_ssidCompleter!.isCompleted) {
       l.warning('waiting for previous ssid request to finish');
+
       return _ssidCompleter!.future.then((value) {
         l.info('completer finished with ssid: "$value"');
+
         return value;
       });
     }
     _ssidCompleter = Completer();
+
     return _detectSsid().then((value) {
       l.info('detected ssid: "$value"');
       _ssidCompleter?.complete(value);
+
       return value;
     });
   }
@@ -51,6 +56,7 @@ class NetworkInfoService extends ChangeNotifier with LogMixin {
         return null;
       }
     }
+
     return networkInfo.getWifiName();
   }
 
@@ -63,17 +69,20 @@ class NetworkInfoService extends ChangeNotifier with LogMixin {
           await NetworkInterface.list(type: InternetAddressType.IPv4);
       _ips = [
         ...networkInterfaces
-            .fold<List<InternetAddress>>(<InternetAddress>[],
-                (previousValue, e) => previousValue..addAll(e.addresses))
+            .fold<List<InternetAddress>>(
+              <InternetAddress>[],
+              (previousValue, e) => previousValue..addAll(e.addresses),
+            )
             .where((e) => !e.isMulticast)
-            .map((e) => e.address)
+            .map((e) => e.address),
       ];
-      if (wifiIp != null && ipValid(wifiIp) && !_ips.contains(wifiIp))
+      if (wifiIp != null && ipValid(wifiIp) && !_ips.contains(wifiIp)) {
         _ips.add(wifiIp);
+      }
     } on PlatformException catch (e) {
       l.severe(e.toString());
     }
-    notifyListeners();
+    invokeChangeCallback();
   }
 
   static bool ipValid(String ip) {

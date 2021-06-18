@@ -16,6 +16,7 @@ class DatabaseCreator {
     final dir = await getApplicationDocumentsDirectory();
     await dir.create(recursive: true);
     var dbPath = join(dir.path, 'p2p_task.db');
+
     return _db = await databaseFactoryIo.openDatabase(dbPath);
   }
 }

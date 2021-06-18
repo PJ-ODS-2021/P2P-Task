@@ -8,7 +8,7 @@ mixin LogMixin {
   static const String YELLOW = '\x1B[33m';
   static const String RED = '\x1B[31m';
   static const String RESET = '\x1B[0m';
-  static Map<String, Logger> _loggers = {};
+  static final Map<String, Logger> _loggers = {};
 
   String get _className => runtimeType.toString();
 
@@ -21,6 +21,7 @@ mixin LogMixin {
   Logger createLogger() {
     final logger = _loggers[_className] = Logger(_className)..clearListeners();
     if (_useColoredDebugPrint) logger.onRecord.listen(_coloredPrint);
+
     return logger;
   }
 
@@ -29,10 +30,11 @@ mixin LogMixin {
         ? WHITE
         : (record.level <= Level.WARNING ? YELLOW : RED);
     debugPrint(
-        '$levelColor[${record.level.name}]$RESET ${record.time} $WHITE${record.loggerName}$RESET: ${record.message}' +
-            (record.error != null ? '\n$WHITE>$RESET ${record.error}' : '') +
-            (record.stackTrace != null
-                ? '\n$WHITE>$RESET ${record.stackTrace}'
-                : ''));
+      '$levelColor[${record.level.name}]$RESET ${record.time} $WHITE${record.loggerName}$RESET: ${record.message}' +
+          (record.error != null ? '\n$WHITE>$RESET ${record.error}' : '') +
+          (record.stackTrace != null
+              ? '\n$WHITE>$RESET ${record.stackTrace}'
+              : ''),
+    );
   }
 }

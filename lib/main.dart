@@ -6,6 +6,7 @@ import 'package:p2p_task/screens/home_screen.dart';
 import 'package:p2p_task/services/activity_entry_service.dart';
 import 'package:p2p_task/services/device_info_service.dart';
 import 'package:p2p_task/services/identity_service.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
@@ -37,40 +38,65 @@ class App extends StatelessWidget {
 
   Widget _buildProviders(BuildContext context, Widget child) {
     return FutureBuilder<Injector>(
-        future: AppModule().initialize(Injector()),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting)
-            return _buildSkeleton(context, CircularProgressIndicator());
-          if (snapshot.hasError)
-            return _buildSkeleton(
-              context,
-              Column(
-                children: [
-                  Text('Error'),
-                  Text(snapshot.error.toString()),
-                  Text(snapshot.stackTrace.toString()),
-                ],
-              ),
-            );
-          final i = snapshot.data!;
-          return MultiProvider(providers: [
-            Provider(
-              create: (context) => DeviceInfoService(null),
+      future: AppModule().initialize(Injector()),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildSkeleton(context, CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return _buildSkeleton(
+            context,
+            Column(
+              children: [
+                Text('Error'),
+                Text(snapshot.error.toString()),
+                Text(snapshot.stackTrace.toString()),
+              ],
             ),
+          );
+        }
+        final i = snapshot.data!;
+
+        return MultiProvider(
+          providers: [
+            Provider(create: (context) => i.get<DeviceInfoService>()),
             Provider(create: (context) => i.get<Database>()),
-            ChangeNotifierProvider(
-                create: (context) => i.get<TaskListService>()),
             ChangeNotifierProvider(create: (context) => ActivityEntryService()),
             ChangeNotifierProvider(
-                create: (context) => i.get<NetworkInfoService>()),
+              create: (context) => ChangeCallbackNotifier<TaskListService>(
+                i.get<TaskListService>(),
+              ),
+            ),
             ChangeNotifierProvider(
-                create: (context) => i.get<PeerInfoService>()),
+              create: (context) => ChangeCallbackNotifier<NetworkInfoService>(
+                i.get<NetworkInfoService>(),
+              ),
+            ),
             ChangeNotifierProvider(
-                create: (context) => i.get<IdentityService>()),
-            ChangeNotifierProvider(create: (context) => i.get<SyncService>()),
-            ChangeNotifierProvider.value(value: i.get<PeerService>()),
-          ], child: child);
-        });
+              create: (context) => ChangeCallbackNotifier<PeerInfoService>(
+                i.get<PeerInfoService>(),
+              ),
+            ),
+            ChangeNotifierProvider(
+              create: (context) => ChangeCallbackNotifier<IdentityService>(
+                i.get<IdentityService>(),
+              ),
+            ),
+            ChangeNotifierProvider(
+              create: (context) => ChangeCallbackNotifier<PeerService>(
+                i.get<PeerService>(),
+              ),
+            ),
+            ChangeNotifierProvider(
+              create: (context) => ChangeCallbackNotifier<SyncService>(
+                i.get<SyncService>(),
+              ),
+            ),
+          ],
+          child: child,
+        );
+      },
+    );
   }
 
   Widget _buildSkeleton(BuildContext context, Widget child) {
