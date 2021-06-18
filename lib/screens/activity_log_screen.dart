@@ -26,7 +26,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
 
   Widget _buildActivityEntries(
       BuildContext context, ActivityEntryService service) {
-    if (service.activities.length == 0) {
+    if (service.activities.isEmpty) {
       return Center(
           child: Column(
         children: [
@@ -84,7 +84,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
 
   Widget _getActivityName(ActivityEntry activity) {
     return Text(
-      activity.event != null ? activity.event : '',
+      activity.event.isNotEmpty ? activity.event : '',
       style: TextStyle(
         fontWeight: FontWeight.normal,
         color: Colors.black,
@@ -95,7 +95,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
 
   Widget _getActivityDate(ActivityEntry activity) {
     return Text(
-      "${activity.timestamp?.day}/${activity.timestamp?.month}/${activity.timestamp?.year}",
+      '${activity.timestamp?.day}/${activity.timestamp?.month}/${activity.timestamp?.year}',
       style: TextStyle(
         color: Colors.black.withOpacity(0.6),
         fontSize: 14,
@@ -104,17 +104,10 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
   }
 
   Widget getActivityIcon(ActivityEntry activity) {
-    // return Icon(
-    //   activity.device == "Windows Phone"
-    //       ? Icons.arrow_upward
-    //       : Icons.arrow_downward,
-    //   color: Colors.black,
-    //   size: 22,
-    // );
     return Image.asset(
-        activity.device == "Windows Phone"
-            ? "assets/up_arrow_icon.png"
-            : "assets/down_arrow_icon.png",
+        activity.device == 'Windows Phone'
+            ? 'assets/up_arrow_icon.png'
+            : 'assets/down_arrow_icon.png',
         width: 22,
         height: 22);
   }
@@ -122,27 +115,27 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
   Widget _getActivityDescription(ActivityEntry activity) {
     return RichText(
       text: TextSpan(
-        text: "On ",
+        text: 'On ',
         style: TextStyle(color: Colors.black, fontSize: 18),
         children: [
           TextSpan(
-            text: activity.device == "Windows Phone"
-                ? "this device"
+            text: activity.device == 'Windows Phone'
+                ? 'this device'
                 : activity.device,
             style: TextStyle(
               color: Colors.black,
-              fontWeight: activity.device == "Windows Phone"
+              fontWeight: activity.device == 'Windows Phone'
                   ? FontWeight.normal
                   : FontWeight.bold,
               fontSize: 18,
             ),
           ),
           TextSpan(
-            text: " in ",
+            text: ' in ',
             style: TextStyle(color: Colors.black, fontSize: 18),
           ),
           TextSpan(
-            text: activity.network,
+            text: activity.peerInfoID,
             style: TextStyle(
               color: Colors.black,
               fontWeight: FontWeight.bold,

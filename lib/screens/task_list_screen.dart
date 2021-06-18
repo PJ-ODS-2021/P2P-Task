@@ -125,7 +125,7 @@ class TaskListScreen extends StatelessWidget {
                 semanticLabel: 'Completed Task',
               )
             : const Icon(
-                Icons.circle_outlined,
+                EvaIcons.radioButtonOffOutline,
                 semanticLabel: 'Uncompleted Task',
               ),
         title: Text(task.title),
