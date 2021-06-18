@@ -16,6 +16,7 @@ class Task {
   Task({
     this.id,
     required this.title,
+    required this.listID,
     this.description,
     this.completed = false,
     this.due,
