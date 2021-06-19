@@ -7,9 +7,9 @@ import 'package:intl/intl.dart';
 
 class TaskFormScreen extends StatefulWidget {
   final Task? task;
-  final String listID;
+  final String taskListID;
 
-  const TaskFormScreen({Key? key, this.task, required this.listID})
+  const TaskFormScreen({Key? key, this.task, required this.taskListID})
       : super(key: key);
 
   @override
@@ -48,7 +48,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       _due = widget.task!.due;
       _editing = true;
     } else {
-      _task = Task(title: '', listID: widget.listID);
+      _task = Task(title: '', taskListID: widget.taskListID);
     }
   }
 
@@ -114,14 +114,14 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                     backgroundColor:
                         MaterialStateProperty.all(Colors.purple[50]),
                   ),
+                  onPressed: () => pickDateTime(context),
                   child: Text(
                     _due != null
                         ? DateFormat('dd.MM.yyyy hh:mm').format(_due!)
-                        : "Due Date",
+                        : 'Due Date',
                     textAlign: TextAlign.left,
                     style: TextStyle(color: Colors.grey[600]),
                   ),
-                  onPressed: () => pickDateTime(context),
                 ),
               ),
             ),

@@ -34,11 +34,11 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     return (await _taskListCrdt).values;
   }
 
-  Future<List<Task>> getTasksByListID(String listID, Filter filter) async {
+  Future<List<Task>> getTasksByListID(String taskListID, Filter filter) async {
     List<Task> tasks = [];
 
     for (var i = 0; i < (await _taskListCrdt).values.length; i++) {
-      if ((await _taskListCrdt).values[i].listID == listID) {
+      if ((await _taskListCrdt).values[i].taskListID == taskListID) {
         tasks.add((await _taskListCrdt).values[i]);
       }
     }
@@ -49,7 +49,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
         break;
       case Filter.Priority:
         tasks.sort((a, b) {
-          if (b.priority) {
+          if (b.isFlagged) {
             return 1;
           }
           return -1;
@@ -102,9 +102,9 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     await _syncService.run();
   }
 
-  Future removeByListID(String listID) async {
+  Future removeByListID(String taskListID) async {
     for (var i = 0; i < (await _taskListCrdt).values.length; i++) {
-      if ((await _taskListCrdt).values[i].listID == listID) {
+      if ((await _taskListCrdt).values[i].taskListID == taskListID) {
         remove((await _taskListCrdt).values[i]);
       }
     }

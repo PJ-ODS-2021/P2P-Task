@@ -3,6 +3,15 @@ import 'package:p2p_task/models/task.dart';
 
 part 'task_list.g.dart';
 
+/// A collection of multiple tasks.
+///
+/// Users give their lists a [title] upon creation. A task can be added to or
+/// removed from the [elements] list of a task list.
+///
+/// When users share a task list with another peer, the [elements] in the list
+/// are exchanged between the peers.
+///
+/// Here, the [id] is used to identify task lists throughout peers.
 @JsonSerializable(explicitToJson: true)
 class TaskList {
   String? id;
