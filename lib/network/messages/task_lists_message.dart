@@ -5,13 +5,14 @@ part 'task_lists_message.g.dart';
 
 @JsonSerializable()
 class TaskListsMessage extends Serializable {
-  String taskListCrdtJson;
+  String taskListsCrdtJson;
   bool requestReply;
 
-  TaskListsMessage(this.taskListCrdtJson, {this.requestReply = false});
+  TaskListsMessage(this.taskListsCrdtJson, {this.requestReply = false});
 
   factory TaskListsMessage.fromJson(Map<String, dynamic> json) =>
       _$TaskListsMessageFromJson(json);
 
+  @override
   Map<String, dynamic> toJson() => _$TaskListsMessageToJson(this);
 }

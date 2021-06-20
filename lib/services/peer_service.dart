@@ -83,7 +83,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     l.info(
       'Received TaskListsMessage',
     );
-    await _taskListsService.mergeCrdtJson(taskListsMessage.taskListCrdtJson);
+    await _taskListsService.mergeCrdtJson(taskListsMessage.taskListsCrdtJson);
     if (taskListsMessage.requestReply) {
       final taskListCrdtJson = await _taskListsService.crdtToJson();
       _peer.sendPacketTo(source, TaskListsMessage(taskListCrdtJson));
@@ -110,8 +110,8 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       await _taskListService.crdtToJson(),
       requestReply: true,
     );
-    final packetLists = TaskListMessage(
-      await _taskListService.crdtToJson(),
+    final packetLists = TaskListsMessage(
+      await _taskListsService.crdtToJson(),
       requestReply: true,
     );
     await _peer.sendPacketToPeer(peerInfo, packetLists, location: location);
@@ -124,12 +124,12 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       await _taskListService.crdtToJson(),
       requestReply: true,
     );
-    final packetLists = TaskListMessage(
+    final packetLists = TaskListsMessage(
       await _taskListsService.crdtToJson(),
       requestReply: true,
     );
     final peers = await _peerInfoService.devices;
-    await _peer.sendPacketToAllPeers(packetTasks, peers);
     await _peer.sendPacketToAllPeers(packetLists, peers);
+    await _peer.sendPacketToAllPeers(packetTasks, peers);
   }
 }

@@ -23,13 +23,14 @@ class TaskListsScreen extends StatelessWidget {
         initialData: [],
         future: listService.lists,
         builder: (context, snapshot) {
-          if (snapshot.hasError)
+          if (snapshot.hasError) {
             return Column(
               children: [
                 Text('Error'),
                 Text(snapshot.error.toString()),
               ],
             );
+          }
           return _buildTaskList(
               context, listService, taskService, snapshot.data!);
         });
