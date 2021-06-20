@@ -77,8 +77,12 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<void> _taskListsMessageCallback(
-      TaskListsMessage taskListsMessage, WebSocketClient source) async {
-    l.info('Received TaskListsMessage');
+    TaskListsMessage taskListsMessage,
+    WebSocketClient source,
+  ) async {
+    l.info(
+      'Received TaskListsMessage',
+    );
     await _taskListsService.mergeCrdtJson(taskListsMessage.taskListCrdtJson);
     if (taskListsMessage.requestReply) {
       final taskListCrdtJson = await _taskListsService.crdtToJson();

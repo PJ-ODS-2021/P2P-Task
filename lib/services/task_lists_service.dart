@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:crdt/crdt.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/services/identity_service.dart';
@@ -27,7 +26,7 @@ class TaskListsService with LogMixin, ChangeCallbackProvider {
   );
 
   Future<List<TaskList>> get lists async {
-    List<TaskList> lists = [];
+    var lists = <TaskList>[];
 
     for (var i = 0; i < (await _taskListsCrdt).values.length; i++) {
       lists.add((await _taskListsCrdt).values[i]);
@@ -97,7 +96,7 @@ class TaskListsService with LogMixin, ChangeCallbackProvider {
     if (!isShared) {
       isShared = true;
       for (var i = 0; i < (await _taskListsCrdt).values.length; i++) {
-        upsert((await _taskListsCrdt).values[i]);
+        await upsert((await _taskListsCrdt).values[i]);
       }
     }
   }
@@ -108,8 +107,8 @@ class TaskListsService with LogMixin, ChangeCallbackProvider {
   Future<MapCrdt<String, TaskList>> _fromJson(String json) async {
     final Map<String, dynamic> map = jsonDecode(json);
     final keys = map.keys.toList();
-    final recordMap = Map<String, Record<TaskList>>();
-    for (int i = 0; i < map.length; ++i) {
+    final recordMap = <String, Record<TaskList>>{};
+    for (var i = 0; i < map.length; ++i) {
       recordMap.putIfAbsent(
         keys[i],
         () => Record(
@@ -121,6 +120,7 @@ class TaskListsService with LogMixin, ChangeCallbackProvider {
         ),
       );
     }
+
     return MapCrdt(await _identityService.peerId, recordMap);
   }
 }

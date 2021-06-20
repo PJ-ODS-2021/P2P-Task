@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/services/task_lists_service.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:provider/provider.dart';
 
 class TaskListFormScreen extends StatefulWidget {
@@ -22,10 +23,11 @@ class _TaskListFormScreenState extends State<TaskListFormScreen> {
 
   void _onSubmitPressed(context) {
     if (_formKey.currentState!.validate()) {
-      print("submited: ${_formTitleController.text}");
-      final taskListsService =
-          Provider.of<TaskListsService>(context, listen: false);
-      taskListsService.upsert(_taskList..title = _formTitleController.text);
+      final listService = Provider.of<ChangeCallbackNotifier<TaskListsService>>(
+        context,
+        listen: false,
+      ).callbackProvider;
+      listService.upsert(_taskList..title = _formTitleController.text);
       Navigator.pop(context);
     }
   }
@@ -65,8 +67,10 @@ class _TaskListFormScreenState extends State<TaskListFormScreen> {
                 ),
                 controller: _formTitleController,
                 validator: (value) {
-                  if (value == null || value.length < 1)
+                  if (value == null || value.isEmpty) {
                     return 'Give your task a title.';
+                  }
+
                   return null;
                 },
               ),

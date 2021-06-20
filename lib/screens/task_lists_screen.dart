@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:p2p_task/config/style_constants.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/screens/task_list_screen.dart';
 import 'package:p2p_task/screens/task_list_form_screen.dart';
@@ -11,8 +12,12 @@ import 'package:provider/provider.dart';
 class TaskListsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final listService = Provider.of<TaskListsService>(context);
-    final taskService = Provider.of<TaskListService>(context);
+    final listService =
+        Provider.of<ChangeCallbackNotifier<TaskListsService>>(context)
+            .callbackProvider;
+    final taskService =
+        Provider.of<ChangeCallbackNotifier<TaskListService>>(context)
+            .callbackProvider;
 
     final futureBuilder = FutureBuilder<List<TaskList>>(
         initialData: [],
@@ -36,11 +41,11 @@ class TaskListsScreen extends StatelessWidget {
         ElevatedButton(
           onPressed: () => Navigator.push(context,
               MaterialPageRoute(builder: (context) => TaskListFormScreen())),
-          child: Icon(Icons.add),
           style: ElevatedButton.styleFrom(
             shape: CircleBorder(),
             padding: EdgeInsets.all(24),
           ),
+          child: Icon(Icons.add),
         )
       ],
     );
@@ -48,7 +53,7 @@ class TaskListsScreen extends StatelessWidget {
 
   Widget _buildTaskList(BuildContext context, TaskListsService listService,
       TaskListService taskService, List<TaskList> tasks) {
-    if (tasks.length == 0) {
+    if (tasks.isEmpty) {
       return Center(
           child: Column(
         children: [
@@ -77,7 +82,6 @@ class TaskListsScreen extends StatelessWidget {
     return Slidable(
       actionPane: SlidableDrawerActionPane(),
       actionExtentRatio: 0.20,
-      child: _buildTaskListContainer(context, taskList, index),
       secondaryActions: <Widget>[
         IconSlideAction(
           caption: 'Edit',
@@ -100,6 +104,7 @@ class TaskListsScreen extends StatelessWidget {
           },
         ),
       ],
+      child: _buildTaskListContainer(context, taskList, index),
     );
   }
 
@@ -110,7 +115,8 @@ class TaskListsScreen extends StatelessWidget {
       child: ListTile(
         leading: Icon(taskList.isShared ? Icons.people : Icons.lock),
         title: Text(taskList.title),
-        subtitle: Text(taskList.isShared ? 'shared with:' : ''),
+        //toDo add shared with
+        subtitle: Text(taskList.isShared ? '' : ''),
         trailing: Icon(Icons.chevron_left),
         onTap: () => Navigator.push(
           context,

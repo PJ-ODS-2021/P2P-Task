@@ -75,6 +75,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
       case SortOption.Created:
         break;
     }
+
     return filtered;
   }
 

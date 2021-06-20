@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
-import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/widgets/list_section.dart';
 import 'package:provider/provider.dart';
 
@@ -40,7 +39,7 @@ class DatabaseSection extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () async {
-                          taskListsService.delete();
+                          await taskListsService.delete();
                           Navigator.pop(context);
                         },
                         child: Text('Yes'),

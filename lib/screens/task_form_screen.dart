@@ -60,71 +60,17 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         key: _formKey,
         child: Column(
           children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: 10.0,
-                horizontal: 15.0,
-              ),
-              child: TextFormField(
-                autofocus: true,
-                onFieldSubmitted: (value) => _onSubmitPressed(context),
-                decoration: InputDecoration(
-                  hintText: 'Title',
-                  filled: true,
-                  fillColor: Colors.purple[50],
-                  border: OutlineInputBorder(borderSide: BorderSide.none),
-                ),
-                controller: _formTitleController,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Give your task a title.';
-                  }
-
-                  return null;
-                },
-              ),
+            _textSection(
+              context,
+              _formTitleController,
+              'Title',
             ),
-            Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: 10.0,
-                horizontal: 15.0,
-              ),
-              child: Container(
-                child: TextFormField(
-                  onFieldSubmitted: (value) => _onSubmitPressed(context),
-                  decoration: InputDecoration(
-                    hintText: 'Description',
-                    filled: true,
-                    fillColor: Colors.purple[50],
-                    border: OutlineInputBorder(borderSide: BorderSide.none),
-                  ),
-                  controller: _formDescriptionController,
-                ),
-              ),
+            _textSection(
+              context,
+              _formDescriptionController,
+              'Description',
             ),
-            Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: 10.0,
-                horizontal: 15.0,
-              ),
-              child: Container(
-                child: TextButton(
-                  style: ButtonStyle(
-                    //minimumSize: Size.fromHeight(50),
-                    backgroundColor:
-                        MaterialStateProperty.all(Colors.purple[50]),
-                  ),
-                  onPressed: () => pickDateTime(context),
-                  child: Text(
-                    _due != null
-                        ? DateFormat('dd.MM.yyyy hh:mm').format(_due!)
-                        : 'Due Date',
-                    textAlign: TextAlign.left,
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                ),
-              ),
-            ),
+            _dateSection(),
             Spacer(flex: 5),
             ElevatedButton(
               onPressed: () => _onSubmitPressed(context),
@@ -137,12 +83,68 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     );
   }
 
+  Widget _textSection(
+    BuildContext context,
+    TextEditingController controller,
+    String hintText,
+  ) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: 10.0,
+        horizontal: 15.0,
+      ),
+      child: TextFormField(
+        autofocus: true,
+        onFieldSubmitted: (value) => _onSubmitPressed(context),
+        decoration: InputDecoration(
+          hintText: hintText,
+          filled: true,
+          fillColor: Colors.purple[50],
+          border: OutlineInputBorder(borderSide: BorderSide.none),
+        ),
+        controller: controller,
+        validator: (value) {
+          if (hintText == 'Title' && (value == null || value.isEmpty)) {
+            return 'Give your task a title.';
+          }
+
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget _dateSection() {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: 10.0,
+        horizontal: 15.0,
+      ),
+      child: Container(
+        child: TextButton(
+          style: ButtonStyle(
+            backgroundColor: MaterialStateProperty.all(Colors.purple[50]),
+          ),
+          onPressed: () => pickDateTime(context),
+          child: Text(
+            _due != null
+                ? DateFormat('dd.MM.yyyy hh:mm').format(_due!)
+                : 'Due Date',
+            textAlign: TextAlign.left,
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future pickDateTime(BuildContext context) async {
     final date = await pickDate(context);
     if (date == null) {
       setState(() {
         _due = null;
       });
+
       return;
     }
 
@@ -157,6 +159,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           0,
         );
       });
+
       return;
     }
 

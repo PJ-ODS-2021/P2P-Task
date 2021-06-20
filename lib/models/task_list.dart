@@ -20,12 +20,13 @@ class TaskList {
   SortOption sortBy;
   final List<Task>? elements;
 
-  TaskList(
-      {this.id,
-      required this.title,
-      this.elements,
-      this.isShared = false,
-      this.sortBy = SortOption.Created});
+  TaskList({
+    this.id,
+    required this.title,
+    this.elements,
+    this.isShared = false,
+    this.sortBy = SortOption.Created,
+  });
 
   factory TaskList.fromJson(Map<String, dynamic> json) =>
       _$TaskListFromJson(json);
@@ -38,6 +39,7 @@ class TaskList {
   @override
   bool operator ==(Object other) {
     if (!(other is TaskList)) return false;
+
     return other.id == id && other.title == title;
   }
 }

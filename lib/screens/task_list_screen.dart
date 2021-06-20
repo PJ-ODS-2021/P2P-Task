@@ -27,23 +27,26 @@ class _TaskListScreenState extends State<TaskListScreen> {
             .callbackProvider;
 
     final futureBuilder = FutureBuilder<List<Task>>(
-        initialData: [],
-        future: taskListService.getTasksForList(widget.taskList),
-        builder: (context, snapshot) {
-          final data = snapshot.data;
-          if (snapshot.hasError)
-            return Column(
-              children: [
-                Text('Error'),
-                Text(snapshot.error.toString()),
-              ],
-            );
-          return _buildTaskList(context, taskListService, data!);
-        });
+      initialData: [],
+      future: taskListService.getTasksForList(widget.taskList),
+      builder: (context, snapshot) {
+        final data = snapshot.data;
+        if (snapshot.hasError) {
+          return Column(
+            children: [
+              Text('Error'),
+              Text(snapshot.error.toString()),
+            ],
+          );
+        }
+
+        return _buildTaskList(context, taskListService, data!);
+      },
+    );
 
     return Scaffold(
       appBar: AppBar(
-        // needs leading overwrite or a functional BottomNavigation
+        // needs functional BottomNavigation
         title: Text(widget.taskList.title),
         centerTitle: true,
         actions: [
@@ -56,17 +59,19 @@ class _TaskListScreenState extends State<TaskListScreen> {
           futureBuilder,
           ElevatedButton(
             onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => TaskFormScreen(
-                          taskListID: widget.taskList.id!,
-                        ))),
-            child: Icon(Icons.add),
+              context,
+              MaterialPageRoute(
+                builder: (context) => TaskFormScreen(
+                  taskListID: widget.taskList.id!,
+                ),
+              ),
+            ),
             style: ElevatedButton.styleFrom(
               shape: CircleBorder(),
               padding: EdgeInsets.all(24),
             ),
-          )
+            child: Icon(Icons.add),
+          ),
         ],
       ),
       // ToDo: onTap
@@ -111,19 +116,20 @@ class _TaskListScreenState extends State<TaskListScreen> {
     return IconButton(
       onPressed: () {
         showDialog(
-            context: context,
-            builder: (context) {
-              return SimpleDialog(
-                title: Text('Sort by'),
-                children: [
-                  _getSimpleDialog(SortOption.Title),
-                  _getSimpleDialog(SortOption.Flag),
-                  _getSimpleDialog(SortOption.Status),
-                  _getSimpleDialog(SortOption.DueDate),
-                  _getSimpleDialog(SortOption.Created),
-                ],
-              );
-            });
+          context: context,
+          builder: (context) {
+            return SimpleDialog(
+              title: Text('Sort by'),
+              children: [
+                _getSimpleDialog(SortOption.Title),
+                _getSimpleDialog(SortOption.Flag),
+                _getSimpleDialog(SortOption.Status),
+                _getSimpleDialog(SortOption.DueDate),
+                _getSimpleDialog(SortOption.Created),
+              ],
+            );
+          },
+        );
       },
       icon: Icon(Icons.filter_alt_sharp),
     );
@@ -162,12 +168,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
           color: Colors.grey[400],
           icon: Icons.edit,
           onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => TaskFormScreen(
-                        task: task,
-                        taskListID: widget.taskList.id!,
-                      ))),
+            context,
+            MaterialPageRoute(
+              builder: (context) => TaskFormScreen(
+                task: task,
+                taskListID: widget.taskList.id!,
+              ),
+            ),
+          ),
         ),
         IconSlideAction(
           caption: 'Flag',
@@ -190,7 +198,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Widget _buildTaskContainer(TaskListService service, Task task, int index) {
-    String subtitle = task.description ?? '';
+    var subtitle = task.description ?? '';
     if (subtitle != '') {
       subtitle = subtitle + '\n';
     }
