@@ -9,6 +9,7 @@ import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
 import 'package:intl/intl.dart';
+import 'package:p2p_task/services/task_lists_service.dart';
 
 class TaskListScreen extends StatefulWidget {
   final TaskList taskList;
@@ -19,8 +20,6 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
-  Filter _filter = Filter.Default;
-
   @override
   Widget build(BuildContext context) {
     final taskListService =
@@ -29,7 +28,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
     final futureBuilder = FutureBuilder<List<Task>>(
         initialData: [],
-        future: taskListService.getTasksByListID(widget.taskList.id!, _filter),
+        future: taskListService.getTasksForList(widget.taskList),
         builder: (context, snapshot) {
           final data = snapshot.data;
           if (snapshot.hasError)
@@ -60,7 +59,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => TaskFormScreen(
-                          listID: widget.taskList.id!,
+                          taskListID: widget.taskList.id!,
                         ))),
             child: Icon(Icons.add),
             style: ElevatedButton.styleFrom(
@@ -115,12 +114,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
             context: context,
             builder: (context) {
               return SimpleDialog(
-                title: Text('Filter by'),
+                title: Text('Sort by'),
                 children: [
-                  _getSimpleDialog(Filter.Title),
-                  _getSimpleDialog(Filter.Priority),
-                  _getSimpleDialog(Filter.Status),
-                  _getSimpleDialog(Filter.DueDate),
+                  _getSimpleDialog(SortOption.Title),
+                  _getSimpleDialog(SortOption.Flag),
+                  _getSimpleDialog(SortOption.Status),
+                  _getSimpleDialog(SortOption.DueDate),
+                  _getSimpleDialog(SortOption.Created),
                 ],
               );
             });
@@ -129,15 +129,21 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
-  SimpleDialogOption _getSimpleDialog(Filter filter) {
+  SimpleDialogOption _getSimpleDialog(SortOption sortOption) {
     return SimpleDialogOption(
       onPressed: () {
         setState(() {
-          _filter = filter;
+          widget.taskList.sortBy = sortOption;
+          final listService =
+              Provider.of<ChangeCallbackNotifier<TaskListsService>>(
+            context,
+            listen: false,
+          ).callbackProvider;
+          listService.upsert(widget.taskList);
         });
         Navigator.pop(context);
       },
-      child: Text(filter.toString().replaceAll('Filter.', '')),
+      child: Text(getFilterName(sortOption)),
     );
   }
 
@@ -160,8 +166,17 @@ class _TaskListScreenState extends State<TaskListScreen> {
               MaterialPageRoute(
                   builder: (context) => TaskFormScreen(
                         task: task,
-                        listID: widget.taskList.id!,
+                        taskListID: widget.taskList.id!,
                       ))),
+        ),
+        IconSlideAction(
+          caption: 'Flag',
+          color: Colors.red[900],
+          icon: Icons.flag,
+          onTap: () {
+            task.isFlagged = !task.isFlagged;
+            service.upsert(task);
+          },
         ),
         IconSlideAction(
           caption: 'Delete',
@@ -193,25 +208,25 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 ? Icon(
                     Icons.check_circle,
                     color: Colors.green,
-                    semanticLabel: "Completed Task",
+                    semanticLabel: 'Completed Task',
                   )
                 : Icon(
                     Icons.circle_outlined,
-                    semanticLabel: "Uncompleted Task",
+                    semanticLabel: 'Uncompleted Task',
                   ),
             SizedBox(
               width: 15,
             ),
-            task.priority
+            task.isFlagged
                 ? Icon(
                     Icons.flag,
                     color: Colors.red,
-                    semanticLabel: "High Priority",
+                    semanticLabel: 'High Priority',
                   )
                 : Icon(
                     Icons.flag,
-                    color: Colors.grey[300],
-                    semanticLabel: "Low Priority",
+                    color: index.isEven ? Colors.white : Colors.white60,
+                    semanticLabel: 'Low Priority',
                   ),
           ],
         ),
@@ -220,10 +235,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
         trailing: Icon(Icons.chevron_left),
         onTap: () {
           task.completed = !task.completed;
-          service.upsert(task);
-        },
-        onLongPress: () {
-          task.priority = !task.priority;
           service.upsert(task);
         },
       ),
