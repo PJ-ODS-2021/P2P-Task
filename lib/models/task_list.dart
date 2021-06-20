@@ -17,10 +17,15 @@ class TaskList {
   String? id;
   bool isShared;
   String title;
+  SortOption sortBy;
   final List<Task>? elements;
 
   TaskList(
-      {this.id, required this.title, this.elements, this.isShared = false});
+      {this.id,
+      required this.title,
+      this.elements,
+      this.isShared = false,
+      this.sortBy = SortOption.Created});
 
   factory TaskList.fromJson(Map<String, dynamic> json) =>
       _$TaskListFromJson(json);

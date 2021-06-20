@@ -10,21 +10,21 @@ import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
 
-class TaskListsService extends ChangeNotifier
-    with LogMixin, ChangeCallbackProvider {
+class TaskListsService with LogMixin, ChangeCallbackProvider {
   final String _crdtTaskLisstKey = 'crdtTaskLists';
-  KeyValueRepository _keyValueRepository;
-  IdentityService _identityService;
-  SyncService _syncService;
+
+  final KeyValueRepository _keyValueRepository;
+  final IdentityService _identityService;
+  final SyncService _syncService;
 
   // stupid
   bool isShared = false;
 
-  TaskListsService(KeyValueRepository keyValueRepository,
-      IdentityService identityService, SyncService syncService)
-      : this._keyValueRepository = keyValueRepository,
-        this._identityService = identityService,
-        this._syncService = syncService;
+  TaskListsService(
+    this._keyValueRepository,
+    this._identityService,
+    this._syncService,
+  );
 
   Future<List<TaskList>> get lists async {
     List<TaskList> lists = [];
@@ -53,7 +53,6 @@ class TaskListsService extends ChangeNotifier
   }
 
   Future remove(TaskList taskList) async {
-    print('removei ${taskList.title}');
     final update = (await _taskListsCrdt)..delete(taskList.id!);
     await _store(update);
     await _syncService.run();
@@ -61,7 +60,7 @@ class TaskListsService extends ChangeNotifier
 
   Future delete() async {
     await _keyValueRepository.purge(key: _crdtTaskLisstKey);
-    notifyListeners();
+    invokeChangeCallback();
     await _syncService.run();
   }
 
@@ -71,7 +70,7 @@ class TaskListsService extends ChangeNotifier
 
   Future<void> _store(MapCrdt<String, TaskList> update) async {
     await _keyValueRepository.put(_crdtTaskLisstKey, update.toJson());
-    notifyListeners();
+    invokeChangeCallback();
     l.info('notifying task list change');
   }
 
@@ -124,8 +123,4 @@ class TaskListsService extends ChangeNotifier
     }
     return MapCrdt(await _identityService.peerId, recordMap);
   }
-
-  @override
-  // ignore: must_call_super
-  void dispose() {}
 }

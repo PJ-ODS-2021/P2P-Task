@@ -54,3 +54,28 @@ class Task {
         other.isFlagged == isFlagged;
   }
 }
+
+enum SortOption {
+  Title,
+  Flag,
+  Status,
+  DueDate,
+  Created,
+}
+
+String getFilterName(SortOption filter) {
+  switch (filter) {
+    case SortOption.Title:
+      return 'Title';
+    case SortOption.Flag:
+      return 'Flagged';
+    case SortOption.Status:
+      return 'Status';
+    case SortOption.DueDate:
+      return 'Due date';
+    case SortOption.Created:
+      return 'Created';
+    default:
+      return 'Unknown';
+  }
+}

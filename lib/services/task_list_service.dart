@@ -2,20 +2,13 @@ import 'dart:convert';
 
 import 'package:crdt/crdt.dart';
 import 'package:p2p_task/models/task.dart';
+import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
-
-enum Filter {
-  Title,
-  Priority,
-  Status,
-  DueDate,
-  Default,
-}
 
 class TaskListService with LogMixin, ChangeCallbackProvider {
   final String _crdtTaskListKey = 'crdtTaskList';
@@ -34,57 +27,55 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     return (await _taskListCrdt).values;
   }
 
-  Future<List<Task>> getTasksByListID(String taskListID, Filter filter) async {
-    List<Task> tasks = [];
+  Future<List<Task>> getTasksForList(TaskList taskList) async {
+    var filtered = <Task>[];
 
-    for (var i = 0; i < (await _taskListCrdt).values.length; i++) {
-      if ((await _taskListCrdt).values[i].taskListID == taskListID) {
-        tasks.add((await _taskListCrdt).values[i]);
+    List allTasks = await tasks;
+    for (var i = 0; i < allTasks.length; i++) {
+      if (allTasks[i].taskListID == taskList.id) {
+        filtered.add(allTasks[i]);
       }
     }
 
-    switch (filter) {
-      case Filter.Title:
-        tasks.sort((a, b) => a.title.toString().compareTo(b.title.toString()));
+    switch (taskList.sortBy) {
+      case SortOption.Title:
+        filtered
+            .sort((a, b) => a.title.toString().compareTo(b.title.toString()));
         break;
-      case Filter.Priority:
-        tasks.sort((a, b) {
+      case SortOption.Flag:
+        filtered.sort((a, b) {
           if (b.isFlagged) {
             return 1;
           }
+
           return -1;
         });
         break;
-      case Filter.Status:
-        tasks.sort((a, b) {
+      case SortOption.Status:
+        filtered.sort((a, b) {
           if (b.completed) {
             return -1;
           }
+
           return 1;
         });
         break;
-      case Filter.DueDate:
-        tasks.sort((a, b) {
+      case SortOption.DueDate:
+        filtered.sort((a, b) {
           if (b.due == null) {
             return -1;
           }
           if (a.due == null) {
             return 1;
           }
+
           return a.due!.compareTo(b.due!);
         });
         break;
-      default:
-        tasks.sort((a, b) {
-          if (b.completed) {
-            return -1;
-          }
-          return 1;
-        });
+      case SortOption.Created:
         break;
     }
-
-    return tasks;
+    return filtered;
   }
 
   Future upsert(Task task) async {
@@ -103,9 +94,10 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
   }
 
   Future removeByListID(String taskListID) async {
-    for (var i = 0; i < (await _taskListCrdt).values.length; i++) {
-      if ((await _taskListCrdt).values[i].taskListID == taskListID) {
-        remove((await _taskListCrdt).values[i]);
+    List allTasks = await tasks;
+    for (var i = 0; i < allTasks.length; i++) {
+      if (allTasks[i].taskListID == taskListID) {
+        await remove(allTasks[i]);
       }
     }
   }
