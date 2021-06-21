@@ -5,7 +5,10 @@ import 'package:p2p_task/screens/devices/device_list_screen.dart';
 import 'package:p2p_task/screens/qr_code_dialog.dart';
 import 'package:p2p_task/screens/settings/settings_screen.dart';
 import 'package:p2p_task/screens/task_list_screen.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
+import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   final String title;
@@ -26,13 +29,11 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text(widget.title),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () => showDialog(
-              context: context,
-              builder: (context) => QrCodeDialog(),
+          if (!kIsWeb)
+            IconButton(
+              onPressed: () => _openQrCodeDialog(context),
+              icon: Icon(Icons.qr_code),
             ),
-            icon: Icon(Icons.qr_code),
-          ),
         ],
       ),
       body: Builder(
@@ -56,6 +57,66 @@ class _HomeScreenState extends State<HomeScreen> {
           _selectedIndex = index;
         }),
       ),
+    );
+  }
+
+  void _openQrCodeDialog(BuildContext context) {
+    if (kIsWeb) return;
+    final peerService =
+        Provider.of<ChangeCallbackNotifier<PeerService>>(context, listen: false)
+            .callbackProvider;
+    if (!peerService.isServerRunning) {
+      showDialog(
+        context: context,
+        builder: (context) =>
+            _createServerNotRunningDialog(context, peerService),
+      );
+    } else {
+      showDialog(context: context, builder: (context) => QrCodeDialog());
+    }
+  }
+
+  Widget _createServerNotRunningDialog(
+    BuildContext context,
+    PeerService peerService,
+  ) {
+    return AlertDialog(
+      title: const Text('The server is not running!'),
+      content: SingleChildScrollView(
+        child: ListBody(
+          children: const [
+            Text('Clients won\'t be able to connect to this device.'),
+            Text('Would you like to start the server now?'),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            peerService.startServer();
+            showDialog(
+              context: context,
+              builder: (context) => QrCodeDialog(),
+            );
+          },
+          child: Text('Yes'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            showDialog(
+              context: context,
+              builder: (context) => QrCodeDialog(),
+            );
+          },
+          child: Text('Show anyway'),
+        ),
+      ],
     );
   }
 }
