@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/models/task.dart';
+import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/network/messages/packet.dart';
 import 'package:p2p_task/network/messages/task_list_message.dart';
+import 'package:p2p_task/network/messages/task_lists_message.dart';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
 import 'package:p2p_task/services/identity_service.dart';
@@ -56,7 +58,7 @@ void main() {
   });
 
   group('Synchronization', () {
-    test('should sync with connecting client', () async {
+    test('should sync tasks with connecting client', () async {
       final task = Task(
         title: 'Eat a hot dog',
         id: '16ca13c-9021-4986-ab97-2d89cc0b3fce',
@@ -99,6 +101,53 @@ void main() {
       final tasks = await taskListService.tasks;
       expect(tasks.length, equals(1));
       expect(tasks.first, task);
+    });
+
+    test('should sync lists with connecting client', () async {
+      final list = TaskList(
+        title: 'Fun things to do',
+        id: '16ca13c-9021-4986-ab97-2d89cc0b3fce',
+      );
+      final message = <String, dynamic>{
+        '516ca13c-9021-4986-ab97-2d89cc0b3fce': {
+          'hlc':
+              '2021-06-04T07:37:08.946Z-0000-d5726a08-2107-49c0-8b06-167e57f96301',
+          'value': list.toJson(),
+        },
+      };
+
+      final peerLocation =
+          PeerLocation('ws://localhost:${await identityService.port}');
+      final client = WebSocketClient.connect(peerLocation.uri);
+      var completer = Completer();
+      client.dataStream.listen((data) {
+        completer.complete(data);
+      });
+
+      client.send(jsonEncode(Packet(
+        'TaskListsMessage',
+        object: TaskListsMessage(
+          jsonEncode(message),
+          requestReply: true,
+        ).toJson(),
+      )));
+      final serverData = await completer.future
+          .timeout(Duration(seconds: 5), onTimeout: () => null);
+      expect(
+        serverData,
+        isNot(equals(null)),
+        reason: 'server did not answer within 5s',
+      );
+
+      final unmarshalledData = TaskListsMessage.fromJson(
+        Packet.fromJson(jsonDecode(serverData)).object,
+      ).taskListsCrdtJson;
+      final lists = await taskListsService.lists;
+
+      expect(lists.length, equals(2));
+      expect(lists[0], list);
+      list.isShared = true;
+      expect(lists[1], list);
     });
   });
 
