@@ -46,7 +46,7 @@ class _TaskListFormScreenState extends State<TaskListFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Add Task'), centerTitle: true),
+      appBar: AppBar(title: Text('Add List'), centerTitle: true),
       body: Form(
         key: _formKey,
         child: Column(

@@ -35,11 +35,11 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       (json) => DebugMessage.fromJson(json),
     );
     _peer.registerTypename<TaskListsMessage>(
-      'ListMessage',
+      'TaskListsMessage',
       (json) => TaskListsMessage.fromJson(json),
     );
     _peer.registerTypename<TaskListMessage>(
-      'TaskMessage',
+      'TaskListMessage',
       (json) => TaskListMessage.fromJson(json),
     );
     _peer.registerCallback<DebugMessage>(_debugMessageCallback);

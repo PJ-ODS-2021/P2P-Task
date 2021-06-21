@@ -37,14 +37,13 @@ void main() {
     await syncService.setInterval(0);
     taskListService =
         TaskListService(keyValueRepository, identityService, syncService);
+    taskListsService =
+        TaskListsService(keyValueRepository, identityService, syncService);
     peerInfoService = PeerInfoService(DataModelRepository(
       db,
       (json) => PeerInfo.fromJson(json),
       'PeerInfo',
     ));
-
-    taskListsService =
-        TaskListsService(keyValueRepository, identityService, syncService);
     peerService = PeerService(
       WebSocketPeer(),
       taskListService,
@@ -59,9 +58,10 @@ void main() {
   group('Synchronization', () {
     test('should sync with connecting client', () async {
       final task = Task(
-          title: 'Eat a hot dog',
-          id: '16ca13c-9021-4986-ab97-2d89cc0b3fce',
-          taskListID: '1');
+        title: 'Eat a hot dog',
+        id: '16ca13c-9021-4986-ab97-2d89cc0b3fce',
+        taskListID: '1',
+      );
       final message = <String, dynamic>{
         '516ca13c-9021-4986-ab97-2d89cc0b3fce': {
           'hlc':

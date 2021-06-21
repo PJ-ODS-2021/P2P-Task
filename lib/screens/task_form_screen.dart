@@ -177,10 +177,11 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   Future pickDate(BuildContext context) async {
     final initialDate = DateTime.now();
     final newDate = await showDatePicker(
-        context: context,
-        initialDate: initialDate,
-        firstDate: initialDate,
-        lastDate: DateTime(initialDate.year + 10));
+      context: context,
+      initialDate: initialDate,
+      firstDate: initialDate,
+      lastDate: DateTime(initialDate.year + 10),
+    );
 
     if (newDate == null) return;
 

@@ -7,7 +7,6 @@ import 'package:p2p_task/screens/task_form_screen.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
-import 'package:p2p_task/widgets/bottom_navigation.dart';
 import 'package:intl/intl.dart';
 import 'package:p2p_task/services/task_lists_service.dart';
 
@@ -75,9 +74,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
         ],
       ),
       // ToDo: onTap
-      bottomNavigationBar: BottomNavigation(
-        onTap: (index) {},
-      ),
+      // bottomNavigationBar: BottomNavigation(
+      //   onTap: (index) {},
+      // ),
     );
   }
 

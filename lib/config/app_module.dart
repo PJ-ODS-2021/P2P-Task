@@ -29,7 +29,9 @@ class AppModule {
     );
     injector.map<WebSocketPeer>((i) => WebSocketPeer(), isSingleton: true);
     injector.map<IdentityService>(
-      (i) => IdentityService(injector.get<KeyValueRepository>()),
+      (i) => IdentityService(
+        injector.get<KeyValueRepository>(),
+      ),
       isSingleton: true,
     );
     injector.map<DeviceInfoService>(
@@ -41,8 +43,11 @@ class AppModule {
       isSingleton: true,
     );
     injector.map<TaskListsService>(
-        (i) => TaskListsService(i.get<KeyValueRepository>(),
-            i.get<IdentityService>(), i.get<SyncService>()),
+        (i) => TaskListsService(
+              i.get<KeyValueRepository>(),
+              i.get<IdentityService>(),
+              i.get<SyncService>(),
+            ),
         isSingleton: true);
     injector.map<PeerInfoService>(
       (i) => PeerInfoService(DataModelRepository(

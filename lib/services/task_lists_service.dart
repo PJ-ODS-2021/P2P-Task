@@ -102,7 +102,8 @@ class TaskListsService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<MapCrdt<String, TaskList>> get _taskListsCrdt async => await _fromJson(
-      await _keyValueRepository.get<String>(_crdtTaskLisstKey) ?? '{}');
+        await _keyValueRepository.get<String>(_crdtTaskLisstKey) ?? '{}',
+      );
 
   Future<MapCrdt<String, TaskList>> _fromJson(String json) async {
     final Map<String, dynamic> map = jsonDecode(json);

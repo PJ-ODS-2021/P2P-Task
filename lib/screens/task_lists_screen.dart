@@ -20,28 +20,38 @@ class TaskListsScreen extends StatelessWidget {
             .callbackProvider;
 
     final futureBuilder = FutureBuilder<List<TaskList>>(
-        initialData: [],
-        future: listService.lists,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Column(
-              children: [
-                Text('Error'),
-                Text(snapshot.error.toString()),
-              ],
-            );
-          }
-          return _buildTaskList(
-              context, listService, taskService, snapshot.data!);
-        });
+      initialData: [],
+      future: listService.lists,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Column(
+            children: [
+              Text('Error'),
+              Text(snapshot.error.toString()),
+            ],
+          );
+        }
+
+        return _buildTaskList(
+          context,
+          listService,
+          taskService,
+          snapshot.data!,
+        );
+      },
+    );
 
     return Stack(
       alignment: const Alignment(0, 0.9),
       children: [
         futureBuilder,
         ElevatedButton(
-          onPressed: () => Navigator.push(context,
-              MaterialPageRoute(builder: (context) => TaskListFormScreen())),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TaskListFormScreen(),
+            ),
+          ),
           style: ElevatedButton.styleFrom(
             shape: CircleBorder(),
             padding: EdgeInsets.all(24),
@@ -52,34 +62,46 @@ class TaskListsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTaskList(BuildContext context, TaskListsService listService,
-      TaskListService taskService, List<TaskList> tasks) {
+  Widget _buildTaskList(
+    BuildContext context,
+    TaskListsService listService,
+    TaskListService taskService,
+    List<TaskList> tasks,
+  ) {
     if (tasks.isEmpty) {
       return Center(
-          child: Column(
-        children: [
-          Spacer(),
-          Text('🔥 Start getting productive.', style: kHeroFont),
-          Text('Click the plus button below to add a list.'),
-          Spacer(flex: 2),
-        ],
-      ));
+        child: Column(
+          children: [
+            Spacer(),
+            Text('🔥 Start getting productive.', style: kHeroFont),
+            Text('Click the plus button below to add a list.'),
+            Spacer(flex: 2),
+          ],
+        ),
+      );
     }
+
     return ListView.builder(
       itemCount: tasks.length,
       itemBuilder: (context, index) {
         return _buildSlidableTaskRow(
-            context, listService, taskService, tasks[index], index);
+          context,
+          listService,
+          taskService,
+          tasks[index],
+          index,
+        );
       },
     );
   }
 
   Widget _buildSlidableTaskRow(
-      BuildContext context,
-      TaskListsService listService,
-      TaskListService taskService,
-      TaskList taskList,
-      int index) {
+    BuildContext context,
+    TaskListsService listService,
+    TaskListService taskService,
+    TaskList taskList,
+    int index,
+  ) {
     return Slidable(
       actionPane: SlidableDrawerActionPane(),
       actionExtentRatio: 0.20,
@@ -89,11 +111,13 @@ class TaskListsScreen extends StatelessWidget {
           color: Colors.grey[400],
           icon: Icons.edit,
           onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => TaskListFormScreen(
-                        taskList: taskList,
-                      ))),
+            context,
+            MaterialPageRoute(
+              builder: (context) => TaskListFormScreen(
+                taskList: taskList,
+              ),
+            ),
+          ),
         ),
         IconSlideAction(
           caption: 'Delete',
@@ -110,14 +134,16 @@ class TaskListsScreen extends StatelessWidget {
   }
 
   Widget _buildTaskListContainer(
-      BuildContext context, TaskList taskList, int index) {
+    BuildContext context,
+    TaskList taskList,
+    int index,
+  ) {
     return Container(
       color: index.isEven ? Colors.white : Colors.white30,
       child: ListTile(
         leading: Icon(taskList.isShared ? Icons.people : Icons.lock),
         title: Text(taskList.title),
         //toDo add shared with
-        subtitle: Text(taskList.isShared ? '' : ''),
         trailing: Icon(Icons.chevron_left),
         onTap: () => Navigator.push(
           context,
