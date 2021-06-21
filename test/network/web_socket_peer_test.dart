@@ -17,6 +17,7 @@ import 'package:p2p_task/utils/data_model_repository.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:sembast/sembast.dart';
 import 'package:sembast/sembast_memory.dart';
+import 'package:lww_crdt/lww_crdt.dart';
 
 void main() {
   late Database db;
@@ -56,13 +57,10 @@ void main() {
         title: 'Eat a hot dog',
         id: '16ca13c-9021-4986-ab97-2d89cc0b3fce',
       );
-      final message = <String, dynamic>{
-        '516ca13c-9021-4986-ab97-2d89cc0b3fce': {
-          'hlc':
-              '2021-06-04T07:37:08.946Z-0000-d5726a08-2107-49c0-8b06-167e57f96301',
-          'value': task.toJson(),
-        },
-      };
+      final crdt = MapCrdt<String, Task>('0000_localNode');
+      crdt.put(task.id!, task);
+      final messageContent =
+          crdt.toJson(valueEncode: (value) => value.toJson());
 
       final peerLocation =
           PeerLocation('ws://localhost:${await identityService.port}');
@@ -74,7 +72,7 @@ void main() {
       client.send(jsonEncode(Packet(
         'TaskListMessage',
         object: TaskListMessage(
-          jsonEncode(message),
+          jsonEncode(messageContent),
           requestReply: true,
         ).toJson(),
       )));
@@ -89,7 +87,16 @@ void main() {
       final unmarshalledData = TaskListMessage.fromJson(
         Packet.fromJson(jsonDecode(serverData)).object,
       ).taskListCrdtJson;
-      expect(jsonDecode(unmarshalledData), message);
+
+      // simulate the changes that should have happened and how the received message should look like
+      final remotePeerId = await identityService.peerId;
+      crdt.addNode(remotePeerId);
+      final expectedMessageContent =
+          crdt.toJson(valueEncode: (value) => value.toJson())
+            ..['node'] = remotePeerId
+            ..['vectorClock'].last += 1;
+
+      expect(jsonDecode(unmarshalledData), expectedMessageContent);
       final tasks = await taskListService.tasks;
       expect(tasks.length, equals(1));
       expect(tasks.first, task);

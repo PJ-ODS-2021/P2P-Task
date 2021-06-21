@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:crdt/crdt.dart';
+import 'package:lww_crdt/lww_crdt.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/services/identity_service.dart';
@@ -23,7 +23,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
   );
 
   Future<List<Task>> get tasks async {
-    return (await _taskListCrdt).values;
+    return (await _taskListCrdt).values.toList();
   }
 
   Future upsert(Task task) async {
@@ -52,51 +52,68 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<void> _store(MapCrdt<String, Task> update) async {
-    await _keyValueRepository.put(_crdtTaskListKey, update.toJson());
+    await _keyValueRepository.put(
+      _crdtTaskListKey,
+      jsonEncode(update.toJson()),
+    );
     invokeChangeCallback();
     l.info('notifying task list change');
   }
 
   Future<String> crdtToJson() async {
-    return (await _taskListCrdt).toJson();
+    return jsonEncode((await _taskListCrdt).toJson(
+      valueEncode: (task) => task.toJson(),
+    ));
   }
 
-  Future mergeCrdtJson(String crdtJson) async {
-    l.info('Merging with $crdtJson');
+  Future mergeCrdtJson(String otherJson) async {
+    l.info('Merging with $otherJson');
     final self = (await _taskListCrdt);
-    final other = CrdtJson.decode<String, Task>(
-      crdtJson,
-      self.canonicalTime,
-      valueDecoder: (key, value) => Task.fromJson(value),
+    final other = MapCrdt<String, Task>.fromJson(
+      jsonDecode(otherJson),
+      valueDecode: (valueJson) => Task.fromJson(valueJson),
     );
-    // Remove records from this node from the task list. This could also be done in the sender.
-    other.removeWhere((key, value) => value.hlc.nodeId == self.nodeId);
-    final update = self..merge(other);
-    l.info('Merge result ${update.toJson()}');
-    await _store(update);
+    self.merge(other);
+    l.info('Merge result ${self.toJson()}');
+    await _store(self);
   }
 
   Future<MapCrdt<String, Task>> get _taskListCrdt async => await _fromJson(
         await _keyValueRepository.get<String>(_crdtTaskListKey) ?? '{}',
       );
 
-  Future<MapCrdt<String, Task>> _fromJson(String json) async {
-    final Map<String, dynamic> map = jsonDecode(json);
-    final keys = map.keys.toList();
-    final recordMap = <String, Record<Task>>{};
-    for (var i = 0; i < map.length; ++i) {
-      recordMap.putIfAbsent(
-        keys[i],
-        () => Record(
-          Hlc.parse(map[keys[i]]['hlc']),
-          map[keys[i]]['value'] == null
-              ? null
-              : Task.fromJson(map[keys[i]]['value']),
-          Hlc.parse(map[keys[i]]['modified'] ?? map[keys[i]]['hlc']),
-        ),
+  Future<MapCrdt<String, Task>> _fromJson(String source) async {
+    final Map<String, dynamic> jsonMap = jsonDecode(source);
+    final peerId = await _identityService.peerId;
+    if (jsonMap.isEmpty) return MapCrdt(peerId);
+    final crdt = MapCrdt<String, Task>.fromJson(
+      jsonMap,
+      valueDecode: (value) => Task.fromJson(value),
+    );
+    if (crdt.node != peerId) {
+      l.severe(
+        'Got invalid node id when reading task list from disk (disk != peerId): "${crdt.node}" != "$peerId"',
+      );
+      if (crdt.hasNode(peerId)) {
+        l.severe(
+          'A node with this peer id already exists. Changing disk node id (could indicate another device is using the same node id which is VERY unlikely and breaks the algorithm)',
+        );
+      } else {
+        l.warning(
+          'Changing disk node id. The old node id might be dead from now on',
+        );
+        crdt.addNode(peerId);
+      }
+
+      return MapCrdt(
+        peerId,
+        nodes: crdt.nodes.toSet(),
+        vectorClock: crdt.vectorClock,
+        records: crdt.records,
+        validateRecords: false,
       );
     }
 
-    return MapCrdt(await _identityService.peerId, recordMap);
+    return crdt;
   }
 }
