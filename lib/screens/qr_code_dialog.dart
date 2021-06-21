@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
@@ -17,96 +16,44 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
     final networkInfoService =
         Provider.of<ChangeCallbackNotifier<NetworkInfoService>>(context)
             .callbackProvider;
-    final peerService =
-        Provider.of<ChangeCallbackNotifier<PeerService>>(context)
-            .callbackProvider;
-
-    // size calculation is very hacky:
-    final windowSize = MediaQuery.of(context).size;
-    final smallestSide = (windowSize.width < windowSize.height
-            ? windowSize.width
-            : (windowSize.height - 60)) -
-        175;
 
     return SimpleDialog(
       title: Text('Scan QR Code'),
       children: [
-        FutureBuilder<List<dynamic>>(
+        FutureBuilder<List>(
           future: Future.wait([
             identityService.name,
             identityService.ip,
             identityService.port,
           ]),
           builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Column(
-                children: [
-                  Text('Error'),
-                  Text(snapshot.error.toString()),
-                ],
-              );
-            }
-            if (snapshot.connectionState == ConnectionState.waiting ||
-                !snapshot.hasData) {
-              return Center(child: CircularProgressIndicator());
-            }
+            final loadingWidget = _createLoadingWidget(snapshot);
+            if (loadingWidget != null) return loadingWidget;
 
-            final storedDeviceName = snapshot.data![0] as String;
             final storedIp = snapshot.data![1] as String?;
-            final storedPort = snapshot.data![2] as int;
-
             final ips = networkInfoService.ips;
-            final selectedIp = _selectIp(ips, storedIp);
-            if (selectedIp != storedIp && selectedIp != null) {
-              identityService.setIp(selectedIp);
+            final connectionInfo = _ConnectionInfo(
+              _selectIp(ips, storedIp),
+              ips,
+              snapshot.data![2] as int,
+              snapshot.data![0] as String,
+            );
+            if (connectionInfo.selectedIp != null &&
+                connectionInfo.selectedIp != storedIp) {
+              identityService.setIp(connectionInfo.selectedIp!);
             }
 
             return Column(children: [
-              if (!peerService.isServerRunning)
-                RichText(
-                  text: TextSpan(
-                    style: DefaultTextStyle.of(context).style,
-                    children: const [
-                      WidgetSpan(child: Icon(Icons.warning_outlined)),
-                      TextSpan(
-                        text: ' The server is not running',
-                        style: TextStyle(fontSize: 20.0),
-                      ),
-                    ],
-                  ),
-                ),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text('IP: '),
-                DropdownButton<String>(
-                  value: selectedIp,
-                  items: ips
-                      .map((e) =>
-                          DropdownMenuItem<String>(value: e, child: Text(e)))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null && value != selectedIp) {
-                      identityService.setIp(value);
-                    }
-                  },
-                ),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 10.0)),
-                Text('Port: $storedPort'),
-              ]),
-              if (selectedIp != null)
-                Center(
-                  child: SizedBox(
-                    width: smallestSide,
-                    height: smallestSide,
-                    child: QrImage(
-                      data: _makeQrContent(
-                        storedDeviceName,
-                        selectedIp,
-                        storedPort,
-                      ),
-                      version: QrVersions.auto,
-                    ),
-                  ),
-                ),
+              ..._createServerNotRunningWidgets(context),
+              ..._createServerConnectionInfoWidgets(
+                context,
+                connectionInfo,
+                identityService,
+              ),
+              ..._createQrWidgets(
+                connectionInfo,
+                _calculateQrCodeSize(context),
+              ),
             ]);
           },
         ),
@@ -118,7 +65,110 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
     );
   }
 
-  String? _selectIp(UnmodifiableListView<String> ips, String? storedIp) {
+  /// returns a widget to be displayed if the snapshot is not ready
+  Widget? _createLoadingWidget(AsyncSnapshot snapshot) {
+    if (snapshot.hasError) {
+      return Column(
+        children: [
+          Text('Error'),
+          Text(snapshot.error.toString()),
+        ],
+      );
+    }
+    if (snapshot.connectionState == ConnectionState.waiting ||
+        !snapshot.hasData) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    return null;
+  }
+
+  List<Widget> _createServerNotRunningWidgets(BuildContext context) {
+    final peerService =
+        Provider.of<ChangeCallbackNotifier<PeerService>>(context)
+            .callbackProvider;
+
+    return [
+      if (!peerService.isServerRunning)
+        _makeWarningText(
+          context,
+          'The server is not running',
+        ),
+    ];
+  }
+
+  List<Widget> _createServerConnectionInfoWidgets(
+    BuildContext context,
+    _ConnectionInfo connectionInfo,
+    IdentityService identityService,
+  ) {
+    return connectionInfo.ips.isEmpty
+        ? [_makeWarningText(context, 'Cannot detect connection info')]
+        : [
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text('IP: '),
+              connectionInfo.ips.length > 1
+                  ? DropdownButton<String>(
+                      value: connectionInfo.selectedIp,
+                      items: connectionInfo.ips
+                          .map((e) => DropdownMenuItem<String>(
+                                value: e,
+                                child: Text(e),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null &&
+                            value != connectionInfo.selectedIp) {
+                          identityService.setIp(value);
+                        }
+                      },
+                    )
+                  : Text(connectionInfo.ips.first),
+              Padding(padding: EdgeInsets.symmetric(horizontal: 10.0)),
+              Text('Port: ${connectionInfo.port}'),
+            ]),
+          ];
+  }
+
+  Widget _makeWarningText(BuildContext context, String message) {
+    return RichText(
+      text: TextSpan(
+        style: DefaultTextStyle.of(context).style,
+        children: [
+          WidgetSpan(child: Icon(Icons.warning_outlined)),
+          TextSpan(
+            text: ' $message',
+            style: TextStyle(fontSize: 20.0),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _createQrWidgets(
+    _ConnectionInfo connectionInfo,
+    double displaySize,
+  ) {
+    return [
+      if (connectionInfo.selectedIp != null)
+        Center(
+          child: SizedBox(
+            width: displaySize,
+            height: displaySize,
+            child: QrImage(
+              data: _makeQrContent(
+                connectionInfo.deviceName,
+                connectionInfo.selectedIp!,
+                connectionInfo.port,
+              ),
+              version: QrVersions.auto,
+            ),
+          ),
+        ),
+    ];
+  }
+
+  String? _selectIp(List<String> ips, String? storedIp) {
     if (ips.contains(storedIp)) return storedIp;
 
     return ips.isNotEmpty ? ips.first : null;
@@ -126,4 +176,23 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
 
   String _makeQrContent(String deviceName, String ip, int port) =>
       '$deviceName,$ip,$port';
+
+  /// size calculation is very hacky
+  double _calculateQrCodeSize(BuildContext context) {
+    final windowSize = MediaQuery.of(context).size;
+
+    return (windowSize.width < windowSize.height
+            ? windowSize.width
+            : (windowSize.height - 60)) -
+        175;
+  }
+}
+
+class _ConnectionInfo {
+  final String? selectedIp;
+  final List<String> ips;
+  final int port;
+  final String deviceName;
+
+  const _ConnectionInfo(this.selectedIp, this.ips, this.port, this.deviceName);
 }

@@ -68,43 +68,55 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!peerService.isServerRunning) {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('The server is not running!'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: const [
-                Text('Clients won\'t be able to connect to this device.'),
-                Text('Would you like to start the server now?'),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                peerService.startServer();
-                showDialog(
-                  context: context,
-                  builder: (context) => QrCodeDialog(),
-                );
-              },
-              child: Text('Yes'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                showDialog(
-                  context: context,
-                  builder: (context) => QrCodeDialog(),
-                );
-              },
-              child: Text('No'),
-            ),
-          ],
-        ),
+        builder: (context) =>
+            _createServerNotRunningDialog(context, peerService),
       );
     } else {
       showDialog(context: context, builder: (context) => QrCodeDialog());
     }
+  }
+
+  Widget _createServerNotRunningDialog(
+    BuildContext context,
+    PeerService peerService,
+  ) {
+    return AlertDialog(
+      title: const Text('The server is not running!'),
+      content: SingleChildScrollView(
+        child: ListBody(
+          children: const [
+            Text('Clients won\'t be able to connect to this device.'),
+            Text('Would you like to start the server now?'),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            peerService.startServer();
+            showDialog(
+              context: context,
+              builder: (context) => QrCodeDialog(),
+            );
+          },
+          child: Text('Yes'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            showDialog(
+              context: context,
+              builder: (context) => QrCodeDialog(),
+            );
+          },
+          child: Text('Show anyway'),
+        ),
+      ],
+    );
   }
 }
