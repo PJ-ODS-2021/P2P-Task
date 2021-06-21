@@ -139,9 +139,6 @@ void main() {
         reason: 'server did not answer within 5s',
       );
 
-      final unmarshalledData = TaskListsMessage.fromJson(
-        Packet.fromJson(jsonDecode(serverData)).object,
-      ).taskListsCrdtJson;
       final lists = await taskListsService.lists;
 
       expect(lists.length, equals(2));
