@@ -17,6 +17,7 @@ class ActivityEntry {
   final String? peerInfoID;
   final String? taskID;
   final String? taskListID;
+
   ActivityEntry({
     this.id,
     this.timestamp,

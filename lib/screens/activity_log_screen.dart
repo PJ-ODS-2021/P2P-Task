@@ -5,49 +5,53 @@ import 'package:provider/provider.dart';
 
 import '../models/activity_entry.dart';
 
-class ActivityLogScreen extends StatefulWidget {
-  ActivityLogScreen({Key? key}) : super(key: key);
-
-  @override
-  _ActivityLogScreenState createState() => _ActivityLogScreenState();
-}
-
-class _ActivityLogScreenState extends State<ActivityLogScreen> {
+class ActivityLogScreen extends StatelessWidget {
   final _heroFont = TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold);
+
   @override
   Widget build(BuildContext context) {
-    final activityEntryWidget = Consumer<ActivityEntryService>(
-      builder: (context, service, child) =>
-          _buildActivityEntries(context, service),
-    );
+    final activityEntryWidget =
+        Consumer<ActivityEntryService>(builder: (context, service, child) {
+      return FutureBuilder<List<ActivityEntry>>(builder: (context, snapshot) {
+        return _buildActivityEntries(context, service);
+      });
+    });
+
     return activityEntryWidget;
   }
 
   Widget _buildActivityEntries(
-      BuildContext context, ActivityEntryService service) {
+    BuildContext context,
+    ActivityEntryService service,
+  ) {
     if (service.activities.isEmpty) {
       return Center(
-          child: Column(
-        children: [
-          Spacer(),
-          Text('⚡️ No activities yet.', style: _heroFont),
-          Text('Changes to your Tasks will be shown here.'),
-          Text('Create a new Task or pair a device to see some activities.'),
-          Spacer(flex: 2),
-        ],
-      ));
+        child: Column(
+          children: [
+            Spacer(),
+            Text('⚡️ No activities yet.', style: _heroFont),
+            Text('Changes to your Tasks will be shown here.'),
+            Text('Create a new Task or pair a device to see some activities.'),
+            Spacer(flex: 2),
+          ],
+        ),
+      );
     }
+
     return ListView.builder(
-        padding: EdgeInsets.zero,
-        itemCount: service.activities.length,
-        // separatorBuilder: (BuildContext context, int index) => const Divider(),
-        itemBuilder: (BuildContext context, int index) {
-          final activity = service.activities[index];
-          return _buildActivityEntry(context, activity);
-        });
+      padding: EdgeInsets.zero,
+      itemCount: service.activities.length,
+      // separatorBuilder: (BuildContext context, int index) => const Divider(),
+      itemBuilder: (BuildContext context, int index) {
+        final activity = service.activities[index];
+
+        return _buildActivityEntry(context, activity, service);
+      },
+    );
   }
 
-  Widget _buildActivityEntry(BuildContext context, ActivityEntry activity) {
+  Widget _buildActivityEntry(BuildContext context, ActivityEntry activity,
+      ActivityEntryService service) {
     return Column(
       children: [
         Container(
@@ -66,9 +70,9 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                 const SizedBox(height: 8.0),
                 Row(
                   children: [
-                    getActivityIcon(activity),
+                    getActivityIcon(activity, service),
                     const SizedBox(width: 8.0),
-                    _getActivityDescription(activity),
+                    _getActivityDescription(activity, service),
                   ],
                 ),
                 const SizedBox(height: 8.0),
@@ -102,28 +106,30 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
     );
   }
 
-  Widget getActivityIcon(ActivityEntry activity) {
+  Widget getActivityIcon(ActivityEntry activity, ActivityEntryService service) {
     return Image.asset(
-        activity.device == 'Windows Phone'
-            ? 'assets/up_arrow_icon.png'
-            : 'assets/down_arrow_icon.png',
-        width: 22,
-        height: 22);
+      activity.device == service.getCurrentDeviceName()
+          ? 'assets/up_arrow_icon.png'
+          : 'assets/down_arrow_icon.png',
+      width: 22,
+      height: 22,
+    );
   }
 
-  Widget _getActivityDescription(ActivityEntry activity) {
+  Widget _getActivityDescription(
+      ActivityEntry activity, ActivityEntryService service) {
     return RichText(
       text: TextSpan(
         text: 'On ',
         style: TextStyle(color: Colors.black, fontSize: 18),
         children: [
           TextSpan(
-            text: activity.device == 'Windows Phone'
+            text: activity.device == service.getCurrentDeviceName()
                 ? 'this device'
                 : activity.device,
             style: TextStyle(
               color: Colors.black,
-              fontWeight: activity.device == 'Windows Phone'
+              fontWeight: activity.device == service.getCurrentDeviceName()
                   ? FontWeight.normal
                   : FontWeight.bold,
               fontSize: 18,

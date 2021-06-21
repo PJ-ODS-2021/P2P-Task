@@ -10,33 +10,41 @@ class ActivityEntryService extends ChangeNotifier {
     // ToDo This is only need for debugging reasons.
     //  It should be removed before deployment!
     add(ActivityEntry(
-        event: 'Task Created',
-        device: 'Windows Phone',
-        peerInfoID: 'House Work',
-        taskID: '1',
-        timestamp: DateTime(2021, 05, 25)));
+      event: 'Task Created',
+      device: 'Windows Phone',
+      peerInfoID: 'House Work',
+      taskID: '1',
+      timestamp: DateTime(2021, 05, 25),
+    ));
     add(ActivityEntry(
-        event: 'Description Updated',
-        device: 'iPad',
-        peerInfoID: 'House Work',
-        taskID: '2',
-        timestamp: DateTime(2021, 05, 30)));
+      event: 'Description Updated',
+      device: 'iPad',
+      peerInfoID: 'House Work',
+      taskID: '2',
+      timestamp: DateTime(2021, 05, 30),
+    ));
     add(ActivityEntry(
-        event: 'Task Updated',
-        device: 'iPhone',
-        peerInfoID: 'Work',
-        taskListID: '3',
-        timestamp: DateTime(2021, 06, 05)));
+      event: 'Task Updated',
+      device: 'iPhone',
+      peerInfoID: 'Work',
+      taskListID: '3',
+      timestamp: DateTime(2021, 06, 05),
+    ));
     add(ActivityEntry(
-        event: 'Task List Created',
-        device: 'Windows PC',
-        peerInfoID: 'Work',
-        taskListID: '1',
-        timestamp: DateTime(2021, 06, 10)));
+      event: 'Task List Created',
+      device: 'Windows PC',
+      peerInfoID: 'Work',
+      taskListID: '1',
+      timestamp: DateTime(2021, 06, 10),
+    ));
   }
 
   UnmodifiableListView<ActivityEntry> get activities =>
       UnmodifiableListView(_activities);
+
+  String getCurrentDeviceName() {
+    return 'Windows Phone';
+  }
 
   void add(ActivityEntry entry) {
     _activities.add(entry);
