@@ -22,9 +22,17 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     this._syncService,
   );
 
-  Future<List<Task>> get tasks async {
-    return (await _taskListCrdt).values.toList();
-  }
+  Future<Iterable<Task>> get tasks async => (await _taskListCrdt).values;
+
+  Future<Iterable<TaskRecord>> get taskRecords async => (await _taskListCrdt)
+      .records
+      .values
+      .where((record) => !record.isDeleted)
+      .map((record) => TaskRecord(
+            record.value!,
+            record.clock.node,
+            DateTime.fromMillisecondsSinceEpoch(record.clock.timestamp),
+          ));
 
   Future upsert(Task task) async {
     l.info('Upsert task ${task.toJson()}');
@@ -116,4 +124,12 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
 
     return crdt;
   }
+}
+
+class TaskRecord {
+  final Task task;
+  final String peerId;
+  final DateTime timestamp;
+
+  const TaskRecord(this.task, this.peerId, this.timestamp);
 }

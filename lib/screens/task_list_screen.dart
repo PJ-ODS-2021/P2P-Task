@@ -14,7 +14,7 @@ class TaskListScreen extends StatelessWidget {
         Provider.of<ChangeCallbackNotifier<TaskListService>>(context)
             .callbackProvider;
 
-    final futureBuilder = FutureBuilder<List<Task>>(
+    final futureBuilder = FutureBuilder<Iterable<Task>>(
       initialData: [],
       future: taskListService.tasks,
       builder: (context, snapshot) {
@@ -27,7 +27,11 @@ class TaskListScreen extends StatelessWidget {
           );
         }
 
-        return _buildTaskList(context, taskListService, snapshot.data!);
+        return _buildTaskList(
+          context,
+          taskListService,
+          snapshot.data!.toList(),
+        );
       },
     );
 
