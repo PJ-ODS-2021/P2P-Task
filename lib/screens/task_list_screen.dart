@@ -49,7 +49,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         title: Text(widget.taskList.title),
         centerTitle: true,
         actions: [
-          _getFilterButton(),
+          _getSortButton(),
         ],
       ),
       body: Stack(
@@ -111,30 +111,30 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
-  Widget _getFilterButton() {
+  Widget _getSortButton() {
     return IconButton(
       onPressed: () {
         showDialog(
           context: context,
           builder: (context) {
             return SimpleDialog(
-              title: Text('Sort by'),
+              title: Text('Sort tasks by'),
               children: [
-                _getSimpleDialog(SortOption.Title),
-                _getSimpleDialog(SortOption.Flag),
-                _getSimpleDialog(SortOption.Status),
-                _getSimpleDialog(SortOption.DueDate),
-                _getSimpleDialog(SortOption.Created),
+                _getSortOption(SortOption.Title),
+                _getSortOption(SortOption.Flag),
+                _getSortOption(SortOption.Status),
+                _getSortOption(SortOption.DueDate),
+                _getSortOption(SortOption.Created),
               ],
             );
           },
         );
       },
-      icon: Icon(Icons.filter_alt_sharp),
+      icon: Icon(Icons.swap_vert),
     );
   }
 
-  SimpleDialogOption _getSimpleDialog(SortOption sortOption) {
+  SimpleDialogOption _getSortOption(SortOption sortOption) {
     return SimpleDialogOption(
       onPressed: () {
         setState(() {
@@ -148,7 +148,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         });
         Navigator.pop(context);
       },
-      child: Text(getFilterName(sortOption)),
+      child: Text(getFilterName(sortOption, widget.taskList.sortBy)),
     );
   }
 
@@ -198,11 +198,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   Widget _buildTaskContainer(TaskListService service, Task task, int index) {
     var subtitle = task.description ?? '';
-    if (subtitle != '') {
+    if (subtitle != '' && task.due != null) {
       subtitle = subtitle + '\n';
     }
     if (task.due != null) {
-      subtitle = subtitle + DateFormat('dd.MM.yyyy hh:mm').format(task.due!);
+      subtitle = subtitle + DateFormat('dd.MM.yyyy HH:mm').format(task.due!);
     }
 
     return Container(

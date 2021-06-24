@@ -128,7 +128,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           onPressed: () => pickDateTime(context),
           child: Text(
             _due != null
-                ? DateFormat('dd.MM.yyyy hh:mm').format(_due!)
+                ? DateFormat('dd.MM.yyyy HH:mm').format(_due!)
                 : 'Due Date',
             textAlign: TextAlign.left,
             style: TextStyle(color: Colors.grey[600]),
@@ -192,6 +192,12 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     final initialTime = TimeOfDay(hour: 0, minute: 0);
     final newTime = await showTimePicker(
       context: context,
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
       initialTime: _due != null
           ? TimeOfDay(hour: _due!.hour, minute: _due!.minute)
           : initialTime,

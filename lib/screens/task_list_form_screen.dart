@@ -68,7 +68,7 @@ class _TaskListFormScreenState extends State<TaskListFormScreen> {
                 controller: _formTitleController,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Give your task a title.';
+                    return 'Give your list a title.';
                   }
 
                   return null;

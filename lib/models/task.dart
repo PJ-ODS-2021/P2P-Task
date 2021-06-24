@@ -63,19 +63,32 @@ enum SortOption {
   Created,
 }
 
-String getFilterName(SortOption filter) {
-  switch (filter) {
+String getFilterName(SortOption sortOption, SortOption current) {
+  var sortOptionName = '';
+
+  switch (sortOption) {
     case SortOption.Title:
-      return 'Title';
+      sortOptionName = 'Title';
+      break;
     case SortOption.Flag:
-      return 'Flagged';
+      sortOptionName = 'Flagged';
+      break;
     case SortOption.Status:
-      return 'Status';
+      sortOptionName = 'Status';
+      break;
     case SortOption.DueDate:
-      return 'Due date';
+      sortOptionName = 'Due date';
+      break;
     case SortOption.Created:
-      return 'Created';
+      sortOptionName = 'Created';
+      break;
     default:
-      return 'Unknown';
+      sortOptionName = 'Unknown';
+      break;
   }
+  if (sortOption == current) {
+    return sortOptionName + '  ✔️';
+  }
+
+  return sortOptionName;
 }

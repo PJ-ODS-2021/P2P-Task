@@ -9,6 +9,7 @@ import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
+import 'package:sembast/sembast.dart';
 
 class TaskListService with LogMixin, ChangeCallbackProvider {
   final String _crdtTaskListKey = 'crdtTaskList';
@@ -28,42 +29,41 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<List<Task>> getTasksForList(TaskList taskList) async {
-    var filtered = <Task>[];
+    var sorted = <Task>[];
 
     List allTasks = await tasks;
     for (var i = 0; i < allTasks.length; i++) {
       if (allTasks[i].taskListID == taskList.id) {
-        filtered.add(allTasks[i]);
+        sorted.add(allTasks[i]);
       }
     }
 
     switch (taskList.sortBy) {
       case SortOption.Title:
-        filtered
-            .sort((a, b) => a.title.toString().compareTo(b.title.toString()));
+        sorted.sort((a, b) => a.title.toString().compareTo(b.title.toString()));
         break;
       case SortOption.Flag:
-        filtered.sort((a, b) {
+        sorted.sort((a, b) {
           if (b.isFlagged) {
             return 1;
           }
 
-          return -1;
+          return 0;
         });
         break;
       case SortOption.Status:
-        filtered.sort((a, b) {
+        sorted.sort((a, b) {
           if (b.completed) {
-            return -1;
+            return 0;
           }
 
           return 1;
         });
         break;
       case SortOption.DueDate:
-        filtered.sort((a, b) {
+        sorted.sort((a, b) {
           if (b.due == null) {
-            return -1;
+            return 0;
           }
           if (a.due == null) {
             return 1;
@@ -76,7 +76,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
         break;
     }
 
-    return filtered;
+    return sorted;
   }
 
   Future upsert(Task task) async {

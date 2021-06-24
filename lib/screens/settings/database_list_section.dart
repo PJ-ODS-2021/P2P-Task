@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/services/task_lists_service.dart';
+import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/widgets/list_section.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,9 @@ class DatabaseSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final taskListsService =
         Provider.of<ChangeCallbackNotifier<TaskListsService>>(context)
+            .callbackProvider;
+    final taskListService =
+        Provider.of<ChangeCallbackNotifier<TaskListService>>(context)
             .callbackProvider;
 
     return FutureBuilder<int>(
@@ -40,6 +44,7 @@ class DatabaseSection extends StatelessWidget {
                       TextButton(
                         onPressed: () async {
                           await taskListsService.delete();
+                          await taskListService.delete();
                           Navigator.pop(context);
                         },
                         child: Text('Yes'),
@@ -49,7 +54,7 @@ class DatabaseSection extends StatelessWidget {
                 },
               ),
               leading: Icon(Icons.data_usage),
-              title: Text('Purge list entries'),
+              title: Text('Delete all Task Lists'),
               subtitle: Text(listEntries.toString()),
             ),
           ],
