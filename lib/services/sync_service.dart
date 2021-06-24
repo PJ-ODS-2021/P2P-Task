@@ -6,69 +6,78 @@ import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:pedantic/pedantic.dart';
 
 class SyncService with LogMixin, ChangeCallbackProvider {
-  final String _syncIntervalKey = 'syncInterval';
-  final int _syncIntervalDefaultValue = 15;
-  final String _syncOnStartKey = 'syncOnStart';
-  final String _syncOnUpdateKey = 'syncOnUpdate';
+  static final String syncIntervalKey = 'syncInterval';
+  static final int _syncIntervalDefaultValue = 5;
+  static final String syncOnStartKey = 'syncOnStart';
+  static final bool _syncOnStartDefaultValue = true;
+  static final String syncOnUpdateKey = 'syncOnUpdate';
+  static final bool _syncOnUpdateDefaultValue = true;
 
-  final KeyValueRepository _repository;
-  // ignore: cancel_subscriptions
+  final KeyValueRepository _settingsRepository;
   StreamSubscription? _syncJob;
   Function()? _job;
 
-  SyncService(KeyValueRepository repository) : _repository = repository;
+  SyncService(KeyValueRepository settingsRepository)
+      : _settingsRepository = settingsRepository;
 
   Future<int> get interval async =>
-      (await _repository.get<int>(_syncIntervalKey)) ??
+      (await _settingsRepository.get<int>(syncIntervalKey)) ??
       _syncIntervalDefaultValue;
 
-  Future setInterval(int interval) async {
-    final updatedInterval = await _repository.put(_syncIntervalKey, interval);
+  Future<void> setInterval(int interval) async {
+    final updatedInterval =
+        await _settingsRepository.put(syncIntervalKey, interval);
     invokeChangeCallback();
 
     return updatedInterval;
   }
 
   Future<bool> get syncOnStart async =>
-      (await _repository.get<bool>(_syncOnStartKey)) ?? true;
+      (await _settingsRepository.get<bool>(syncOnStartKey)) ??
+      _syncOnStartDefaultValue;
 
-  Future setSyncOnStart(bool syncOnStart) async {
-    final updatedValue = await _repository.put(_syncOnStartKey, syncOnStart);
+  Future<void> setSyncOnStart(bool syncOnStart) async {
+    final updatedValue =
+        await _settingsRepository.put(syncOnStartKey, syncOnStart);
     invokeChangeCallback();
 
     return updatedValue;
   }
 
   Future<bool> get syncOnUpdate async =>
-      (await _repository.get<bool>(_syncOnUpdateKey)) ?? true;
+      (await _settingsRepository.get<bool>(syncOnUpdateKey)) ??
+      _syncOnUpdateDefaultValue;
 
-  Future setSyncOnUpdate(bool syncOnUpdate) async {
-    final updatedValue = await _repository.put(_syncOnUpdateKey, syncOnUpdate);
+  Future<void> setSyncOnUpdate(bool syncOnUpdate) async {
+    final updatedValue =
+        await _settingsRepository.put(syncOnUpdateKey, syncOnUpdate);
     invokeChangeCallback();
 
     return updatedValue;
   }
 
-  Future startJob(Function() job) async {
+  Future<void> startJob(Function() job) async {
     _job = job;
+    if (await syncOnStart) await run();
     if (_syncJob != null) await _syncJob!.cancel();
-    final currentInterval = await interval;
-    if (currentInterval < 1) return;
-    if (await syncOnStart && currentInterval > 1) job();
     _syncJob = Stream.periodic(Duration(seconds: 1), (count) => count)
         .listen((count) async {
       unawaited(_runJob(count));
     });
   }
 
-  Future run() async {
-    if (_job != null && await syncOnUpdate) _job!();
+  Future<void> run() async {
+    if (_job == null) return;
+    if (await syncOnStart || await syncOnUpdate) {
+      l.info('Syncing job started...');
+      _job!();
+    }
   }
 
-  Future _runJob(int count) async {
+  Future<void> _runJob(int count) async {
     final currentInterval = await interval;
     if (currentInterval < 1) return;
-    if (count % currentInterval == 0) {
+    if ((count + 1) % currentInterval == 0) {
       l.info('Syncing job started...');
       _job!();
     }
