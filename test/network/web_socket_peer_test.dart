@@ -53,12 +53,17 @@ void main() {
 
   group('Synchronization', () {
     test('should sync with connecting client', () async {
+      /// This manual task message setup is very implementation sepcific and kind of hard to maintain:
       final task = Task(
         title: 'Eat a hot dog',
         id: '16ca13c-9021-4986-ab97-2d89cc0b3fce',
       );
-      final crdt = MapCrdt<String, Task>('0000_localNode');
-      crdt.put(task.id!, task);
+      final crdt =
+          MapCrdt<String, MapCrdtNode<String, dynamic>>('0000_localNode');
+      final crdtTaskNode = MapCrdtNode<String, dynamic>(crdt);
+      (task.toJson()..remove('id'))
+          .forEach((key, value) => crdtTaskNode.put(key, value));
+      crdt.put(task.id!, crdtTaskNode);
       final messageContent =
           crdt.toJson(valueEncode: (value) => value.toJson());
 

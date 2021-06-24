@@ -145,6 +145,45 @@ void main() {
     expect(await devices[1].taskListService.tasks, [task2]);
   });
 
+  test('crdt recursive task merge', () async {
+    final task1 = Task(
+      title: 'task1',
+      description: 'description1',
+    );
+    await devices[0].taskListService.upsert(task1);
+    final task2 = Task(
+      id: (await devices[0].taskListService.tasks).first.id,
+      title: 'task2',
+      description: 'description2',
+    );
+    await devices[1].taskListService.upsert(task2);
+
+    // two-way merge:
+    await devices[0]
+        .taskListService
+        .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
+    await devices[1]
+        .taskListService
+        .mergeCrdtJson(await devices[0].taskListService.crdtToJson());
+
+    // update title in device 1 and description in device 2:
+    await devices[0].taskListService.upsert(task1..title = 'task1 updated');
+    await devices[1]
+        .taskListService
+        .upsert(task2..description = 'task2 description');
+
+    await devices[0]
+        .taskListService
+        .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
+    expect((await devices[0].taskListService.tasks).toList(), [
+      Task(
+        id: task2.id,
+        title: 'task1 updated',
+        description: 'task2 description',
+      ),
+    ]);
+  });
+
   tearDown(() async {
     await Future.wait(devices.map((device) => device.close()));
   });
