@@ -9,7 +9,6 @@ import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
-import 'package:sembast/sembast.dart';
 
 class TaskListService with LogMixin, ChangeCallbackProvider {
   final String _crdtTaskListKey = 'crdtTaskList';

@@ -16,7 +16,6 @@ class TaskListsService with LogMixin, ChangeCallbackProvider {
   final IdentityService _identityService;
   final SyncService _syncService;
 
-  // stupid
   bool isShared = false;
 
   TaskListsService(
@@ -38,7 +37,6 @@ class TaskListsService with LogMixin, ChangeCallbackProvider {
   }
 
   Future upsert(TaskList taskList) async {
-    // stupid
     if (!taskList.isShared) {
       taskList.isShared = isShared;
     }
@@ -91,8 +89,6 @@ class TaskListsService with LogMixin, ChangeCallbackProvider {
     l.info('Merge result ${update.toJson()}');
     await _store(update);
 
-// stupid - as soon as connection is established for the first time, all lists will be shwon as shared
-// also those which are not yet shared
     if (!isShared) {
       isShared = true;
       for (var i = 0; i < (await _taskListsCrdt).values.length; i++) {
