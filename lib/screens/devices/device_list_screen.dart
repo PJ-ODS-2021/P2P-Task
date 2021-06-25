@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:p2p_task/config/style_constants.dart';
@@ -40,13 +41,10 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
 
   @override
   Widget build(BuildContext context) {
-    final consumerWidget = Consumer2<ChangeCallbackNotifier<PeerInfoService>,
-        ChangeCallbackNotifier<PeerService>>(
-      builder: (context, service, peerService, child) => _buildDeviceList(
-        context,
-        service.callbackProvider,
-        peerService.callbackProvider,
-      ),
+    final showQrScannerButton = _showQrScannerButton();
+    final consumerWidget = Consumer2<PeerInfoService, PeerService>(
+      builder: (context, service, peerService, child) =>
+          _buildDeviceList(context, service, peerService, showQrScannerButton),
     );
 
     return Stack(
@@ -54,25 +52,18 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
       children: [
         consumerWidget,
         ElevatedButton(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => QrScannerScreen(
-                onQRCodeRead: (qrContent) => _onQrCodeRead(qrContent, context),
-              ),
-            ),
-          ),
-          onLongPress: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DeviceFormScreen(),
-            ),
-          ),
+          onPressed: showQrScannerButton
+              ? () => _openQrScanner(context)
+              : () => _openDeviceForm(context),
+          onLongPress:
+              showQrScannerButton ? () => _openDeviceForm(context) : null,
           style: ElevatedButton.styleFrom(
             shape: CircleBorder(),
             padding: EdgeInsets.all(24),
           ),
-          child: Icon(Icons.qr_code_scanner),
+          child: showQrScannerButton
+              ? Icon(Icons.qr_code_scanner)
+              : Icon(Icons.add),
         ),
       ],
     );
@@ -82,6 +73,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
     BuildContext context,
     PeerInfoService service,
     PeerService peerService,
+    bool showQrScannerButton,
   ) {
     return FutureBuilder<List<PeerInfo>>(
       future: service.devices,
@@ -98,8 +90,11 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
               children: [
                 Spacer(),
                 Text('📪 No devices yet.', style: kHeroFont),
-                Text('Press the button below to scan a QR code.'),
-                Text('Longpress the button below to manually add a device.'),
+                showQrScannerButton
+                    ? Text('Press the button below to scan a QR code.')
+                    : Text('Press the button below to add a device'),
+                if (showQrScannerButton)
+                  Text('Longpress the button below to manually add a device.'),
                 Spacer(flex: 2),
               ],
             ),
@@ -167,5 +162,39 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
           : '${peerLocation.uriStr} in ${peerLocation.networkName}'),
       trailing: Icon(Icons.keyboard_arrow_left),
     );
+  }
+
+  Future _openQrScanner(BuildContext context) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QrScannerScreen(
+          onQRCodeRead: (qrContent) => _onQrCodeRead(qrContent, context),
+        ),
+      ),
+    );
+  }
+
+  Future _openDeviceForm(BuildContext context) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DeviceFormScreen(),
+      ),
+    );
+  }
+
+  bool _showQrScannerButton() {
+    // Dependent on what platforms are supported by qr_code_scanner package.
+    // Add more platforms when more support is added.
+    if (kIsWeb) return true;
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.iOS:
+        return true;
+      case TargetPlatform.android:
+        return true;
+      default:
+        return false;
+    }
   }
 }
