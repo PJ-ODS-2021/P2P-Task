@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:p2p_task/models/activity_entry.dart';
 import 'package:p2p_task/services/activity_entry_service.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 import '../models/activity_entry.dart';
 
@@ -41,21 +42,24 @@ class ActivityLogScreen extends StatelessWidget {
     return ListView.builder(
       padding: EdgeInsets.zero,
       itemCount: service.activities.length,
-      // separatorBuilder: (BuildContext context, int index) => const Divider(),
       itemBuilder: (BuildContext context, int index) {
         final activity = service.activities[index];
 
-        return _buildActivityEntry(context, activity, service);
+        return _buildActivityEntry(context, activity, service, index);
       },
     );
   }
 
-  Widget _buildActivityEntry(BuildContext context, ActivityEntry activity,
-      ActivityEntryService service) {
+  Widget _buildActivityEntry(
+    BuildContext context,
+    ActivityEntry activity,
+    ActivityEntryService service,
+    int index,
+  ) {
     return Column(
       children: [
         Container(
-          color: Color(0xFFe8d8e0),
+          color: index.isEven ? Colors.white : Colors.white60,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
             child: Column(
@@ -98,7 +102,7 @@ class ActivityLogScreen extends StatelessWidget {
 
   Widget _getActivityDate(ActivityEntry activity) {
     return Text(
-      '${activity.timestamp?.day}/${activity.timestamp?.month}/${activity.timestamp?.year}',
+      DateFormat('dd.MM.yyyy').format(activity.timestamp!),
       style: TextStyle(
         color: Colors.black.withOpacity(0.6),
         fontSize: 14,
@@ -117,7 +121,9 @@ class ActivityLogScreen extends StatelessWidget {
   }
 
   Widget _getActivityDescription(
-      ActivityEntry activity, ActivityEntryService service) {
+    ActivityEntry activity,
+    ActivityEntryService service,
+  ) {
     return RichText(
       text: TextSpan(
         text: 'On ',

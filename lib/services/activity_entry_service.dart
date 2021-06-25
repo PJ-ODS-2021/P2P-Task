@@ -43,6 +43,7 @@ class ActivityEntryService extends ChangeNotifier {
       UnmodifiableListView(_activities);
 
   String getCurrentDeviceName() {
+    // TODO: Get actual current device name
     return 'Windows Phone';
   }
 

@@ -12,6 +12,7 @@ import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sembast/sembast.dart';
 
@@ -70,6 +71,11 @@ class App extends StatelessWidget {
             ChangeNotifierProvider(
               create: (context) => ChangeCallbackNotifier<NetworkInfoService>(
                 i.get<NetworkInfoService>(),
+              ),
+            ),
+            ChangeNotifierProvider(
+              create: (context) => ChangeCallbackNotifier<TaskListsService>(
+                i.get<TaskListsService>(),
               ),
             ),
             ChangeNotifierProvider(
