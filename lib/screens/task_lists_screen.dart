@@ -57,7 +57,7 @@ class TaskListsScreen extends StatelessWidget {
             padding: EdgeInsets.all(24),
           ),
           child: Icon(Icons.add),
-        )
+        ),
       ],
     );
   }

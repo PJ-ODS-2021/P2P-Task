@@ -43,12 +43,13 @@ class AppModule {
       isSingleton: true,
     );
     injector.map<TaskListsService>(
-        (i) => TaskListsService(
-              i.get<KeyValueRepository>(),
-              i.get<IdentityService>(),
-              i.get<SyncService>(),
-            ),
-        isSingleton: true);
+      (i) => TaskListsService(
+        i.get<KeyValueRepository>(),
+        i.get<IdentityService>(),
+        i.get<SyncService>(),
+      ),
+      isSingleton: true,
+    );
     injector.map<PeerInfoService>(
       (i) => PeerInfoService(DataModelRepository(
         _db,

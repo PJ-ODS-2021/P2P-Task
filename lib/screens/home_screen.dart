@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:p2p_task/screens/counter_example_screen.dart';
+import 'package:p2p_task/screens/activity_log_screen.dart';
 import 'package:p2p_task/screens/devices/device_list_screen.dart';
 import 'package:p2p_task/screens/qr_code_dialog.dart';
 import 'package:p2p_task/screens/settings/settings_screen.dart';
@@ -42,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
             case 0:
               return TaskListsScreen();
             case 1:
-              return CounterExampleScreen();
+              return ActivityLogScreen();
             case 2:
               return DeviceListScreen();
             case 3:

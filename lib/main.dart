@@ -3,6 +3,7 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:p2p_task/config/app_module.dart';
 import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/screens/home_screen.dart';
+import 'package:p2p_task/services/activity_entry_service.dart';
 import 'package:p2p_task/services/device_info_service.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
@@ -61,6 +62,7 @@ class App extends StatelessWidget {
           providers: [
             Provider(create: (context) => i.get<DeviceInfoService>()),
             Provider(create: (context) => i.get<Database>()),
+            ChangeNotifierProvider(create: (context) => ActivityEntryService()),
             ChangeNotifierProvider(
               create: (context) => ChangeCallbackNotifier<TaskListService>(
                 i.get<TaskListService>(),

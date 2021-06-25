@@ -27,7 +27,11 @@ void main() {
     final taskTitle = 'Drink a cold cat';
 
     await taskListService.upsert(
-        Task(title: 'Catch a cat falling from the sky', taskListID: '1'));
+      Task(
+        title: 'Catch a cat falling from the sky',
+        taskListID: '1',
+      ),
+    );
     final task = (await taskListService.tasks).first;
     await taskListService.remove(task);
     await taskListService.upsert(Task(title: taskTitle, taskListID: '1'));
