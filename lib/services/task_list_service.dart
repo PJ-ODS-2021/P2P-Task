@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:crdt/crdt.dart';
 import 'package:p2p_task/models/task.dart';
+import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
@@ -26,6 +27,57 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     return (await _taskListCrdt).values;
   }
 
+  Future<List<Task>> getTasksForList(TaskList taskList) async {
+    var sorted = <Task>[];
+
+    List allTasks = await tasks;
+    for (var i = 0; i < allTasks.length; i++) {
+      if (allTasks[i].taskListID == taskList.id) {
+        sorted.add(allTasks[i]);
+      }
+    }
+
+    switch (taskList.sortBy) {
+      case SortOption.Title:
+        sorted.sort((a, b) => a.title.toString().compareTo(b.title.toString()));
+        break;
+      case SortOption.Flag:
+        sorted.sort((a, b) {
+          if (b.isFlagged) {
+            return 1;
+          }
+
+          return 0;
+        });
+        break;
+      case SortOption.Status:
+        sorted.sort((a, b) {
+          if (b.completed) {
+            return 0;
+          }
+
+          return 1;
+        });
+        break;
+      case SortOption.DueDate:
+        sorted.sort((a, b) {
+          if (b.due == null) {
+            return 0;
+          }
+          if (a.due == null) {
+            return 1;
+          }
+
+          return a.due!.compareTo(b.due!);
+        });
+        break;
+      case SortOption.Created:
+        break;
+    }
+
+    return sorted;
+  }
+
   Future upsert(Task task) async {
     l.info('Upsert task ${task.toJson()}');
     final id = Uuid().v4();
@@ -39,6 +91,15 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     final update = (await _taskListCrdt)..delete(task.id!);
     await _store(update);
     await _syncService.run();
+  }
+
+  Future removeByListID(String taskListID) async {
+    List allTasks = await tasks;
+    for (var i = 0; i < allTasks.length; i++) {
+      if (allTasks[i].taskListID == taskListID) {
+        await remove(allTasks[i]);
+      }
+    }
   }
 
   Future delete() async {

@@ -9,6 +9,7 @@ import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:p2p_task/utils/data_model_repository.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:sembast/sembast.dart';
@@ -28,7 +29,9 @@ class AppModule {
     );
     injector.map<WebSocketPeer>((i) => WebSocketPeer(), isSingleton: true);
     injector.map<IdentityService>(
-      (i) => IdentityService(injector.get<KeyValueRepository>()),
+      (i) => IdentityService(
+        injector.get<KeyValueRepository>(),
+      ),
       isSingleton: true,
     );
     injector.map<DeviceInfoService>(
@@ -37,6 +40,14 @@ class AppModule {
     );
     injector.map<NetworkInfoService>(
       (i) => NetworkInfoService(),
+      isSingleton: true,
+    );
+    injector.map<TaskListsService>(
+      (i) => TaskListsService(
+        i.get<KeyValueRepository>(),
+        i.get<IdentityService>(),
+        i.get<SyncService>(),
+      ),
       isSingleton: true,
     );
     injector.map<PeerInfoService>(
@@ -51,6 +62,7 @@ class AppModule {
       (i) => PeerService(
         i.get<WebSocketPeer>(),
         i.get<TaskListService>(),
+        i.get<TaskListsService>(),
         i.get<PeerInfoService>(),
         i.get<IdentityService>(),
         i.get<SyncService>(),

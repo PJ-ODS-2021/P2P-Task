@@ -3,6 +3,7 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:p2p_task/config/app_module.dart';
 import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/screens/home_screen.dart';
+import 'package:p2p_task/services/activity_entry_service.dart';
 import 'package:p2p_task/services/device_info_service.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
@@ -11,6 +12,7 @@ import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:p2p_task/widgets/app_lifecycle_reactor.dart';
 import 'package:provider/provider.dart';
 import 'package:sembast/sembast.dart';
@@ -71,9 +73,15 @@ class App extends StatelessWidget {
       providers: [
         Provider(create: (context) => injector.get<DeviceInfoService>()),
         Provider(create: (context) => injector.get<Database>()),
+        ChangeNotifierProvider(create: (context) => ActivityEntryService()),
         ChangeNotifierProvider(
           create: (context) => ChangeCallbackNotifier<TaskListService>(
             injector.get<TaskListService>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ChangeCallbackNotifier<TaskListsService>(
+            injector.get<TaskListsService>(),
           ),
         ),
         ChangeNotifierProvider(
