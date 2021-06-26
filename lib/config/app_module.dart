@@ -28,7 +28,9 @@ class AppModule {
     );
     injector.map<WebSocketPeer>((i) => WebSocketPeer(), isSingleton: true);
     injector.map<IdentityService>(
-      (i) => IdentityService(injector.get<KeyValueRepository>()),
+      (i) => IdentityService(
+        injector.get<KeyValueRepository>(),
+      ),
       isSingleton: true,
     );
     injector.map<DeviceInfoService>(

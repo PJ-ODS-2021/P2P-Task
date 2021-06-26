@@ -79,20 +79,20 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<void> syncWithPeer(PeerInfo peerInfo, {PeerLocation? location}) async {
-    final packet = TaskListMessage(
+    final tasksPacket = TaskListMessage(
       await _taskListService.crdtToJson(),
       requestReply: true,
     );
-    await _peer.sendPacketToPeer(peerInfo, packet, location: location);
+    await _peer.sendPacketToPeer(peerInfo, tasksPacket, location: location);
   }
 
   Future<void> syncWithAllKnownPeers() async {
     l.info('syncing task list with all known peers');
-    final packet = TaskListMessage(
+    final tasksPacket = TaskListMessage(
       await _taskListService.crdtToJson(),
       requestReply: true,
     );
     final peers = await _peerInfoService.devices;
-    await _peer.sendPacketToAllPeers(packet, peers);
+    await _peer.sendPacketToAllPeers(tasksPacket, peers);
   }
 }

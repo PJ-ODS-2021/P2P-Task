@@ -2,55 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/task.dart';
-import 'package:p2p_task/services/identity_service.dart';
-import 'package:p2p_task/services/sync_service.dart';
-import 'package:p2p_task/services/task_list_service.dart';
-import 'package:p2p_task/utils/key_value_repository.dart';
-import 'package:sembast/sembast.dart';
-import 'package:sembast/sembast_memory.dart';
-
-class DeviceTaskList {
-  final Database database;
-  final KeyValueRepository keyValueRepository;
-  final IdentityService identityService;
-  final SyncService syncService;
-  final TaskListService taskListService;
-
-  DeviceTaskList(
-    this.database,
-    this.keyValueRepository,
-    this.identityService,
-    this.syncService,
-    this.taskListService,
-  );
-
-  static Future<DeviceTaskList> create({
-    DatabaseFactory? databaseFactory,
-    String? databasePath,
-    String? name,
-  }) async {
-    final database = await (databaseFactory ?? newDatabaseFactoryMemory())
-        .openDatabase(databasePath ?? sembastInMemoryDatabasePath);
-    final keyValueRepository = KeyValueRepository(database);
-    final identityService = IdentityService(keyValueRepository);
-    if (name != null) await identityService.setName(name);
-    final syncService = SyncService(keyValueRepository);
-    final taskListService =
-        TaskListService(keyValueRepository, identityService, syncService);
-
-    return DeviceTaskList(
-      database,
-      keyValueRepository,
-      identityService,
-      syncService,
-      taskListService,
-    );
-  }
-
-  Future<void> close() {
-    return database.close();
-  }
-}
+import 'package:p2p_task/models/task_list.dart';
+import '../utils/device_task_list.dart';
 
 void main() {
   var devices = <DeviceTaskList>[];
@@ -65,27 +18,55 @@ void main() {
   test('distinct task lists', () async {
     final task1 = Task(title: 'task1');
     final task2 = Task(title: 'task2');
-    await devices[0].taskListService.upsert(task1);
-    await devices[1].taskListService.upsert(task2);
+    await devices[0]
+        .taskListService
+        .upsertTaskList(TaskList(id: 'id1', title: 'list1'));
+    await devices[0].taskListService.upsertTask('id1', task1);
+    await devices[1]
+        .taskListService
+        .upsertTaskList(TaskList(id: 'id2', title: 'list2'));
+    await devices[1].taskListService.upsertTask('id2', task2);
 
-    expect(await devices[0].taskListService.tasks, [task1]);
-    expect(await devices[1].taskListService.tasks, [task2]);
+    expect(await devices[0].taskListService.allTasks, [task1]);
+    expect(
+      (await devices[0].taskListService.getTaskListById('id1'))?.elements,
+      [task1],
+    );
+    expect(await devices[0].taskListService.getTasksFromList('id1'), [task1]);
+    expect(await devices[1].taskListService.allTasks, [task2]);
+    expect(
+      (await devices[1].taskListService.getTaskListById('id2'))?.elements,
+      [task2],
+    );
+    expect(await devices[1].taskListService.getTasksFromList('id2'), [task2]);
   });
 
-  test('crdt merge tasks unordered', () async {
+  test('crdt merge tasks unordered same list', () async {
     final task1 = Task(title: 'task1');
     final task2 = Task(title: 'task2');
-    await devices[0].taskListService.upsert(task1);
-    await devices[1].taskListService.upsert(task2);
+    await devices[0]
+        .taskListService
+        .upsertTaskList(TaskList(id: 'id', title: 'list'));
+    await devices[0].taskListService.upsertTask('id', task1);
+    await devices[1]
+        .taskListService
+        .upsertTaskList(TaskList(id: 'id', title: 'list'));
+    await devices[1].taskListService.upsertTask('id', task2);
 
     await devices[0]
         .taskListService
         .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
-    expect(await devices[1].taskListService.tasks, [task2]);
+
+    final taskLists = (await devices[0].taskListService.taskLists).toList();
+    expect(taskLists.length, 1);
+    expect(taskLists.first.id, 'id');
+    expect(taskLists.first.title, 'list');
+    expect(taskLists.first.elements.toSet(), {task1, task2});
     expect(
-      (await devices[0].taskListService.tasks).toSet(),
+      (await devices[0].taskListService.getTasksFromList('id')).toSet(),
       {task1, task2},
     );
+    expect((await devices[0].taskListService.allTasks).toSet(), {task1, task2});
   });
 
   test('crdt merge clock drift', () async {
@@ -93,10 +74,10 @@ void main() {
     // The flutter crdt library throws a ClockDriftException when trying to merge with a Hlc timestamp that is more than 1 minute in the future.
     // The new implementation should not care.
 
-    final task1 = Task(title: 'task1');
-    final task2 = Task(title: 'task2');
-    await devices[0].taskListService.upsert(task1);
-    await devices[1].taskListService.upsert(task2);
+    final taskList1 = TaskList(id: 'id1', title: 'taskList1');
+    final taskList2 = TaskList(id: 'id2', title: 'taskList2');
+    await devices[0].taskListService.upsertTaskList(taskList1);
+    await devices[1].taskListService.upsertTaskList(taskList2);
 
     final Map<String, dynamic> device1Crdt =
         jsonDecode(await devices[1].taskListService.crdtToJson());
@@ -109,54 +90,70 @@ void main() {
         DateTime.now().add(Duration(hours: 1)).millisecondsSinceEpoch;
 
     await devices[0].taskListService.mergeCrdtJson(jsonEncode(device1Crdt));
-    expect(await devices[1].taskListService.tasks, [task2]);
-    expect((await devices[0].taskListService.tasks).toSet(), {task1, task2});
+    expect(
+      (await devices[0].taskListService.taskLists).toSet(),
+      {taskList1, taskList2},
+    );
   });
 
-  test('crdt update less recent task', () async {
-    final task1 = Task(title: 'task1');
-    await devices[0].taskListService.upsert(task1);
-    final task2 = Task(
-      id: (await devices[0].taskListService.tasks).first.id,
-      title: 'task2',
-    );
-    await devices[1].taskListService.upsert(task2);
+  test('crdt update less recent task in list', () async {
+    final taskList = TaskList(id: 'id', title: 'list');
+    final task1 = Task(id: 'task1id', title: 'task1');
+    final task2 = Task(id: task1.id, title: 'task2');
+    await devices[0].taskListService.upsertTaskList(taskList);
+    await devices[0].taskListService.upsertTask(taskList.id!, task1);
+    await Future.delayed(Duration(milliseconds: 10));
+    await devices[1].taskListService.upsertTaskList(taskList);
+    await devices[1].taskListService.upsertTask(taskList.id!, task2);
 
     await devices[0]
         .taskListService
         .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
-    expect(await devices[1].taskListService.tasks, [task2]);
-    expect(await devices[0].taskListService.tasks, [task2]);
+    final mergedTaskLists =
+        (await devices[0].taskListService.taskLists).toList();
+    expect(mergedTaskLists.length, 1);
+    final mergedTaskList = mergedTaskLists.first;
+    expect(mergedTaskList.title, taskList.title);
+    expect(mergedTaskList.elements.toSet(), {task2});
   });
 
-  test('crdt keep more recent task', () async {
-    final task1 = Task(title: 'task1');
-    await devices[0].taskListService.upsert(task1);
-    final task2 = Task(
-      id: (await devices[0].taskListService.tasks).first.id,
-      title: 'task2',
-    );
-    await devices[1].taskListService.upsert(task2);
+  test('crdt keep more recent task in list', () async {
+    final taskList = TaskList(id: 'id', title: 'list');
+    final task1 = Task(id: 'task1id', title: 'task1');
+    final task2 = Task(id: task1.id, title: 'task2');
+    await devices[1].taskListService.upsertTaskList(taskList);
+    await devices[1].taskListService.upsertTask(taskList.id!, task2);
+    await Future.delayed(Duration(milliseconds: 10));
+    await devices[0].taskListService.upsertTaskList(taskList);
+    await devices[0].taskListService.upsertTask(taskList.id!, task1);
 
-    await devices[1]
+    await devices[0]
         .taskListService
-        .mergeCrdtJson(await devices[0].taskListService.crdtToJson());
-    expect(await devices[0].taskListService.tasks, [task1]);
-    expect(await devices[1].taskListService.tasks, [task2]);
+        .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
+    final mergedTaskLists =
+        (await devices[0].taskListService.taskLists).toList();
+    expect(mergedTaskLists.length, 1);
+    final mergedTaskList = mergedTaskLists.first;
+    expect(mergedTaskList.title, taskList.title);
+    expect(mergedTaskList.elements.toSet(), {task1});
   });
 
-  test('crdt recursive task merge', () async {
+  test('crdt recursive task merge in list', () async {
+    final taskList = TaskList(id: 'id', title: 'list');
     final task1 = Task(
+      id: 'task1Id',
       title: 'task1',
       description: 'description1',
     );
-    await devices[0].taskListService.upsert(task1);
     final task2 = Task(
-      id: (await devices[0].taskListService.tasks).first.id,
+      id: task1.id,
       title: 'task2',
       description: 'description2',
     );
-    await devices[1].taskListService.upsert(task2);
+    await devices[0].taskListService.upsertTaskList(taskList);
+    await devices[0].taskListService.upsertTask(taskList.id!, task1);
+    await devices[1].taskListService.upsertTaskList(taskList);
+    await devices[1].taskListService.upsertTask(taskList.id!, task2);
 
     // two-way merge:
     await devices[0]
@@ -167,21 +164,23 @@ void main() {
         .mergeCrdtJson(await devices[0].taskListService.crdtToJson());
 
     // update title in device 1 and description in device 2:
-    await devices[0].taskListService.upsert(task1..title = 'task1 updated');
+    await devices[0]
+        .taskListService
+        .upsertTask(taskList.id!, task1..title = 'task1 updated');
     await devices[1]
         .taskListService
-        .upsert(task2..description = 'task2 description');
+        .upsertTask(taskList.id!, task2..description = 'task2 description');
 
     await devices[0]
         .taskListService
         .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
-    expect((await devices[0].taskListService.tasks).toList(), [
+    expect((await devices[0].taskListService.allTasks).toSet(), {
       Task(
         id: task2.id,
         title: 'task1 updated',
         description: 'task2 description',
       ),
-    ]);
+    });
   });
 
   tearDown(() async {

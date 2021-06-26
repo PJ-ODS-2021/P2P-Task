@@ -1,115 +1,81 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/models/task.dart';
-import 'package:p2p_task/network/messages/packet.dart';
-import 'package:p2p_task/network/messages/task_list_message.dart';
-import 'package:p2p_task/network/peer/web_socket_client.dart';
+import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
-import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
-import 'package:p2p_task/services/sync_service.dart';
-import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/utils/data_model_repository.dart';
-import 'package:p2p_task/utils/key_value_repository.dart';
-import 'package:sembast/sembast.dart';
-import 'package:sembast/sembast_memory.dart';
-import 'package:lww_crdt/lww_crdt.dart';
+import '../utils/device_task_list.dart';
 
-void main() {
-  late Database db;
-  late KeyValueRepository keyValueRepository;
-  late IdentityService identityService;
-  late TaskListService taskListService;
-  late SyncService syncService;
-  late PeerInfoService peerInfoService;
-  late PeerService peerService;
+class Device {
+  final DeviceTaskList taskList;
+  final PeerInfoService peerInfoService;
+  final PeerService peerService;
 
-  setUp(() async {
-    db = await databaseFactoryMemory.openDatabase('');
-    keyValueRepository = KeyValueRepository(db);
-    identityService = IdentityService(keyValueRepository);
-    syncService = SyncService(keyValueRepository);
-    await syncService.setInterval(0);
-    taskListService =
-        TaskListService(keyValueRepository, identityService, syncService);
-    peerInfoService = PeerInfoService(DataModelRepository(
-      db,
+  Device(this.taskList, this.peerInfoService, this.peerService);
+
+  static Future<Device> create({String? name, int? port}) async {
+    final taskList = await DeviceTaskList.create(name: name);
+    if (port != null) await taskList.identityService.setPort(port);
+    final peerInfoService = PeerInfoService(DataModelRepository(
+      taskList.database,
       (json) => PeerInfo.fromJson(json),
       'PeerInfo',
     ));
-    peerService = PeerService(
+    final peerService = PeerService(
       WebSocketPeer(),
-      taskListService,
+      taskList.taskListService,
       peerInfoService,
-      identityService,
-      syncService,
+      taskList.identityService,
+      taskList.syncService,
     );
-    await peerService.startServer();
+
+    return Device(taskList, peerInfoService, peerService);
+  }
+
+  Future<void> close() async {
+    await peerService.stopServer();
+    await taskList.close();
+  }
+}
+
+void main() {
+  late List<Device> devices;
+
+  setUp(() async {
+    devices = [
+      await Device.create(name: 'device1', port: 58240),
+      await Device.create(name: 'device2', port: 58241),
+    ];
+    await Future.wait(devices.map(
+      (device) => device.peerService.startServer(),
+    ));
   });
 
   group('Synchronization', () {
-    test('should sync with connecting client', () async {
-      /// This manual task message setup is very implementation sepcific and kind of hard to maintain:
-      final task = Task(
-        title: 'Eat a hot dog',
-        id: '16ca13c-9021-4986-ab97-2d89cc0b3fce',
-      );
-      final crdt =
-          MapCrdtRoot<String, MapCrdtNode<String, dynamic>>('0000_localNode');
-      final crdtTaskNode = MapCrdtNode<String, dynamic>(crdt);
-      (task.toJson()..remove('id'))
-          .forEach((key, value) => crdtTaskNode.put(key, value));
-      crdt.put(task.id!, crdtTaskNode);
-      final messageContent =
-          crdt.toJson(valueEncode: (value) => value.toJson());
+    test('should sync tasks with connecting client', () async {
+      final taskList = TaskList(id: 'list1Id', title: 'list1');
+      final task = Task(id: 'task1Id', title: 'Eat a hot dog');
 
-      final peerLocation =
-          PeerLocation('ws://localhost:${await identityService.port}');
-      final client = WebSocketClient.connect(peerLocation.uri);
-      var completer = Completer();
-      client.dataStream.listen((data) {
-        completer.complete(data);
-      });
-      client.send(jsonEncode(Packet(
-        'TaskListMessage',
-        object: TaskListMessage(
-          jsonEncode(messageContent),
-          requestReply: true,
-        ).toJson(),
-      )));
-      final serverData = await completer.future
-          .timeout(Duration(seconds: 5), onTimeout: () => null);
-      expect(
-        serverData,
-        isNot(equals(null)),
-        reason: 'server did not answer within 5s',
-      );
+      await devices[0].taskList.taskListService.upsertTaskList(taskList);
+      await devices[0].taskList.taskListService.upsertTask(taskList.id!, task);
+      final device1Port = await devices[1].taskList.identityService.port;
+      await devices[0].peerInfoService.upsert(PeerInfo()
+        ..locations.add(PeerLocation('ws://localhost:$device1Port')));
+      await devices[0].peerService.syncWithAllKnownPeers();
 
-      final unmarshalledData = TaskListMessage.fromJson(
-        Packet.fromJson(jsonDecode(serverData)).object,
-      ).taskListCrdtJson;
-
-      // simulate the changes that should have happened and how the received message should look like
-      final remotePeerId = await identityService.peerId;
-      crdt.addNode(remotePeerId);
-      final expectedMessageContent =
-          crdt.toJson(valueEncode: (value) => value.toJson())
-            ..['node'] = remotePeerId
-            ..['vectorClock'].last += 1;
-
-      expect(jsonDecode(unmarshalledData), expectedMessageContent);
-      final tasks = await taskListService.tasks;
-      expect(tasks.length, equals(1));
-      expect(tasks.first, task);
+      final device2TaskLists =
+          (await devices[1].taskList.taskListService.taskLists).toList();
+      expect(device2TaskLists.length, 1);
+      expect(device2TaskLists.first.title, taskList.title);
+      expect(device2TaskLists.first.elements, [task]);
     });
   });
 
   tearDown(() async {
-    await peerService.stopServer();
-    await db.close();
+    await Future.wait(devices.map((device) => device.close()));
   });
 }
