@@ -59,7 +59,7 @@ void main() {
         id: '16ca13c-9021-4986-ab97-2d89cc0b3fce',
       );
       final crdt =
-          MapCrdt<String, MapCrdtNode<String, dynamic>>('0000_localNode');
+          MapCrdtRoot<String, MapCrdtNode<String, dynamic>>('0000_localNode');
       final crdtTaskNode = MapCrdtNode<String, dynamic>(crdt);
       (task.toJson()..remove('id'))
           .forEach((key, value) => crdtTaskNode.put(key, value));

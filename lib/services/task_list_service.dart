@@ -10,7 +10,7 @@ import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
 
 typedef _TaskCrdtType = MapCrdtNode<String, dynamic>;
-typedef _TaskListCrdtType = MapCrdt<String, _TaskCrdtType>;
+typedef _TaskListCrdtType = MapCrdtRoot<String, _TaskCrdtType>;
 
 class TaskListService with LogMixin, ChangeCallbackProvider {
   final String _crdtTaskListKey = 'crdtTaskList';
@@ -129,7 +129,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
       l.severe(
         'Got invalid node id when reading task list from disk (disk != peerId): "${crdt.node}" != "$expectedPeer"',
       );
-      if (crdt.hasNode(expectedPeer)) {
+      if (crdt.containsNode(expectedPeer)) {
         l.severe(
           'A node with this peer id already exists. Changing disk node id (could indicate another device is using the same node id which is VERY unlikely and breaks the algorithm)',
         );
@@ -140,7 +140,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
         crdt.addNode(expectedPeer);
       }
 
-      return MapCrdt(
+      return _TaskListCrdtType(
         expectedPeer,
         nodes: crdt.nodes.toSet(),
         vectorClock: crdt.vectorClock,
