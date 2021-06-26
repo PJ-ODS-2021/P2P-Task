@@ -16,7 +16,7 @@ void main() {
 
   setUp(() async {
     database = await databaseFactoryMemory.openDatabase('');
-    keyValueRepository = KeyValueRepository(database);
+    keyValueRepository = KeyValueRepository(database, StoreRef(''));
     identityService = IdentityService(keyValueRepository);
     syncService = SyncService(keyValueRepository);
     taskListService =

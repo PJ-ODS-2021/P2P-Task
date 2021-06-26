@@ -4,57 +4,57 @@ import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
 
 class IdentityService with LogMixin, ChangeCallbackProvider {
-  static const String _PEER_ID_KEY = 'peerId';
-  static const String _NAME_KEY = 'name';
-  static const String _IP_KEY = 'ip';
-  static const String _PORT_KEY = 'port';
+  static const String peerIdKey = 'peerId';
+  static const String peerNameKey = 'name';
+  static const String peerIpKey = 'ip';
+  static const String peerPortKey = 'port';
 
   final KeyValueRepository _repository;
 
   IdentityService(this._repository);
 
   Future<String> get peerId async {
-    var peerId = await _repository.get<String>(_PEER_ID_KEY);
+    var peerId = await _repository.get<String>(peerIdKey);
     if (peerId != null) {
       l.info('Returning already present peer id "$peerId".');
 
       return peerId;
     }
     l.info('No peer id, creating one...');
-    peerId = await _repository.put(_PEER_ID_KEY, Uuid().v4());
+    peerId = await _repository.put(peerIdKey, Uuid().v4());
     l.info('Peer id "$peerId" created and stored.');
     invokeChangeCallback();
 
     return peerId!;
   }
 
-  Future<String> get name async =>
-      (await _repository.get<String>(_NAME_KEY)) ?? 'Clementine';
+  Future<String?> get name async =>
+      (await _repository.get<String>(peerNameKey));
 
   Future setName(String name) async {
-    final updatedName = await _repository.put(_NAME_KEY, name);
+    final updatedName = await _repository.put(peerNameKey, name);
     invokeChangeCallback();
 
     return updatedName;
   }
 
-  Future<String?> get ip async => await _repository.get<String>(_IP_KEY);
+  Future<String?> get ip async => await _repository.get<String>(peerIpKey);
 
   Future setIp(String ip) async {
-    final updatedIp = await _repository.put(_IP_KEY, ip);
+    final updatedIp = await _repository.put(peerIpKey, ip);
     invokeChangeCallback();
 
     return updatedIp;
   }
 
   Future<int> get port async =>
-      (await _repository.get<int>(_PORT_KEY)) ?? 58241;
+      (await _repository.get<int>(peerPortKey)) ?? 58241;
 
   Future<int> setPort(int port) async {
     if (port < 0 || port > 65355) {
       throw UnsupportedError('Port needs to be in ranges 0 - 65355.');
     }
-    final updatedPort = await _repository.put(_PORT_KEY, port);
+    final updatedPort = await _repository.put(peerPortKey, port);
     invokeChangeCallback();
 
     return updatedPort;

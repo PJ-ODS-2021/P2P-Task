@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/models/activity_entry.dart';
 import 'package:p2p_task/services/activity_entry_service.dart';
 import 'package:provider/provider.dart';
@@ -7,8 +8,6 @@ import 'package:intl/intl.dart';
 import '../models/activity_entry.dart';
 
 class ActivityLogScreen extends StatelessWidget {
-  final _heroFont = TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold);
-
   @override
   Widget build(BuildContext context) {
     final activityEntryWidget =
@@ -30,7 +29,7 @@ class ActivityLogScreen extends StatelessWidget {
         child: Column(
           children: [
             Spacer(),
-            Text('⚡️ No activities yet.', style: _heroFont),
+            Text('⚡️ No activities yet.', style: kHeroFont),
             Text('Changes to your Tasks will be shown here.'),
             Text('Create a new Task or pair a device to see some activities.'),
             Spacer(flex: 2),
@@ -111,13 +110,16 @@ class ActivityLogScreen extends StatelessWidget {
   }
 
   Widget getActivityIcon(ActivityEntry activity, ActivityEntryService service) {
-    return Image.asset(
-      activity.device == service.getCurrentDeviceName()
-          ? 'assets/up_arrow_icon.png'
-          : 'assets/down_arrow_icon.png',
-      width: 22,
-      height: 22,
-    );
+    return Icon(activity.device == service.getCurrentDeviceName()
+        ? Icons.arrow_upward
+        : Icons.arrow_downward);
+    // return Image.asset(
+    //   activity.device == service.getCurrentDeviceName()
+    //       ? 'assets/up_arrow_icon.png'
+    //       : 'assets/down_arrow_icon.png',
+    //   width: 22,
+    //   height: 22,
+    // );
   }
 
   Widget _getActivityDescription(

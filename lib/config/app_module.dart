@@ -1,5 +1,6 @@
 import 'package:flutter_simple_dependency_injection/injector.dart';
-import 'package:p2p_task/config/database_creator.dart';
+import 'package:p2p_task/services/database_service.dart';
+import 'package:p2p_task/config/migrations.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
 import 'package:p2p_task/services/device_info_service.dart';
@@ -11,26 +12,64 @@ import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:p2p_task/utils/data_model_repository.dart';
+import 'package:p2p_task/utils/shared_preferences_keys.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
+import 'package:p2p_task/utils/store_ref_names.dart';
 import 'package:sembast/sembast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AppModule {
-  static bool _initialized = false;
-  late Database _db;
+  Future<void> initialize(Injector injector) async {
+    injector.dispose();
+    injector = Injector();
 
-  Future<Injector> initialize(Injector injector) async {
-    if (_initialized) return injector;
-    _db = await DatabaseCreator.create();
-
-    injector.map<Database>((i) => _db, isSingleton: true);
-    injector.map<KeyValueRepository>(
-      (i) => KeyValueRepository(_db),
+    final sharedPreferences = await SharedPreferences.getInstance();
+    injector.map((injector) => sharedPreferences, isSingleton: true);
+    final inMemory =
+        sharedPreferences.containsKey(SharedPreferencesKeys.inMemory.value)
+            ? sharedPreferences.getBool(SharedPreferencesKeys.inMemory.value)!
+            : false;
+    injector.map<DatabaseService>(
+      (i) => DatabaseService(1, 'p2p_task', inMemory, migrations),
       isSingleton: true,
     );
-    injector.map<WebSocketPeer>((i) => WebSocketPeer(), isSingleton: true);
+    if (sharedPreferences
+        .containsKey(SharedPreferencesKeys.databasePath.value)) {
+      final databasePath =
+          sharedPreferences.getString(SharedPreferencesKeys.databasePath.value);
+      await injector.get<DatabaseService>().create(
+            dbPath: databasePath,
+          );
+    } else {
+      await injector.get<DatabaseService>().create();
+    }
+    injector.map<Database>(
+      (i) => i.get<DatabaseService>().database!,
+      isSingleton: true,
+    );
+    injector.map<KeyValueRepository>(
+      (i) => KeyValueRepository(
+        i.get<Database>(),
+        StoreRef(StoreRefNames.settings.value),
+      ),
+      isSingleton: true,
+      key: StoreRefNames.settings.value,
+    );
+    injector.map<KeyValueRepository>(
+      (i) => KeyValueRepository(
+        i.get<Database>(),
+        StoreRef(StoreRefNames.tasks.value),
+      ),
+      isSingleton: true,
+      key: StoreRefNames.tasks.value,
+    );
+    injector.map<WebSocketPeer>(
+      (i) => WebSocketPeer(),
+      isSingleton: true,
+    );
     injector.map<IdentityService>(
       (i) => IdentityService(
-        injector.get<KeyValueRepository>(),
+        injector.get<KeyValueRepository>(key: StoreRefNames.settings.value),
       ),
       isSingleton: true,
     );
@@ -42,19 +81,11 @@ class AppModule {
       (i) => NetworkInfoService(),
       isSingleton: true,
     );
-    injector.map<TaskListsService>(
-      (i) => TaskListsService(
-        i.get<KeyValueRepository>(),
-        i.get<IdentityService>(),
-        i.get<SyncService>(),
-      ),
-      isSingleton: true,
-    );
     injector.map<PeerInfoService>(
       (i) => PeerInfoService(DataModelRepository(
-        _db,
+        i.get<Database>(),
         (json) => PeerInfo.fromJson(json),
-        'PeerInfo',
+        StoreRefNames.peerInfo.value,
       )),
       isSingleton: true,
     );
@@ -70,20 +101,26 @@ class AppModule {
       isSingleton: true,
     );
     injector.map<SyncService>(
-      (i) => SyncService(i.get<KeyValueRepository>()),
+      (i) => SyncService(
+        i.get<KeyValueRepository>(key: StoreRefNames.settings.value),
+      ),
       isSingleton: true,
     );
     injector.map<TaskListService>(
       (i) => TaskListService(
-        i.get<KeyValueRepository>(),
+        i.get<KeyValueRepository>(key: StoreRefNames.tasks.value),
         i.get<IdentityService>(),
         i.get<SyncService>(),
       ),
       isSingleton: true,
     );
-
-    _initialized = true;
-
-    return injector;
+    injector.map<TaskListsService>(
+      (i) => TaskListsService(
+        i.get<KeyValueRepository>(key: StoreRefNames.tasks.value),
+        i.get<IdentityService>(),
+        i.get<SyncService>(),
+      ),
+      isSingleton: true,
+    );
   }
 }

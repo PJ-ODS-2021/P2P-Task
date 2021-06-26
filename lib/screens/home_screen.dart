@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:p2p_task/screens/activity_log_screen.dart';
@@ -6,8 +8,10 @@ import 'package:p2p_task/screens/qr_code_dialog.dart';
 import 'package:p2p_task/screens/settings/settings_screen.dart';
 import 'package:p2p_task/screens/task_lists_screen.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
+import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
+import 'package:p2p_task/widgets/yes_no_dialog.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,6 +25,78 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final identityService =
+        Provider.of<ChangeCallbackNotifier<IdentityService>>(
+      context,
+      listen: false,
+    ).callbackProvider;
+    identityService.name.then((value) {
+      if (value == null) {
+        showDialog(
+          context: context,
+          builder: (context) {
+            final nameController = TextEditingController();
+            final formKey = GlobalKey<FormState>();
+            final handleSubmit = () async {
+              if (formKey.currentState!.validate()) {
+                await identityService.setName(nameController.text);
+                Navigator.of(context).pop();
+                setState(() {
+                  _selectedIndex = 2;
+                });
+                await YesNoDialog.show(
+                  context,
+                  title: 'Syncing',
+                  yesText: 'Understood',
+                  description: 'If you want to synchronize data from'
+                      ' another device, you can scan the'
+                      ' devices QR Code now. (You may'
+                      ' always do this at a later time.)',
+                );
+              }
+            };
+
+            return AlertDialog(
+              title: Text('Choose a name'),
+              content: Form(
+                key: formKey,
+                child: TextFormField(
+                  validator: (value) {
+                    if (value == null || value.isEmpty || value.length < 5) {
+                      return 'Name must be at least 5 characters long.';
+                    }
+
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    helperText:
+                        'This name will be shown to other users when they connect with this device.',
+                    helperMaxLines: 2,
+                  ),
+                  controller: nameController,
+                  onFieldSubmitted: (value) => handleSubmit(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: handleSubmit,
+                  child: Text('OK'),
+                ),
+                TextButton(
+                  onPressed: () => exit(0),
+                  child: Text('Exit'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
