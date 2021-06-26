@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:p2p_task/config/app_module.dart';
 import 'package:p2p_task/config/style_constants.dart';
-import 'package:p2p_task/screens/home_screen.dart';
+import 'package:p2p_task/screens/initial_setup_screen.dart';
 import 'package:p2p_task/services/activity_entry_service.dart';
 import 'package:p2p_task/services/device_info_service.dart';
 import 'package:p2p_task/services/identity_service.dart';
@@ -33,7 +33,7 @@ class App extends StatelessWidget {
           primarySwatch: Colors.deepPurple,
           canvasColor: kGrayBackground,
         ),
-        home: HomeScreen(title: 'P2P Task Manager'),
+        home: InitialSetupDialog(),
       ),
     );
   }
