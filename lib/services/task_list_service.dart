@@ -188,11 +188,11 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     final taskCrdt = _TaskCrdtType(parent);
     final taskJson = task.toJson()..remove('id');
     if (base == null) {
-      taskJson.forEach((key, value) => taskCrdt.put(key, value));
+      taskCrdt.putAll(taskJson);
     } else {
-      taskJson.forEach((key, value) {
-        if (base.get(key) != value) taskCrdt.put(key, value);
-      });
+      taskCrdt.putAll(
+        taskJson..removeWhere((key, value) => base.get(key) == value),
+      );
     }
 
     return taskCrdt;
