@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:p2p_task/screens/setup/dependencies_provider.dart';
 import 'package:p2p_task/services/task_lists_service.dart';
-import 'package:p2p_task/screens/setup/landing_screen.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/database_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
@@ -92,9 +92,7 @@ class DatabaseSection extends StatelessWidget {
     if (confirmed) {
       await databaseService.delete();
       await sharedPreferences.clear();
-      await Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-        return LandingScreen();
-      }));
+      DependenciesProvider.rebuild(context);
     }
   }
 }

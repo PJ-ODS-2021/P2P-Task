@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:p2p_task/screens/setup/config_view.dart';
+import 'package:p2p_task/screens/setup/config_screen.dart';
 import 'package:p2p_task/screens/setup/dependencies_provider.dart';
 import 'package:p2p_task/utils/shared_preferences_keys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,65 +23,63 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ConfigView(
-        title: 'Setup Database',
-        onSubmit: handleSubmit,
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Text('Use in memory database?'),
-              ],
-            ),
-            SizedBox(
-              height: 8,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Radio<bool>(
-                  value: true,
-                  groupValue: inMemoryRadioGroupValue,
-                  onChanged: (value) => handleInMemoryChanged(value!),
-                ),
-                Text('Yes'),
-                Radio<bool>(
-                  value: false,
-                  groupValue: inMemoryRadioGroupValue,
-                  onChanged: (value) => handleInMemoryChanged(value!),
-                ),
-                Text('No'),
-              ],
-            ),
-            SizedBox(
-              height: 22,
-            ),
-            Row(
-              children: [
-                Text(
-                  'Choose database location:',
-                  style: TextStyle(
-                    color: inMemoryRadioGroupValue
-                        ? Theme.of(context).disabledColor
-                        : Theme.of(context).textTheme.bodyText1!.color,
-                  ),
-                ),
-              ],
-            ),
-            TextFormField(
-              decoration: InputDecoration(
-                enabled: !inMemoryRadioGroupValue,
-                helperMaxLines: 2,
-                helperText:
-                    'The task lists and tasks you create, will be stored in a file at this location.',
+    return ConfigScreen(
+      title: 'Setup Database',
+      onSubmit: handleSubmit,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Text('Use in memory database?'),
+            ],
+          ),
+          SizedBox(
+            height: 8,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Radio<bool>(
+                value: true,
+                groupValue: inMemoryRadioGroupValue,
+                onChanged: (value) => handleInMemoryChanged(value!),
               ),
-              controller: databasePathController,
-              onFieldSubmitted: (value) async =>
-                  await handleDatabasePathSubmitted(value),
+              Text('Yes'),
+              Radio<bool>(
+                value: false,
+                groupValue: inMemoryRadioGroupValue,
+                onChanged: (value) => handleInMemoryChanged(value!),
+              ),
+              Text('No'),
+            ],
+          ),
+          SizedBox(
+            height: 22,
+          ),
+          Row(
+            children: [
+              Text(
+                'Choose database location:',
+                style: TextStyle(
+                  color: inMemoryRadioGroupValue
+                      ? Theme.of(context).disabledColor
+                      : Theme.of(context).textTheme.bodyText1!.color,
+                ),
+              ),
+            ],
+          ),
+          TextFormField(
+            decoration: InputDecoration(
+              enabled: !inMemoryRadioGroupValue,
+              helperMaxLines: 2,
+              helperText:
+                  'The task lists and tasks you create, will be stored in a file at this location.',
             ),
-          ],
-        ),
+            controller: databasePathController,
+            onFieldSubmitted: (value) async =>
+                await handleDatabasePathSubmitted(value),
+          ),
+        ],
       ),
     );
   }
