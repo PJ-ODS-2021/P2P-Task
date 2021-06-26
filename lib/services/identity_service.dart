@@ -46,6 +46,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
   Future setPublicKeyPem(String publicKey) async {
     final updatedPublicKey = await _repository.put(_PUBLIC_KEY, publicKey);
     invokeChangeCallback();
+
     return updatedPublicKey;
   }
 
@@ -55,6 +56,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
   Future setPrivateKeyPem(String privateKey) async {
     final updatedPrivateKey = await _repository.put(_PRIVATE_KEY, privateKey);
     invokeChangeCallback();
+
     return updatedPrivateKey;
   }
 

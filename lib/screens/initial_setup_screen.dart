@@ -121,7 +121,6 @@ class InitialSetupDialog extends StatelessWidget with LogMixin {
     );
   }
 
-  @override
   void dispose() {
     _nameController.dispose();
   }

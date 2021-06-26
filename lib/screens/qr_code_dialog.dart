@@ -3,7 +3,6 @@ import 'package:p2p_task/services/device_info_service.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/network_info_service.dart';
-import 'package:p2p_task/services/device_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:provider/provider.dart';
@@ -81,13 +80,17 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
       return Column(
         children: [
           Text('Error'),
-          Text(snapshot.error.toString()),
+          Text(
+            snapshot.error.toString(),
+          ),
         ],
       );
     }
     if (snapshot.connectionState == ConnectionState.waiting ||
         !snapshot.hasData) {
-      return Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(),
+      );
     }
 
     return null;
@@ -134,7 +137,9 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
                       },
                     )
                   : Text(connectionInfo.ips.first),
-              Padding(padding: EdgeInsets.symmetric(horizontal: 10.0)),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10.0),
+              ),
               Text('Port: ${connectionInfo.port}'),
             ]),
           ];
@@ -145,7 +150,9 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
       text: TextSpan(
         style: DefaultTextStyle.of(context).style,
         children: [
-          WidgetSpan(child: Icon(Icons.warning_outlined)),
+          WidgetSpan(
+            child: Icon(Icons.warning_outlined),
+          ),
           TextSpan(
             text: ' $message',
             style: TextStyle(fontSize: 20.0),

@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:pointycastle/export.dart' as pc;
 import 'package:asn1lib/asn1lib.dart';
-import 'package:encrypt/encrypt.dart' as encryptPem;
+import 'package:encrypt/encrypt.dart' as encrypt_pem;
 
 class KeyHelper {
   pc.AsymmetricKeyPair<pc.RSAPublicKey, pc.RSAPrivateKey> generateRSAkeyPair(
@@ -24,15 +24,24 @@ class KeyHelper {
     final myPrivate = pair.privateKey as pc.RSAPrivateKey;
 
     return pc.AsymmetricKeyPair<pc.RSAPublicKey, pc.RSAPrivateKey>(
-        myPublic, myPrivate);
+      myPublic,
+      myPrivate,
+    );
   }
 
   String decrypt(pc.RSAPrivateKey myPrivate, String cipherText) {
     final decryptor = pc.OAEPEncoding(pc.RSAEngine())
-      ..init(false, pc.PrivateKeyParameter<pc.RSAPrivateKey>(myPrivate));
+      ..init(
+        false,
+        pc.PrivateKeyParameter<pc.RSAPrivateKey>(myPrivate),
+      );
 
     return String.fromCharCodes(
-        _processInBlocks(decryptor, Uint8List.fromList(cipherText.codeUnits)));
+      _processInBlocks(
+        decryptor,
+        Uint8List.fromList(cipherText.codeUnits),
+      ),
+    );
   }
 
   Uint8List _processInBlocks(pc.AsymmetricBlockCipher engine, Uint8List input) {
@@ -49,7 +58,12 @@ class KeyHelper {
           : input.length - inputOffset;
 
       outputOffset += engine.processBlock(
-          input, inputOffset, chunkSize, output, outputOffset);
+        input,
+        inputOffset,
+        chunkSize,
+        output,
+        outputOffset,
+      );
 
       inputOffset += chunkSize;
     }
@@ -60,11 +74,19 @@ class KeyHelper {
   }
 
   String encrypt(pc.RSAPublicKey myPublic, String dataToEncrypt) {
-    final encryptor = pc.OAEPEncoding(pc.RSAEngine())
-      ..init(true, pc.PublicKeyParameter<pc.RSAPublicKey>(myPublic));
+    final encryptor = pc.OAEPEncoding(
+      pc.RSAEngine(),
+    )..init(
+        true,
+        pc.PublicKeyParameter<pc.RSAPublicKey>(myPublic),
+      );
 
     var blocks = _processInBlocks(
-        encryptor, Uint8List.fromList(utf8.encode(dataToEncrypt)));
+      encryptor,
+      Uint8List.fromList(
+        utf8.encode(dataToEncrypt),
+      ),
+    );
 
     return String.fromCharCodes(blocks);
   }
@@ -75,26 +97,36 @@ class KeyHelper {
     final seedSource = Random.secure();
     final seeds = <int>[];
     for (var i = 0; i < 32; i++) {
-      seeds.add(seedSource.nextInt(255));
+      seeds.add(
+        seedSource.nextInt(255),
+      );
     }
-    secureRandom.seed(pc.KeyParameter(Uint8List.fromList(seeds)));
+    secureRandom.seed(
+      pc.KeyParameter(
+        Uint8List.fromList(seeds),
+      ),
+    );
 
     return secureRandom;
   }
 
   pc.RSAPrivateKey decodePrivateKeyFromPem(String priavateKeyPem) {
-    return encryptPem.RSAKeyParser().parse(priavateKeyPem) as pc.RSAPrivateKey;
+    return encrypt_pem.RSAKeyParser().parse(priavateKeyPem) as pc.RSAPrivateKey;
   }
 
   pc.RSAPublicKey decodePublicKeyFromPem(String publicKeyPem) {
-    return encryptPem.RSAKeyParser().parse(publicKeyPem) as pc.RSAPublicKey;
+    return encrypt_pem.RSAKeyParser().parse(publicKeyPem) as pc.RSAPublicKey;
   }
 
   String encodePublicKeyToPem(pc.RSAPublicKey publicKey) {
     var topLevel = ASN1Sequence();
 
-    topLevel.add(ASN1Integer(publicKey.modulus!));
-    topLevel.add(ASN1Integer(publicKey.exponent!));
+    topLevel.add(
+      ASN1Integer(publicKey.modulus!),
+    );
+    topLevel.add(
+      ASN1Integer(publicKey.exponent!),
+    );
 
     var dataBase64 = base64.encode(topLevel.encodedBytes);
     return '-----BEGIN RSA PUBLIC KEY-----\r\n$dataBase64\r\n-----END RSA PUBLIC KEY-----';
