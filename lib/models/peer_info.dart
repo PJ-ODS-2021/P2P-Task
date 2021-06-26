@@ -28,7 +28,9 @@ class PeerInfo implements DataModel {
   @override
   String? id;
   String name = '';
+  String device = '';
   List<PeerLocation> locations = [];
+  String publicKey = '';
 
   PeerInfo();
 
@@ -48,6 +50,8 @@ class PeerInfo implements DataModel {
     };
     addProperty('id', id);
     addProperty('name', name);
+    addProperty('public_key', publicKey);
+    addProperty('device', device);
 
     return '[${locations.join(',')}]' +
         (buffer.isEmpty ? '' : ' (${buffer.toString()})');

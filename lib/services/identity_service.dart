@@ -8,6 +8,8 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
   static const String _NAME_KEY = 'name';
   static const String _IP_KEY = 'ip';
   static const String _PORT_KEY = 'port';
+  static const String _PUBLIC_KEY = 'public_key';
+  static const String _PRIVATE_KEY = 'private_key';
 
   final KeyValueRepository _repository;
 
@@ -29,13 +31,31 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<String> get name async =>
-      (await _repository.get<String>(_NAME_KEY)) ?? 'Clementine';
+      (await _repository.get<String>(_NAME_KEY)) ?? '';
 
   Future setName(String name) async {
     final updatedName = await _repository.put(_NAME_KEY, name);
     invokeChangeCallback();
 
     return updatedName;
+  }
+
+  Future<String?> get publicKeyPem async =>
+      await _repository.get<String>(_PUBLIC_KEY);
+
+  Future setPublicKeyPem(String publicKey) async {
+    final updatedPublicKey = await _repository.put(_PUBLIC_KEY, publicKey);
+    invokeChangeCallback();
+    return updatedPublicKey;
+  }
+
+  Future<String> get privateKeyPem async =>
+      await _repository.get<String>(_PRIVATE_KEY) ?? '';
+
+  Future setPrivateKeyPem(String privateKey) async {
+    final updatedPrivateKey = await _repository.put(_PRIVATE_KEY, privateKey);
+    invokeChangeCallback();
+    return updatedPrivateKey;
   }
 
   Future<String?> get ip async => await _repository.get<String>(_IP_KEY);

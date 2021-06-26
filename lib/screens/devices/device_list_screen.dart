@@ -22,7 +22,7 @@ class DeviceListScreen extends StatefulWidget {
 class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
   void _onQrCodeRead(String qrContent, BuildContext context) {
     var values = qrContent.split(',');
-    if (values.length < 3) {
+    if (values.length < 6) {
       l.warning(
         'ignoring invalid qr content "$qrContent": less than 3 components',
       );
@@ -34,8 +34,10 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
         .upsert(
           PeerInfo()
             ..id = values[0]
-            ..name = values[0]
-            ..locations.add(PeerLocation('ws://${values[1]}:${values[2]}')),
+            ..name = values[1]
+            ..device = values[2]
+            ..locations.add(PeerLocation('ws://${values[3]}:${values[4]}'))
+            ..publicKey = values[5],
         );
   }
 
@@ -151,18 +153,19 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
           onTap: () => peerInfoService.remove(peerInfo),
         ),
       ],
-      child: _buildPeerLocationEntry(peerInfoService, peerLocation),
+      child: _buildPeerLocationEntry(peerInfo, peerLocation),
     );
   }
 
   Widget _buildPeerLocationEntry(
-    PeerInfoService service,
+    PeerInfo peerInfo,
     PeerLocation peerLocation,
   ) {
     return ListTile(
       tileColor: Colors.white,
       leading: Icon(Icons.send_to_mobile),
-      title: Text(peerLocation.networkName == null
+      title: Text('${peerInfo.device}'),
+      subtitle: Text(peerLocation.networkName == null
           ? peerLocation.uriStr
           : '${peerLocation.uriStr} in ${peerLocation.networkName}'),
       trailing: Icon(Icons.keyboard_arrow_left),
