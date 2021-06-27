@@ -194,7 +194,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     return taskListCrdt;
   }
 
-  /// Changes the crdt node if [expectedNode] differes from the [crdt].node
+  /// Changes the crdt node if [expectedNode] differs from the [crdt].node
   void _validateCrdtPeer(
     _TaskListCollectionCrdtType crdt,
     String expectedNode,
