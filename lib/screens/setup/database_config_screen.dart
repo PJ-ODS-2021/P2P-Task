@@ -17,8 +17,7 @@ class DatabaseConfigScreen extends StatefulWidget {
 }
 
 class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
-  late final databasePathController =
-      TextEditingController(text: widget.directory.path);
+  late final databasePathController = TextEditingController();
   var inMemoryRadioGroupValue = false;
 
   @override
@@ -75,7 +74,9 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
               helperText:
                   'The task lists and tasks you create, will be stored in a file at this location.',
             ),
-            controller: databasePathController,
+            controller: inMemoryRadioGroupValue
+                ? (databasePathController..text = '')
+                : (databasePathController..text = widget.directory.path),
             onFieldSubmitted: (value) async =>
                 await handleDatabasePathSubmitted(value),
           ),

@@ -28,13 +28,7 @@ class WelcomeScreen extends StatelessWidget {
               ],
             ),
             TextFormField(
-              validator: (value) {
-                if (value == null || value.isEmpty || value.length < 3) {
-                  return 'Name must be at least 3 characters long.';
-                }
-
-                return null;
-              },
+              validator: _validateName,
               decoration: InputDecoration(
                 helperText:
                     'This name will be shown to other users when they connect with this device.',
@@ -49,12 +43,21 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
+  String? _validateName(String? name) {
+    if (name == null || name.isEmpty || name.length < 3) {
+      return 'Name must be at least 3 characters long.';
+    }
+
+    return null;
+  }
+
   void _handleSubmit(BuildContext context) async {
     if (formKey.currentState!.validate()) {
       final identityService =
-          Provider.of<ChangeCallbackNotifier<IdentityService>>(context,
-                  listen: false)
-              .callbackProvider;
+          Provider.of<ChangeCallbackNotifier<IdentityService>>(
+        context,
+        listen: false,
+      ).callbackProvider;
       await identityService.setName(nameController.text);
       await Navigator.pushReplacement(
         context,

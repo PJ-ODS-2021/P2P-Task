@@ -17,57 +17,62 @@ class SyncConfigScreen extends StatelessWidget {
     return ConfigScreen(
       title: 'Scan other devices 📱',
       onSubmit: () => _handleSubmit(context),
-      child: ValueListenableBuilder<LoadProcess<List<PeerInfo>>>(
-        valueListenable: viewModel.peerInfos,
-        builder: (context, loadProcess, child) {
-          if (!loadProcess.hasData) {
-            return Column(
-              children: [
-                child!,
-              ],
-            );
-          }
-          return Column(
-            children: [
-              ...loadProcess.data!.map((peerInfo) {
-                return Column(children: [
-                  ...peerInfo.locations.map((location) {
-                    return ListTile(
-                      title: Text(location.uriStr),
-                    );
-                  }).toList()
-                ]);
-              }).toList(),
-              child!,
-              SizedBox(
-                height: 8,
-              ),
-              Text(
-                'If you want to synchronize data from another device, '
-                'you can scan the devices QR Code now. (You may always '
-                'do this at a later time.)',
-                style: TextStyle(fontSize: 12, color: Colors.black54),
-              ),
-            ],
-          );
-        },
-        child: Center(
-          child: TextButton.icon(
-            icon: Icon(Icons.add),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) =>
-                    QrScannerScreen(onQRCodeRead: viewModel.handleQrCodeRead),
-              ),
-            ),
-            onLongPress: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => DeviceFormScreen(),
-              ),
-            ),
-            label: Text('Add device'),
+      child: Column(
+        children: [
+          ValueListenableBuilder<LoadProcess<List<PeerInfo>>>(
+            valueListenable: viewModel.peerInfos,
+            builder: (context, loadProcess, child) {
+              if (!loadProcess.hasData) {
+                return Column(
+                  children: [],
+                );
+              }
+
+              return Column(
+                children: loadProcess.data!
+                    .map((peerInfo) {
+                      return peerInfo.locations.map((location) {
+                        return ListTile(
+                          title: Text(
+                            peerInfo.id?.substring(0, 24).padRight(27, '.') ??
+                                peerInfo.name,
+                          ),
+                          subtitle: Text(location.uriStr),
+                        );
+                      });
+                    })
+                    .expand((element) => element)
+                    .toList(),
+              );
+            },
           ),
-        ),
+          Center(
+            child: TextButton.icon(
+              icon: Icon(Icons.add),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      QrScannerScreen(onQRCodeRead: viewModel.handleQrCodeRead),
+                ),
+              ),
+              onLongPress: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => DeviceFormScreen(),
+                ),
+              ),
+              label: Text('Add device'),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'If you want to synchronize data from another device, '
+              'you can scan the devices QR Code now. (You may always '
+              'do this at a later time.)',
+              style: TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ),
+        ],
       ),
     );
   }

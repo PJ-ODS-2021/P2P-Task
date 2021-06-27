@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:p2p_task/screens/setup/scroll_column_expandable.dart';
 
 class ConfigScreen extends StatelessWidget {
   final Widget child;
@@ -14,67 +15,58 @@ class ConfigScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final quarterPadding = screenWidth * 0.25 / 2;
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text('P2P Task Manager'),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        physics: ClampingScrollPhysics(),
+      body: SafeArea(
         child: Container(
-          height: screenHeight - 112,
-          margin: const EdgeInsets.all(16.0),
-          padding:
-              EdgeInsets.symmetric(vertical: 32.0, horizontal: quarterPadding),
+          margin: const EdgeInsets.all(18.0),
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 32.0),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.all(Radius.circular(15)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: ScrollColumnExpandable(
             children: [
-              Center(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 42,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0),
+                child: _buildTitle(),
               ),
-              Spacer(
-                flex: 4,
+              Spacer(),
+              Container(
+                constraints: BoxConstraints(maxWidth: 450),
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                child: child,
               ),
-              child,
-              SizedBox(
-                height: 16,
-              ),
-              Spacer(
-                flex: 1,
-              ),
-              Center(
-                child: MaterialButton(
-                  padding: const EdgeInsets.all(16.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15.0),
-                  ),
-                  onPressed: onSubmit,
-                  color: Theme.of(context).accentColor,
-                  textColor: Colors.white,
-                  child: Text('OK'),
-                ),
-              ),
-              Spacer(
-                flex: 2,
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0),
+                child: _buildButton(context),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTitle() {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 42,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  Widget _buildButton(BuildContext context) {
+    return MaterialButton(
+      padding: const EdgeInsets.all(16.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      onPressed: onSubmit,
+      color: Theme.of(context).accentColor,
+      textColor: Colors.white,
+      child: Text('OK'),
     );
   }
 }
