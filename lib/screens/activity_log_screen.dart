@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/models/activity_entry.dart';
-import 'package:p2p_task/services/activity_entry_service.dart';
+import 'package:p2p_task/services/change_callback_notifier.dart';
+import 'package:p2p_task/services/identity_service.dart';
+import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -11,21 +13,43 @@ class ActivityLogScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activityEntryWidget =
-        Consumer<ActivityEntryService>(builder: (context, service, child) {
-      return FutureBuilder<List<ActivityEntry>>(builder: (context, snapshot) {
-        return _buildActivityEntries(context, service);
-      });
-    });
+    final taskListService =
+        Provider.of<ChangeCallbackNotifier<TaskListService>>(context)
+            .callbackProvider;
+    final identityService =
+        Provider.of<ChangeCallbackNotifier<IdentityService>>(context)
+            .callbackProvider;
 
-    return activityEntryWidget;
+    return FutureBuilder<List>(
+      future: Future.wait([
+        taskListService.allTaskRecords.then((v) => _getActivityEntries(v)),
+        identityService.peerId,
+      ]),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Column(
+            children: [
+              Text('Error'),
+              Text(snapshot.error.toString()),
+            ],
+          );
+        }
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
+        }
+        final data = snapshot.data!;
+
+        return _buildActivityEntries(context, data[0], data[1]);
+      },
+    );
   }
 
   Widget _buildActivityEntries(
     BuildContext context,
-    ActivityEntryService service,
+    List<ActivityEntry> activities,
+    String currentPeerId,
   ) {
-    if (service.activities.isEmpty) {
+    if (activities.isEmpty) {
       return Center(
         child: Column(
           children: [
@@ -41,11 +65,11 @@ class ActivityLogScreen extends StatelessWidget {
 
     return ListView.builder(
       padding: EdgeInsets.zero,
-      itemCount: service.activities.length,
+      itemCount: activities.length,
       itemBuilder: (BuildContext context, int index) {
-        final activity = service.activities[index];
+        final activity = activities[index];
 
-        return _buildActivityEntry(context, activity, service, index);
+        return _buildActivityEntry(context, activity, currentPeerId, index);
       },
     );
   }
@@ -53,7 +77,7 @@ class ActivityLogScreen extends StatelessWidget {
   Widget _buildActivityEntry(
     BuildContext context,
     ActivityEntry activity,
-    ActivityEntryService service,
+    String currentPeerId,
     int index,
   ) {
     return Column(
@@ -74,9 +98,9 @@ class ActivityLogScreen extends StatelessWidget {
                 const SizedBox(height: 8.0),
                 Row(
                   children: [
-                    getActivityIcon(activity, service),
+                    getActivityIcon(activity, currentPeerId),
                     const SizedBox(width: 8.0),
-                    _getActivityDescription(activity, service),
+                    _getActivityDescription(activity, currentPeerId),
                   ],
                 ),
                 const SizedBox(height: 8.0),
@@ -110,9 +134,9 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  Widget getActivityIcon(ActivityEntry activity, ActivityEntryService service) {
+  Widget getActivityIcon(ActivityEntry activity, String currentPeerId) {
     return Image.asset(
-      activity.device == service.getCurrentDeviceName()
+      activity.device == currentPeerId
           ? 'assets/up_arrow_icon.png'
           : 'assets/down_arrow_icon.png',
       width: 22,
@@ -122,7 +146,7 @@ class ActivityLogScreen extends StatelessWidget {
 
   Widget _getActivityDescription(
     ActivityEntry activity,
-    ActivityEntryService service,
+    String currentPeerId,
   ) {
     return RichText(
       text: TextSpan(
@@ -130,12 +154,12 @@ class ActivityLogScreen extends StatelessWidget {
         style: TextStyle(color: Colors.black, fontSize: 18),
         children: [
           TextSpan(
-            text: activity.device == service.getCurrentDeviceName()
+            text: activity.device == currentPeerId
                 ? 'this device'
                 : activity.device,
             style: TextStyle(
               color: Colors.black,
-              fontWeight: activity.device == service.getCurrentDeviceName()
+              fontWeight: activity.device == currentPeerId
                   ? FontWeight.normal
                   : FontWeight.bold,
               fontSize: 18,
@@ -156,5 +180,20 @@ class ActivityLogScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  List<ActivityEntry> _getActivityEntries(
+    Iterable<TaskRecord> taskEntries,
+  ) {
+    return taskEntries
+        .map((taskEntry) => ActivityEntry(
+              event: taskEntry.task == null ? 'Task deleted' : 'Task updated',
+              device: taskEntry.peerId,
+              taskID: taskEntry.task?.id,
+              taskListID: taskEntry.taskListId,
+              timestamp: taskEntry.timestamp,
+            ))
+        .toList()
+          ..sort((a, b) => b.timestamp!.compareTo(a.timestamp!));
   }
 }
