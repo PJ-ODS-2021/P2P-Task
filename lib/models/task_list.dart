@@ -14,6 +14,8 @@ part 'task_list.g.dart';
 /// Here, the [id] is used to identify task lists throughout peers.
 @JsonSerializable(explicitToJson: true)
 class TaskList {
+  static const crdtMembers = ['isShared', 'title', 'sortBy'];
+
   String? id;
   bool isShared;
   String title;

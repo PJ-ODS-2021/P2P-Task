@@ -27,28 +27,35 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     this._syncService,
   );
 
+  Future<Iterable<TaskRecord>> get allTaskRecords async =>
+      _decodeTasks(await _readAndDecodeTaskListCollectionCrdt()).map(
+        (v) => TaskRecord(
+          v.taskRecord.value,
+          v.taskRecord.clock.node,
+          DateTime.fromMillisecondsSinceEpoch(v.taskRecord.clock.timestamp),
+          v.taskListId,
+        ),
+      );
+
   Future<Iterable<Task>> get allTasks async =>
       (await taskLists).map((taskList) => taskList.elements).expand((e) => e);
 
-  Future<Iterable<TaskList>> get taskLists async => (await taskListRecords)
+  Future<Iterable<TaskList>> get taskLists async => (await _taskListRecords)
       .where((record) => !record.isDeleted)
       .map((record) => record.value!);
 
-  Future<Iterable<Record<TaskList>>> get taskListRecords async =>
-      (await taskListRecordMap).values;
-
-  Future<Map<String, Record<TaskList>>> get taskListRecordMap async =>
-      _decodeTaskListCollection(await _readAndDecodeTaskListCollectionCrdt());
-
-  Future<Record<TaskList>?> getTaskListRecordById(String taskListId) async =>
-      (await taskListRecordMap)[taskListId];
-
   Future<TaskList?> getTaskListById(String taskListId) async =>
-      (await taskListRecordMap)[taskListId]?.value;
+      (await _taskListRecordMap)[taskListId]?.value;
 
   Future<Iterable<Task>> getTasksFromList(String taskListId) async =>
       getTaskListById(taskListId)
           .then((taskList) => taskList != null ? taskList.elements : []);
+
+  Future<Iterable<Record<TaskList>>> get _taskListRecords async =>
+      (await _taskListRecordMap).values;
+
+  Future<Map<String, Record<TaskList>>> get _taskListRecordMap async =>
+      _decodeTaskListCollection(await _readAndDecodeTaskListCollectionCrdt());
 
   /// Returns false if the task list does not exist
   Future<bool> upsertTask(String taskListId, Task task) async {
@@ -218,6 +225,28 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     );
   }
 
+  Iterable<_TaskRecordAndListId> _decodeTasks(
+    _TaskListCollectionCrdtType crdt,
+  ) {
+    return crdt.records.entries
+        .where((taskListRecordEntry) => !taskListRecordEntry.value.isDeleted)
+        .map((taskListRecordEntry) =>
+            taskListRecordEntry.value.value!.records.entries.where((entry) {
+              return entry.value.value is _TaskCrdtType ||
+                  (entry.value.isDeleted &&
+                      !TaskList.crdtMembers.contains(entry.key));
+            }).map((entry) => _TaskRecordAndListId(
+                  Record(
+                    clock: entry.value.clock,
+                    value: entry.value.isDeleted
+                        ? null
+                        : _decodeTask(entry.value.value, id: entry.key),
+                  ),
+                  taskListRecordEntry.key,
+                )))
+        .expand((v) => v);
+  }
+
   Map<String, Record<TaskList>> _decodeTaskListCollection(
     _TaskListCollectionCrdtType crdt,
   ) {
@@ -233,7 +262,6 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
   }
 
   TaskList _decodeTaskList(_TaskListCrdtType crdt, {String? id}) {
-    const taskListCrdtMembers = ['isShared', 'title', 'sortBy'];
     final tasks = crdt.records.entries
         .where((entry) =>
             !entry.value.isDeleted && entry.value.value is _TaskCrdtType)
@@ -243,7 +271,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
       'id': id,
       'elements': [],
     }..addAll(Map.fromEntries(
-        taskListCrdtMembers.map((e) => MapEntry(e, crdt.get(e))),
+        TaskList.crdtMembers.map((e) => MapEntry(e, crdt.get(e))),
       )))
       ..elements.addAll(tasks);
   }
@@ -321,10 +349,18 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
   }
 }
 
+class _TaskRecordAndListId {
+  Record<Task> taskRecord;
+  String taskListId;
+
+  _TaskRecordAndListId(this.taskRecord, this.taskListId);
+}
+
 class TaskRecord {
   final Task? task;
   final String peerId;
   final DateTime timestamp;
+  final String taskListId;
 
-  const TaskRecord(this.task, this.peerId, this.timestamp);
+  const TaskRecord(this.task, this.peerId, this.timestamp, this.taskListId);
 }
