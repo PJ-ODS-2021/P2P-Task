@@ -42,9 +42,14 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
   @override
   Widget build(BuildContext context) {
     final showQrScannerButton = _showQrScannerButton();
-    final consumerWidget = Consumer2<PeerInfoService, PeerService>(
-      builder: (context, service, peerService, child) =>
-          _buildDeviceList(context, service, peerService, showQrScannerButton),
+    final consumerWidget = Consumer2<ChangeCallbackNotifier<PeerInfoService>,
+        ChangeCallbackNotifier<PeerService>>(
+      builder: (context, service, peerService, child) => _buildDeviceList(
+        context,
+        service.callbackProvider,
+        peerService.callbackProvider,
+        showQrScannerButton,
+      ),
     );
 
     return Stack(
@@ -92,7 +97,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
                 Text('📪 No devices yet.', style: kHeroFont),
                 showQrScannerButton
                     ? Text('Press the button below to scan a QR code.')
-                    : Text('Press the button below to add a device'),
+                    : Text('Press the button below to add a device.'),
                 if (showQrScannerButton)
                   Text('Longpress the button below to manually add a device.'),
                 Spacer(flex: 2),
