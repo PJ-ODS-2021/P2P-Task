@@ -182,42 +182,27 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
       return peerId != null ? _TaskListCollectionCrdtType(peerId) : null;
     }
     final taskListCrdt = _crdtFromJson(json);
+    if (peerId != null) _validateCrdtPeer(taskListCrdt, peerId);
 
-    return peerId != null
-        ? _validateCrdtPeer(taskListCrdt, peerId)
-        : taskListCrdt;
+    return taskListCrdt;
   }
 
-  _TaskListCollectionCrdtType _validateCrdtPeer(
+  /// Changes the crdt node if [expectedNode] differes from the [crdt].node
+  void _validateCrdtPeer(
     _TaskListCollectionCrdtType crdt,
-    String expectedPeer,
+    String expectedNode,
   ) {
-    if (crdt.node != expectedPeer) {
+    if (crdt.node != expectedNode) {
       l.severe(
-        'Got invalid node id when reading task list from disk (disk != peerId): "${crdt.node}" != "$expectedPeer"',
+        'Got invalid node id when reading task list from disk (disk != peerId): "${crdt.node}" != "$expectedNode". Changing node id, the old node id might be dead for now on',
       );
-      if (crdt.containsNode(expectedPeer)) {
+      if (crdt.containsNode(expectedNode)) {
         l.severe(
-          'A node with this peer id already exists. Changing disk node id (could indicate another device is using the same node id which is VERY unlikely and breaks the algorithm)',
+          'A node with this peer id already exists. This could indicate another device is using the same node id which is VERY unlikely and potentially breaks the algorithm',
         );
-      } else {
-        l.warning(
-          'Changing disk node id. The old node id might be dead from now on',
-        );
-        crdt.addNode(expectedPeer);
       }
-
-      // TODO: This won't change the parent in the sub-nodes
-      return _TaskListCollectionCrdtType(
-        expectedPeer,
-        nodes: crdt.nodes.toSet(),
-        vectorClock: crdt.vectorClock,
-        records: crdt.records,
-        validateRecords: false,
-      );
+      crdt.changeNode(expectedNode);
     }
-
-    return crdt;
   }
 
   _TaskListCollectionCrdtType _crdtFromJson(Map<String, dynamic> json) {
