@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:p2p_task/screens/error_popup_dialog.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
@@ -46,7 +47,17 @@ class SyncListSection extends StatelessWidget {
                 value: peer.isServerRunning,
                 onChanged: kIsWeb
                     ? (value) => null
-                    : (value) => value ? peer.startServer() : peer.stopServer(),
+                    : (value) => value
+                        ? peer
+                            .startServer()
+                            .onError((error, stackTrace) => showDialog(
+                                  context: context,
+                                  builder: (context) => SimpleErrorPopupDialog(
+                                    'Could not start server',
+                                    error.toString(),
+                                  ),
+                                ))
+                        : peer.stopServer(),
               ),
               subtitle: peer.isServerRunning
                   ? Text(
