@@ -8,6 +8,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
   static const String peerNameKey = 'name';
   static const String peerIpKey = 'ip';
   static const String peerPortKey = 'port';
+  static const int peerPortDefault = 58241;
 
   final KeyValueRepository _repository;
 
@@ -16,8 +17,6 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
   Future<String> get peerId async {
     var peerId = await _repository.get<String>(peerIdKey);
     if (peerId != null) {
-      l.info('Returning already present peer id "$peerId".');
-
       return peerId;
     }
     l.info('No peer id, creating one...');
@@ -48,11 +47,11 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<int> get port async =>
-      (await _repository.get<int>(peerPortKey)) ?? 58241;
+      (await _repository.get<int>(peerPortKey)) ?? peerPortDefault;
 
   Future<int> setPort(int port) async {
-    if (port < 0 || port > 65355) {
-      throw UnsupportedError('Port needs to be in ranges 0 - 65355.');
+    if (port < 49152 || port > 65535) {
+      throw UnsupportedError('Port needs to be in range of 49152 to 65535.');
     }
     final updatedPort = await _repository.put(peerPortKey, port);
     invokeChangeCallback();
