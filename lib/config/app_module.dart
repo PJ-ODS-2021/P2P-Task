@@ -26,7 +26,7 @@ class AppModule {
 
     final sharedPreferences = await SharedPreferences.getInstance();
     injector.map((injector) => sharedPreferences, isSingleton: true);
-    _provideDatabaseService(sharedPreferences, injector);
+    await _provideDatabaseService(sharedPreferences, injector);
     injector.map<Database>(
       (i) => i.get<DatabaseService>().database!,
       isSingleton: true,
