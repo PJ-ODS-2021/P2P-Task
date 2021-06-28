@@ -13,6 +13,7 @@ import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/services/task_lists_service.dart';
+import 'package:p2p_task/widgets/app_lifecycle_reactor.dart';
 import 'package:provider/provider.dart';
 import 'package:sembast/sembast.dart';
 
@@ -23,7 +24,7 @@ void main() async {
 class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return _buildProviders(
+    return _buildAwaitAppModule(
       context,
       MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -37,7 +38,7 @@ class App extends StatelessWidget {
     );
   }
 
-  Widget _buildProviders(BuildContext context, Widget child) {
+  Widget _buildAwaitAppModule(BuildContext context, Widget child) {
     return FutureBuilder<Injector>(
       future: AppModule().initialize(Injector()),
       builder: (context, snapshot) {
@@ -56,52 +57,64 @@ class App extends StatelessWidget {
             ),
           );
         }
-        final i = snapshot.data!;
+        final injector = snapshot.data!;
 
-        return MultiProvider(
-          providers: [
-            Provider(create: (context) => i.get<DeviceInfoService>()),
-            Provider(create: (context) => i.get<Database>()),
-            ChangeNotifierProvider(create: (context) => ActivityEntryService()),
-            ChangeNotifierProvider(
-              create: (context) => ChangeCallbackNotifier<TaskListService>(
-                i.get<TaskListService>(),
-              ),
-            ),
-            ChangeNotifierProvider(
-              create: (context) => ChangeCallbackNotifier<NetworkInfoService>(
-                i.get<NetworkInfoService>(),
-              ),
-            ),
-            ChangeNotifierProvider(
-              create: (context) => ChangeCallbackNotifier<TaskListsService>(
-                i.get<TaskListsService>(),
-              ),
-            ),
-            ChangeNotifierProvider(
-              create: (context) => ChangeCallbackNotifier<PeerInfoService>(
-                i.get<PeerInfoService>(),
-              ),
-            ),
-            ChangeNotifierProvider(
-              create: (context) => ChangeCallbackNotifier<IdentityService>(
-                i.get<IdentityService>(),
-              ),
-            ),
-            ChangeNotifierProvider(
-              create: (context) => ChangeCallbackNotifier<PeerService>(
-                i.get<PeerService>(),
-              ),
-            ),
-            ChangeNotifierProvider(
-              create: (context) => ChangeCallbackNotifier<SyncService>(
-                i.get<SyncService>(),
-              ),
-            ),
-          ],
-          child: child,
-        );
+        return _buildProviders(context, injector, child);
       },
+    );
+  }
+
+  Widget _buildProviders(
+    BuildContext context,
+    Injector injector,
+    Widget child,
+  ) {
+    return MultiProvider(
+      providers: [
+        Provider(create: (context) => injector.get<DeviceInfoService>()),
+        Provider(create: (context) => injector.get<Database>()),
+        ChangeNotifierProvider(create: (context) => ActivityEntryService()),
+        ChangeNotifierProvider(
+          create: (context) => ChangeCallbackNotifier<TaskListService>(
+            injector.get<TaskListService>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ChangeCallbackNotifier<TaskListsService>(
+            injector.get<TaskListsService>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ChangeCallbackNotifier<NetworkInfoService>(
+            injector.get<NetworkInfoService>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ChangeCallbackNotifier<PeerInfoService>(
+            injector.get<PeerInfoService>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ChangeCallbackNotifier<IdentityService>(
+            injector.get<IdentityService>(),
+          ),
+        ),
+        ChangeNotifierProvider.value(
+          value: ChangeCallbackNotifier<PeerService>(
+            injector.get<PeerService>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ChangeCallbackNotifier<SyncService>(
+            injector.get<SyncService>(),
+          ),
+        ),
+      ],
+      child: AppLifecycleReactor(
+        onResume: () async =>
+            await injector.get<SyncService>().run(runOnSyncOnStart: true),
+        child: child,
+      ),
     );
   }
 
