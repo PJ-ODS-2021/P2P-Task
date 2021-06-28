@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:p2p_task/config/style_constants.dart';
@@ -23,37 +24,35 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     return Stack(
       alignment: const Alignment(0, 0.9),
       children: [
-        _buildContent(viewModel),
-        _buildFloatingButton(viewModel),
+        _buildContent(
+          context,
+          viewModel,
+        ),
+        _buildFloatingButton(context, viewModel),
       ],
     );
   }
 
-  Widget _buildFloatingButton(DeviceListViewModel viewModel) {
+  Widget _buildFloatingButton(
+      BuildContext context, DeviceListViewModel viewModel) {
     return ElevatedButton(
-      onPressed: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => QrScannerScreen(
-            onQRCodeRead: viewModel.handleQrCodeRead,
-          ),
-        ),
-      ),
-      onLongPress: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => DeviceFormScreen(),
-        ),
-      ),
+      onPressed: viewModel.showQrScannerButton
+          ? () => _openQrScanner(context, viewModel)
+          : () => _openDeviceForm(context),
+      onLongPress:
+          viewModel.showQrScannerButton ? () => _openDeviceForm(context) : null,
       style: ElevatedButton.styleFrom(
         shape: CircleBorder(),
         padding: EdgeInsets.all(24),
       ),
-      child: Icon(Icons.qr_code_scanner),
+      child: viewModel.showQrScannerButton
+          ? Icon(Icons.qr_code_scanner)
+          : Icon(Icons.add),
     );
   }
 
   Widget _buildContent(
+    BuildContext context,
     DeviceListViewModel viewModel,
   ) {
     return ValueListenableBuilder<LoadProcess<List<PeerInfo>>>(
@@ -172,6 +171,26 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       leading: Icon(Icons.send_to_mobile),
       title: Text(title),
       trailing: Icon(Icons.keyboard_arrow_left),
+    );
+  }
+
+  Future _openQrScanner(BuildContext context, DeviceListViewModel viewModel) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QrScannerScreen(
+          onQRCodeRead: (qrContent) => viewModel.handleQrCodeRead(qrContent),
+        ),
+      ),
+    );
+  }
+
+  Future _openDeviceForm(BuildContext context) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DeviceFormScreen(),
+      ),
     );
   }
 }

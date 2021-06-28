@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:p2p_task/screens/simple_error_popup_dialog.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
@@ -44,9 +45,7 @@ class SyncListSection extends StatelessWidget {
               leading: Icon(Icons.electrical_services),
               trailing: Switch.adaptive(
                 value: peer.isServerRunning,
-                onChanged: kIsWeb
-                    ? (value) => null
-                    : (value) => value ? peer.startServer() : peer.stopServer(),
+                onChanged: (value) => _setServerStatus(context, peer, value),
               ),
               subtitle: peer.isServerRunning
                   ? Text(
@@ -101,5 +100,24 @@ class SyncListSection extends StatelessWidget {
         );
       },
     );
+  }
+
+  void _setServerStatus(
+    BuildContext context,
+    PeerService peerService,
+    bool startServer,
+  ) {
+    if (kIsWeb) return;
+    if (startServer) {
+      peerService.startServer().onError((error, stackTrace) => showDialog(
+            context: context,
+            builder: (context) => SimpleErrorPopupDialog(
+              'Could not start server',
+              error.toString(),
+            ),
+          ));
+    } else {
+      peerService.stopServer();
+    }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
@@ -75,6 +76,20 @@ class DeviceListViewModel with LogMixin {
   void remove(PeerInfo peer) async {
     await _peerInfoService.remove(peer);
     _loadDevices();
+  }
+
+  bool get showQrScannerButton {
+    // Dependent on what platforms are supported by qr_code_scanner package.
+    // Add more platforms when more support is added.
+    if (kIsWeb) return true;
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.iOS:
+        return true;
+      case TargetPlatform.android:
+        return true;
+      default:
+        return false;
+    }
   }
 
   void dispose() {
