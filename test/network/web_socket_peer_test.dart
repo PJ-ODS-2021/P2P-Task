@@ -41,11 +41,14 @@ void main() {
         TaskListService(keyValueRepository, identityService, syncService);
     taskListsService =
         TaskListsService(keyValueRepository, identityService, syncService);
-    peerInfoService = PeerInfoService(DataModelRepository(
-      db,
-      (json) => PeerInfo.fromJson(json),
-      'PeerInfo',
-    ));
+    peerInfoService = PeerInfoService(
+      DataModelRepository(
+        db,
+        (json) => PeerInfo.fromJson(json),
+        'PeerInfo',
+      ),
+      syncService,
+    );
     peerService = PeerService(
       WebSocketPeer(),
       taskListService,

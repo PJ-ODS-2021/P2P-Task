@@ -66,11 +66,14 @@ class AppModule {
       isSingleton: true,
     );
     injector.map<PeerInfoService>(
-      (i) => PeerInfoService(DataModelRepository(
-        i.get<Database>(),
-        (json) => PeerInfo.fromJson(json),
-        StoreRefNames.peerInfo.value,
-      )),
+      (i) => PeerInfoService(
+        DataModelRepository(
+          i.get<Database>(),
+          (json) => PeerInfo.fromJson(json),
+          StoreRefNames.peerInfo.value,
+        ),
+        i.get<SyncService>(),
+      ),
       isSingleton: true,
     );
     injector.map<PeerService>(
