@@ -12,6 +12,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
   final String _syncOnUpdateKey = 'syncOnUpdate';
 
   final KeyValueRepository _repository;
+
   // ignore: cancel_subscriptions
   StreamSubscription? _syncJob;
   Function()? _job;
@@ -72,5 +73,13 @@ class SyncService with LogMixin, ChangeCallbackProvider {
       l.info('Syncing job started...');
       _job!();
     }
+  }
+
+  Future<void> clearJob() async {
+    if (_syncJob != null) {
+      await _syncJob?.cancel();
+      _syncJob = null;
+    }
+    _job = null;
   }
 }

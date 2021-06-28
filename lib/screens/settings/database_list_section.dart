@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/screens/setup/dependencies_provider.dart';
+import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/database_service.dart';
@@ -20,8 +21,6 @@ class DatabaseSection extends StatelessWidget {
             .callbackProvider;
     final databaseService =
         Provider.of<DatabaseService>(context, listen: false);
-    final sharedPreferences =
-        Provider.of<SharedPreferences>(context, listen: false);
 
     return FutureBuilder<int>(
       initialData: -1,
@@ -70,7 +69,6 @@ class DatabaseSection extends StatelessWidget {
               onTap: () => handleDatabaseDeletion(
                 context,
                 databaseService,
-                sharedPreferences,
               ),
               leading: Icon(Icons.delete_forever),
               title: Text('Reset database'),
@@ -85,13 +83,19 @@ class DatabaseSection extends StatelessWidget {
   void handleDatabaseDeletion(
     BuildContext context,
     DatabaseService databaseService,
-    SharedPreferences sharedPreferences,
   ) async {
+    final sharedPreferences =
+        Provider.of<SharedPreferences>(context, listen: false);
+    final syncService = Provider.of<ChangeCallbackNotifier<SyncService>>(
+      context,
+      listen: false,
+    ).callbackProvider;
     final confirmed =
         await YesNoDialog.show(context, title: 'Delete all data?') ?? false;
     if (confirmed) {
       await databaseService.delete();
       await sharedPreferences.clear();
+      await syncService.clearJob();
       DependenciesProvider.rebuild(context);
     }
   }
