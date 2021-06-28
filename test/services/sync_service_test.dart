@@ -37,12 +37,12 @@ void main() {
         .thenAnswer((_) => Future.value(1));
     when(keyValueRepository.get<bool>(SyncService.syncOnStartKey))
         .thenAnswer((_) => Future.value(false));
+    when(keyValueRepository.put(any, any)).thenAnswer((_) => Future.value(5));
     var ran = false;
 
     fakeAsync((async) {
       syncService.startJob(() => ran = true);
-      when(keyValueRepository.get<int>(SyncService.syncIntervalKey))
-          .thenAnswer((_) => Future.value(5));
+      syncService.setInterval(5);
       async.elapse(Duration(seconds: 1));
       expect(ran, false);
       async.elapse(Duration(seconds: 4));

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
-import 'package:pedantic/pedantic.dart';
 
 class SyncService with LogMixin, ChangeCallbackProvider {
   static final String syncIntervalKey = 'syncInterval';
@@ -14,7 +13,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
   static final bool _syncOnUpdateDefaultValue = true;
 
   final KeyValueRepository _settingsRepository;
-  StreamSubscription? _syncJob;
+  Timer? _syncTimer;
   Function()? _job;
 
   SyncService(KeyValueRepository settingsRepository)
@@ -27,6 +26,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
   Future<void> setInterval(int interval) async {
     final updatedInterval =
         await _settingsRepository.put(syncIntervalKey, interval);
+    await _updateSyncTimer(updatedInterval);
     invokeChangeCallback();
 
     return updatedInterval;
@@ -58,28 +58,27 @@ class SyncService with LogMixin, ChangeCallbackProvider {
 
   Future<void> startJob(Function() job) async {
     _job = job;
-    if (await syncOnStart) await run();
-    if (_syncJob != null) await _syncJob!.cancel();
-    _syncJob = Stream.periodic(Duration(seconds: 1), (count) => count)
-        .listen((count) async {
-      unawaited(_runJob(count));
-    });
+    await _updateSyncTimer(await interval);
+    if (await syncOnStart) _runJob();
   }
 
   Future<void> run() async {
     if (_job == null) return;
     if (await syncOnStart || await syncOnUpdate) {
-      l.info('Syncing job started...');
-      _job!();
+      _runJob();
     }
   }
 
-  Future<void> _runJob(int count) async {
-    final currentInterval = await interval;
-    if (currentInterval < 1) return;
-    if ((count + 1) % currentInterval == 0) {
-      l.info('Syncing job started...');
-      _job!();
-    }
+  Future<void> _updateSyncTimer(int interval) async {
+    if (_job == null) return;
+    if (_syncTimer != null) _syncTimer!.cancel();
+    _syncTimer = Timer.periodic(Duration(seconds: interval), (_) {
+      _runJob();
+    });
+  }
+
+  void _runJob() {
+    l.info('Syncing job started...');
+    _job!();
   }
 }
