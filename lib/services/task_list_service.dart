@@ -29,11 +29,13 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
 
   Future<Iterable<TaskRecord>> get allTaskRecords async =>
       _decodeTasks(await _readAndDecodeTaskListCollectionCrdt()).map(
-        (v) => TaskRecord(
-          v.taskRecord.value,
-          v.taskRecord.clock.node,
-          DateTime.fromMillisecondsSinceEpoch(v.taskRecord.clock.timestamp),
-          v.taskListId,
+        (recordAndListId) => TaskRecord(
+          recordAndListId.taskRecord.value,
+          recordAndListId.taskRecord.clock.node,
+          DateTime.fromMillisecondsSinceEpoch(
+            recordAndListId.taskRecord.clock.timestamp,
+          ),
+          recordAndListId.taskListId,
         ),
       );
 

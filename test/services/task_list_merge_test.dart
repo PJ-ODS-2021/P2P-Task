@@ -99,7 +99,7 @@ void main() {
   test('crdt update less recent task in list', () async {
     final taskList = TaskList(id: 'id', title: 'list');
     final task1 = Task(id: 'task1id', title: 'task1');
-    final task2 = Task(id: task1.id, title: 'task2');
+    final task2 = Task(id: 'task1id', title: 'task2');
     await devices[0].taskListService.upsertTaskList(taskList);
     await devices[0].taskListService.upsertTask(taskList.id!, task1);
     await Future.delayed(Duration(milliseconds: 10));
@@ -146,7 +146,7 @@ void main() {
       description: 'description1',
     );
     final task2 = Task(
-      id: task1.id,
+      id: 'task1Id',
       title: 'task2',
       description: 'description2',
     );
@@ -174,13 +174,11 @@ void main() {
     await devices[0]
         .taskListService
         .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
-    expect((await devices[0].taskListService.allTasks).toSet(), {
-      Task(
-        id: task2.id,
-        title: 'task1 updated',
-        description: 'task2 description',
-      ),
-    });
+    final allTasks = (await devices[0].taskListService.allTasks).toSet();
+    expect(allTasks.length, 1);
+    expect(allTasks.first.id, task2.id);
+    expect(allTasks.first.title, 'task1 updated');
+    expect(allTasks.first.description, 'task2 description');
   });
 
   tearDown(() async {

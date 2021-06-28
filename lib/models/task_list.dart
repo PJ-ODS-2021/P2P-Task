@@ -25,10 +25,10 @@ class TaskList {
   TaskList({
     this.id,
     required this.title,
-    this.elements = const [],
+    List<Task>? elements,
     this.isShared = false,
     this.sortBy = SortOption.Created,
-  });
+  }) : elements = elements ?? [];
 
   factory TaskList.fromJson(Map<String, dynamic> json) =>
       _$TaskListFromJson(json);
