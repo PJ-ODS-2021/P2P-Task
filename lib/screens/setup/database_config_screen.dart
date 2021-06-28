@@ -17,93 +17,107 @@ class DatabaseConfigScreen extends StatefulWidget {
 }
 
 class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
-  late final databasePathController = TextEditingController();
-  var inMemoryRadioGroupValue = false;
+  final _formKey = GlobalKey<FormState>();
+  late final _databasePathController = TextEditingController();
+  var _inMemoryRadioGroupValue = false;
 
   @override
   Widget build(BuildContext context) {
     return ConfigScreen(
       title: 'Setup Database',
-      onSubmit: handleSubmit,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Text('Use in memory database?'),
-            ],
-          ),
-          SizedBox(
-            height: 8,
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Radio<bool>(
-                value: true,
-                groupValue: inMemoryRadioGroupValue,
-                onChanged: (value) => handleInMemoryChanged(value!),
-              ),
-              Text('Yes'),
-              Radio<bool>(
-                value: false,
-                groupValue: inMemoryRadioGroupValue,
-                onChanged: (value) => handleInMemoryChanged(value!),
-              ),
-              Text('No'),
-            ],
-          ),
-          SizedBox(
-            height: 22,
-          ),
-          Row(
-            children: [
-              Text(
-                'Choose database location:',
-                style: TextStyle(
-                  color: inMemoryRadioGroupValue
-                      ? Theme.of(context).disabledColor
-                      : Theme.of(context).textTheme.bodyText1!.color,
-                ),
-              ),
-            ],
-          ),
-          TextFormField(
-            decoration: InputDecoration(
-              enabled: !inMemoryRadioGroupValue,
-              helperMaxLines: 2,
-              helperText:
-                  'The task lists and tasks you create, will be stored in a file at this location.',
+      onSubmit: _handleSubmit,
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Text('Use in memory database?'),
+              ],
             ),
-            controller: inMemoryRadioGroupValue
-                ? (databasePathController..text = '')
-                : (databasePathController..text = widget.directory.path),
-            onFieldSubmitted: (value) async =>
-                await handleDatabasePathSubmitted(value),
-          ),
-        ],
+            SizedBox(
+              height: 8,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Radio<bool>(
+                  value: true,
+                  groupValue: _inMemoryRadioGroupValue,
+                  onChanged: (value) => _handleInMemoryChanged(value!),
+                ),
+                Text('Yes'),
+                Radio<bool>(
+                  value: false,
+                  groupValue: _inMemoryRadioGroupValue,
+                  onChanged: (value) => _handleInMemoryChanged(value!),
+                ),
+                Text('No'),
+              ],
+            ),
+            SizedBox(
+              height: 22,
+            ),
+            Row(
+              children: [
+                Text(
+                  'Choose database location:',
+                  style: TextStyle(
+                    color: _inMemoryRadioGroupValue
+                        ? Theme.of(context).disabledColor
+                        : Theme.of(context).textTheme.bodyText1!.color,
+                  ),
+                ),
+              ],
+            ),
+            TextFormField(
+              validator: _validateDatabasePath,
+              decoration: InputDecoration(
+                enabled: !_inMemoryRadioGroupValue,
+                helperMaxLines: 2,
+                helperText:
+                    'The task lists and tasks you create, will be stored in a file at this location.',
+              ),
+              controller: _inMemoryRadioGroupValue
+                  ? (_databasePathController..text = '')
+                  : (_databasePathController..text = widget.directory.path),
+              onFieldSubmitted: (value) async =>
+                  await _handleDatabasePathSubmitted(value),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  void handleSubmit() async {
-    await handleDatabasePathSubmitted(
-      databasePathController.text,
+  String? _validateDatabasePath(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please specify a path.';
+    }
+
+    return null;
+  }
+
+  void _handleSubmit() async {
+    await _handleDatabasePathSubmitted(
+      _databasePathController.text,
     );
     DependenciesProvider.rebuild(context);
   }
 
-  Future<void> handleInMemoryChanged(bool inMemory) async {
+  Future<void> _handleInMemoryChanged(bool inMemory) async {
     final sharedPreferences = await SharedPreferences.getInstance();
     await sharedPreferences.setBool(
       SharedPreferencesKeys.inMemory.value,
       inMemory,
     );
     setState(() {
-      inMemoryRadioGroupValue = inMemory;
+      _inMemoryRadioGroupValue = inMemory;
     });
   }
 
-  Future<void> handleDatabasePathSubmitted(String databasePath) async {
+  Future<void> _handleDatabasePathSubmitted(String databasePath) async {
+    if (!_formKey.currentState!.validate()) return;
     final sharedPreferences = await SharedPreferences.getInstance();
     await sharedPreferences.setString(
       SharedPreferencesKeys.databasePath.value,

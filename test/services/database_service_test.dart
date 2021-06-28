@@ -11,7 +11,8 @@ import 'database_service_test.mocks.dart';
 
 @GenerateMocks([VersionedMigrationFunctionDispenser])
 void main() {
-  final databaseFactory = PlatformDatabaseFactory();
+  final databaseFactory = (databaseName, inMemory) =>
+      PlatformDatabaseFactory(databaseName, inMemory);
   final databaseName = 'Harakiri';
 
   group('#create', () {

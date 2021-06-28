@@ -1,10 +1,11 @@
 import 'package:p2p_task/config/migrations.dart';
-import 'package:p2p_task/utils/platform_database_factory.dart';
 import 'package:sembast/sembast.dart';
 
 class DatabaseService {
+  static const databaseNameDefault = 'p2p_task';
+  static const inMemoryDefault = false;
+  static const versionDefault = 1;
   final _databaseFactory;
-  final String databaseName;
   final int currentVersion;
   final VersionedMigrationFunctionDispenser? _migrationFunctionDispenser;
   Database? _database;
@@ -13,16 +14,17 @@ class DatabaseService {
   Database? get database => _database;
 
   DatabaseService(
-    PlatformDatabaseFactory databaseFactory, {
+    DatabaseFactory Function(String, bool) factoryProvider, {
     int? version,
     String? databaseName,
     bool? inMemory,
     VersionedMigrationFunctionDispenser? migrationDispenser,
-  })  : _databaseFactory = databaseFactory
-          ..inMemory = inMemory ?? false
-          ..databaseName = databaseName ?? 'P2P Task',
-        currentVersion = version ?? 1,
-        databaseName = databaseName ?? 'P2P Task',
+  })  : assert(databaseName != null ? databaseName.isNotEmpty : false),
+        _databaseFactory = factoryProvider(
+          databaseName ?? databaseNameDefault,
+          inMemory ?? inMemoryDefault,
+        ),
+        currentVersion = version ?? versionDefault,
         _migrationFunctionDispenser = migrationDispenser;
 
   Future<void> create({String? dbPath}) async {

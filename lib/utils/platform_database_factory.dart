@@ -9,12 +9,10 @@ import 'package:sembast/sembast_memory.dart';
 import 'package:sembast_web/sembast_web.dart';
 
 class PlatformDatabaseFactory extends DatabaseFactory {
-  String _databaseName = '';
-  bool _inMemory = false;
+  final String _databaseName;
+  final bool _inMemory;
 
-  set databaseName(String databaseName) => _databaseName = databaseName;
-
-  set inMemory(bool inMemory) => _inMemory = inMemory;
+  PlatformDatabaseFactory(this._databaseName, this._inMemory);
 
   @override
   Future<void> deleteDatabase(String path) async {

@@ -34,7 +34,9 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   }
 
   Widget _buildFloatingButton(
-      BuildContext context, DeviceListViewModel viewModel) {
+    BuildContext context,
+    DeviceListViewModel viewModel,
+  ) {
     return ElevatedButton(
       onPressed: viewModel.showQrScannerButton
           ? () => _openQrScanner(context, viewModel)
@@ -105,7 +107,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       child: Column(
         children: [
           Spacer(),
-          Text('📪 No devices yet.', style: kHeroFont),
+          Text('📪 No devices yet.', style: heroFont),
           Text('Press the button below to scan a QR code.'),
           Text('Longpress the button below to manually add a device.'),
           Spacer(flex: 2),

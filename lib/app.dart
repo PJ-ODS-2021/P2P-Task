@@ -12,7 +12,7 @@ class App extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'P2P Task Manager',
-      theme: kStandardTheme,
+      theme: standardTheme,
       home: child,
     );
   }

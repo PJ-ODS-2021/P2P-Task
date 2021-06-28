@@ -29,7 +29,7 @@ class ActivityLogScreen extends StatelessWidget {
         child: Column(
           children: [
             Spacer(),
-            Text('⚡️ No activities yet.', style: kHeroFont),
+            Text('⚡️ No activities yet.', style: heroFont),
             Text('Changes to your Tasks will be shown here.'),
             Text('Create a new Task or pair a device to see some activities.'),
             Spacer(flex: 2),
@@ -113,13 +113,6 @@ class ActivityLogScreen extends StatelessWidget {
     return Icon(activity.device == service.getCurrentDeviceName()
         ? Icons.arrow_upward
         : Icons.arrow_downward);
-    // return Image.asset(
-    //   activity.device == service.getCurrentDeviceName()
-    //       ? 'assets/up_arrow_icon.png'
-    //       : 'assets/down_arrow_icon.png',
-    //   width: 22,
-    //   height: 22,
-    // );
   }
 
   Widget _getActivityDescription(

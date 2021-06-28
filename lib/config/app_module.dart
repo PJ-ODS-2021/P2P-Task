@@ -115,7 +115,8 @@ class AppModule {
     final inMemory = _userWantsDatabaseInMemory(sharedPreferences);
     injector.map<DatabaseService>(
       (i) => DatabaseService(
-        PlatformDatabaseFactory(),
+        (databaseName, inMemory) =>
+            PlatformDatabaseFactory(databaseName, inMemory),
         version: 1,
         databaseName: 'p2p_task',
         inMemory: inMemory,

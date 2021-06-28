@@ -66,7 +66,7 @@ class DatabaseSection extends StatelessWidget {
             ),
             ListTile(
               tileColor: Colors.white,
-              onTap: () => handleDatabaseDeletion(
+              onTap: () => _handleDatabaseDeletion(
                 context,
                 databaseService,
               ),
@@ -80,7 +80,7 @@ class DatabaseSection extends StatelessWidget {
     );
   }
 
-  void handleDatabaseDeletion(
+  void _handleDatabaseDeletion(
     BuildContext context,
     DatabaseService databaseService,
   ) async {
