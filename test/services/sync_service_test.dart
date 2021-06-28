@@ -32,6 +32,26 @@ void main() {
     expect(ran, true);
   });
 
+  test('should not sync when interval set to 0', () async {
+    when(keyValueRepository.get<int>(SyncService.syncIntervalKey))
+        .thenAnswer((_) => Future.value(1));
+    when(keyValueRepository.get<bool>(SyncService.syncOnStartKey))
+        .thenAnswer((_) => Future.value(false));
+    when(keyValueRepository.put(any, any)).thenAnswer((_) => Future.value(0));
+    var ran = false;
+
+    fakeAsync((async) {
+      syncService.startJob(() => ran = true);
+      async.elapse(Duration(seconds: 1));
+      expect(ran, true);
+      ran = false;
+      syncService.setInterval(0);
+      async.elapse(Duration(seconds: 2));
+    });
+
+    expect(ran, false);
+  });
+
   test('should sync with new interval', () async {
     when(keyValueRepository.get<int>(SyncService.syncIntervalKey))
         .thenAnswer((_) => Future.value(1));

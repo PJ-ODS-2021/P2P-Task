@@ -70,8 +70,8 @@ class SyncService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<void> _updateSyncTimer(int interval) async {
-    if (_job == null) return;
     if (_syncTimer != null) _syncTimer!.cancel();
+    if (_job == null || interval == 0) return;
     _syncTimer = Timer.periodic(Duration(seconds: interval), (_) {
       _runJob();
     });
