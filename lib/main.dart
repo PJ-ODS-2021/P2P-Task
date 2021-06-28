@@ -111,7 +111,8 @@ class App extends StatelessWidget {
         ),
       ],
       child: AppLifecycleReactor(
-        onResume: () async => await injector.get<SyncService>().run(),
+        onResume: () async =>
+            await injector.get<SyncService>().run(runOnSyncOnStart: true),
         child: child,
       ),
     );

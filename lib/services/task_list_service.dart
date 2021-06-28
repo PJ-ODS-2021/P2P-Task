@@ -84,13 +84,13 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     final update = (await _taskListCrdt)
       ..put(task.id ?? id, task..id = (task.id ?? id));
     await _store(update);
-    await _syncService.run();
+    await _syncService.run(runOnSyncOnUpdate: true);
   }
 
   Future remove(Task task) async {
     final update = (await _taskListCrdt)..delete(task.id!);
     await _store(update);
-    await _syncService.run();
+    await _syncService.run(runOnSyncOnUpdate: true);
   }
 
   Future removeByListID(String taskListID) async {
@@ -105,7 +105,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
   Future delete() async {
     await _keyValueRepository.purge(key: _crdtTaskListKey);
     invokeChangeCallback();
-    await _syncService.run();
+    await _syncService.run(runOnSyncOnUpdate: true);
   }
 
   Future<int> count() async {

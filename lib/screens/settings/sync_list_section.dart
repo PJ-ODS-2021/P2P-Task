@@ -25,6 +25,7 @@ class SyncListSection extends StatelessWidget {
           syncService.interval,
           syncService.syncOnStart,
           syncService.syncOnUpdate,
+          syncService.retrieveSyncAfterDeviceAdded(),
         ],
       ),
       builder: (context, snapshot) {
@@ -58,12 +59,13 @@ class SyncListSection extends StatelessWidget {
                       : Text('Not running'),
             ),
             ListTile(
-                tileColor: Colors.white,
-                leading: Icon(Icons.sync),
-                title: Text('Sync interval'),
-                trailing: isWaiting
-                    ? null
-                    : _buildIntervalDropdown(syncService, data![0])),
+              tileColor: Colors.white,
+              leading: Icon(Icons.sync),
+              title: Text('Sync interval'),
+              trailing: isWaiting
+                  ? null
+                  : _buildIntervalDropdown(syncService, data![0]),
+            ),
             ListTile(
               tileColor: Colors.white,
               leading: Icon(Icons.perm_device_info),
@@ -84,6 +86,18 @@ class SyncListSection extends StatelessWidget {
                   : Switch.adaptive(
                       value: data![2],
                       onChanged: (value) => syncService.setSyncOnUpdate(value),
+                    ),
+            ),
+            ListTile(
+              tileColor: Colors.white,
+              leading: Icon(Icons.add_to_home_screen),
+              title: Text('Sync after device added'),
+              trailing: isWaiting
+                  ? null
+                  : Switch.adaptive(
+                      value: data![3],
+                      onChanged: (value) =>
+                          syncService.setSyncAfterDeviceAdded(value),
                     ),
             ),
           ],

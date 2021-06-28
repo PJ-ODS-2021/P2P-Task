@@ -88,8 +88,6 @@ void main() {
   test('should run job when syncOnUpdate is true', () async {
     when(keyValueRepository.get<int>(SyncService.syncIntervalKey))
         .thenAnswer((_) => Future.value(1));
-    when(keyValueRepository.get<bool>(SyncService.syncOnStartKey))
-        .thenAnswer((_) => Future.value(false));
     when(keyValueRepository.get<bool>(SyncService.syncOnUpdateKey))
         .thenAnswer((_) => Future.value(true));
     var ran = false;
@@ -97,7 +95,7 @@ void main() {
     fakeAsync((async) {
       syncService.startJob(() => ran = true);
     });
-    await syncService.run();
+    await syncService.run(runOnSyncOnUpdate: true);
 
     expect(ran, true);
   });
@@ -105,8 +103,6 @@ void main() {
   test('should not run job when syncOnUpdate is false', () async {
     when(keyValueRepository.get<int>(SyncService.syncIntervalKey))
         .thenAnswer((_) => Future.value(1));
-    when(keyValueRepository.get<bool>(SyncService.syncOnStartKey))
-        .thenAnswer((_) => Future.value(false));
     when(keyValueRepository.get<bool>(SyncService.syncOnUpdateKey))
         .thenAnswer((_) => Future.value(false));
     var ran = false;
@@ -114,7 +110,7 @@ void main() {
     fakeAsync((async) {
       syncService.startJob(() => ran = true);
     });
-    await syncService.run();
+    await syncService.run(runOnSyncOnUpdate: true);
 
     expect(ran, false);
   });
@@ -124,15 +120,58 @@ void main() {
         .thenAnswer((_) => Future.value(1));
     when(keyValueRepository.get<bool>(SyncService.syncOnStartKey))
         .thenAnswer((_) => Future.value(true));
-    when(keyValueRepository.get<bool>(SyncService.syncOnUpdateKey))
+    var ran = false;
+
+    fakeAsync((async) {
+      syncService.startJob(() => ran = true);
+    });
+    await syncService.run(runOnSyncOnStart: true);
+
+    expect(ran, true);
+  });
+
+  test('should not run job when syncOnStart is false', () async {
+    when(keyValueRepository.get<int>(SyncService.syncIntervalKey))
+        .thenAnswer((_) => Future.value(1));
+    when(keyValueRepository.get<bool>(SyncService.syncOnStartKey))
         .thenAnswer((_) => Future.value(false));
     var ran = false;
 
     fakeAsync((async) {
       syncService.startJob(() => ran = true);
     });
-    await syncService.run();
+    await syncService.run(runOnSyncOnStart: true);
+
+    expect(ran, false);
+  });
+
+  test('should run job when syncAfterDeviceAdded is true', () async {
+    when(keyValueRepository.get<int>(SyncService.syncIntervalKey))
+        .thenAnswer((_) => Future.value(1));
+    when(keyValueRepository.get<bool>(SyncService.syncAfterDeviceAddedKey))
+        .thenAnswer((_) => Future.value(true));
+    var ran = false;
+
+    fakeAsync((async) {
+      syncService.startJob(() => ran = true);
+    });
+    await syncService.run(runOnSyncAfterDeviceAdded: true);
 
     expect(ran, true);
+  });
+
+  test('should not run job when syncAfterDeviceAdded is false', () async {
+    when(keyValueRepository.get<int>(SyncService.syncIntervalKey))
+        .thenAnswer((_) => Future.value(1));
+    when(keyValueRepository.get<bool>(SyncService.syncAfterDeviceAddedKey))
+        .thenAnswer((_) => Future.value(false));
+    var ran = false;
+
+    fakeAsync((async) {
+      syncService.startJob(() => ran = true);
+    });
+    await syncService.run(runOnSyncAfterDeviceAdded: true);
+
+    expect(ran, false);
   });
 }

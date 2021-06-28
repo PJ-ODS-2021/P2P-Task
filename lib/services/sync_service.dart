@@ -11,6 +11,8 @@ class SyncService with LogMixin, ChangeCallbackProvider {
   static final bool _syncOnStartDefault = true;
   static final String syncOnUpdateKey = 'syncOnUpdate';
   static final bool _syncOnUpdateDefault = true;
+  static final String syncAfterDeviceAddedKey = 'syncAfterDeviceAdded';
+  static final bool _syncAfterDeviceAddedDefault = true;
 
   final KeyValueRepository _settingsRepository;
   Timer? _syncTimer;
@@ -56,14 +58,37 @@ class SyncService with LogMixin, ChangeCallbackProvider {
     return updatedValue;
   }
 
+  Future<bool> retrieveSyncAfterDeviceAdded() async =>
+      (await _settingsRepository.get<bool>(syncAfterDeviceAddedKey)) ??
+      _syncAfterDeviceAddedDefault;
+
+  Future<void> setSyncAfterDeviceAdded(bool syncAfterDeviceAdded) async {
+    final updatedValue = await _settingsRepository.put(
+      syncAfterDeviceAddedKey,
+      syncAfterDeviceAdded,
+    );
+    invokeChangeCallback();
+
+    return updatedValue;
+  }
+
   Future<void> startJob(Function() job) async {
     _job = job;
     await _updateSyncTimer(await interval);
   }
 
-  Future<void> run() async {
+  Future<void> run({
+    bool runOnSyncOnStart = false,
+    bool runOnSyncOnUpdate = false,
+    bool runOnSyncAfterDeviceAdded = false,
+  }) async {
     if (_job == null) return;
-    if (await syncOnStart || await syncOnUpdate) {
+    final conditions = [
+      runOnSyncOnStart ? await syncOnStart : false,
+      runOnSyncOnUpdate ? await syncOnUpdate : false,
+      runOnSyncAfterDeviceAdded ? await retrieveSyncAfterDeviceAdded() : false,
+    ];
+    if (conditions.any((element) => element)) {
       _runJob();
     }
   }
