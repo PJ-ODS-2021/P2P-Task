@@ -12,6 +12,7 @@ import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:p2p_task/utils/data_model_repository.dart';
+import 'package:p2p_task/utils/platform_database_factory.dart';
 import 'package:p2p_task/utils/shared_preferences_keys.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/store_ref_names.dart';
@@ -25,24 +26,7 @@ class AppModule {
 
     final sharedPreferences = await SharedPreferences.getInstance();
     injector.map((injector) => sharedPreferences, isSingleton: true);
-    final inMemory =
-        sharedPreferences.containsKey(SharedPreferencesKeys.inMemory.value)
-            ? sharedPreferences.getBool(SharedPreferencesKeys.inMemory.value)!
-            : false;
-    injector.map<DatabaseService>(
-      (i) => DatabaseService(1, 'p2p_task', inMemory, migrations),
-      isSingleton: true,
-    );
-    if (sharedPreferences
-        .containsKey(SharedPreferencesKeys.databasePath.value)) {
-      final databasePath =
-          sharedPreferences.getString(SharedPreferencesKeys.databasePath.value);
-      await injector.get<DatabaseService>().create(
-            dbPath: databasePath,
-          );
-    } else {
-      await injector.get<DatabaseService>().create();
-    }
+    _provideDatabaseService(sharedPreferences, injector);
     injector.map<Database>(
       (i) => i.get<DatabaseService>().database!,
       isSingleton: true,
@@ -122,5 +106,45 @@ class AppModule {
       ),
       isSingleton: true,
     );
+  }
+
+  Future<void> _provideDatabaseService(
+    SharedPreferences sharedPreferences,
+    Injector injector,
+  ) async {
+    final inMemory = _userWantsDatabaseInMemory(sharedPreferences);
+    injector.map<DatabaseService>(
+      (i) => DatabaseService(
+        PlatformDatabaseFactory(),
+        version: 1,
+        databaseName: 'p2p_task',
+        inMemory: inMemory,
+        migrationDispenser: VersionedMigrationFunctionDispenser(),
+      ),
+      isSingleton: true,
+    );
+    await _createDatabaseWithSpecifiedLocation(sharedPreferences, injector);
+  }
+
+  bool _userWantsDatabaseInMemory(SharedPreferences sharedPreferences) {
+    return sharedPreferences.containsKey(SharedPreferencesKeys.inMemory.value)
+        ? sharedPreferences.getBool(SharedPreferencesKeys.inMemory.value)!
+        : false;
+  }
+
+  Future<void> _createDatabaseWithSpecifiedLocation(
+    SharedPreferences sharedPreferences,
+    Injector injector,
+  ) async {
+    final userSpecifiedDatabasePathExists =
+        sharedPreferences.containsKey(SharedPreferencesKeys.databasePath.value);
+    final databaseService = injector.get<DatabaseService>();
+    if (userSpecifiedDatabasePathExists) {
+      final databasePath =
+          sharedPreferences.getString(SharedPreferencesKeys.databasePath.value);
+      await databaseService.create(dbPath: databasePath);
+    } else {
+      await databaseService.create();
+    }
   }
 }

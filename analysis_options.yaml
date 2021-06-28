@@ -7,6 +7,7 @@ analyzer:
     - macos/**
     - ios/**
     - android/**
+    - lib/**/*.mocks.dart
   plugins:
     - dart_code_metrics
 
