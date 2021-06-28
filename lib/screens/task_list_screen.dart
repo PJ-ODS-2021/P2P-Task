@@ -26,11 +26,10 @@ class _TaskListScreenState extends State<TaskListScreen> {
             .callbackProvider;
     final taskListId = widget.taskList.id!;
 
-    final futureBuilder = FutureBuilder<Iterable<Task>>(
-      initialData: [],
-      future: taskListService.getTasksFromList(taskListId),
+    final futureBuilder = FutureBuilder<TaskList?>(
+      initialData: null,
+      future: taskListService.getTaskListById(taskListId),
       builder: (context, snapshot) {
-        final data = snapshot.data;
         if (snapshot.hasError) {
           return Column(
             children: [
@@ -39,8 +38,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
             ],
           );
         }
+        final taskList = snapshot.data;
+        final tasks = taskList != null
+            ? _sortTasks(taskList.sortBy, taskList.elements)
+            : <Task>[];
 
-        return _buildTaskList(context, taskListService, data!.toList());
+        return _buildTaskList(context, taskListService, tasks);
       },
     );
 
@@ -247,5 +250,44 @@ class _TaskListScreenState extends State<TaskListScreen> {
         },
       ),
     );
+  }
+
+  List<Task> _sortTasks(SortOption sortOption, List<Task> tasks) {
+    switch (sortOption) {
+      case SortOption.Title:
+        return tasks..sort(_titleIdCompare);
+      case SortOption.Flag:
+        return tasks
+          ..sort((a, b) => a.isFlagged != b.isFlagged
+              ? (a.isFlagged ? -1 : 1)
+              : _titleIdCompare(a, b));
+      case SortOption.Status:
+        return tasks
+          ..sort((a, b) => a.completed != b.completed
+              ? (a.completed ? -1 : 1)
+              : _titleIdCompare(a, b));
+      case SortOption.DueDate:
+        return tasks
+          ..sort((a, b) {
+            if (a.due == null) return b.due == null ? _titleIdCompare(a, b) : 1;
+            if (b.due == null) return -1;
+            final cmp = a.due!.compareTo(b.due!);
+            if (cmp != 0) return cmp;
+
+            return _titleIdCompare(a, b);
+          });
+      case SortOption.Created:
+      default:
+        return tasks..sort(_titleIdCompare);
+    }
+  }
+
+  int _titleIdCompare(Task a, Task b) {
+    final cmp = a.title.compareTo(b.title);
+    if (cmp != 0) return cmp;
+    if (a.id == null) return b.id == null ? 0 : 1;
+    if (b.id == null) return -1;
+
+    return a.id!.compareTo(b.id!);
   }
 }

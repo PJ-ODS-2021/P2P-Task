@@ -15,9 +15,10 @@ class TaskListsScreen extends StatelessWidget {
         Provider.of<ChangeCallbackNotifier<TaskListService>>(context)
             .callbackProvider;
 
-    final futureBuilder = FutureBuilder<Iterable<TaskList>>(
+    final futureBuilder = FutureBuilder<List<TaskList>>(
       initialData: [],
-      future: taskService.taskLists,
+      future: taskService.taskLists
+          .then((v) => v.toList()..sort((a, b) => a.title.compareTo(b.title))),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Column(
