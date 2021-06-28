@@ -47,6 +47,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     _peer.registerCallback<TaskListMessage>(_taskListMessageCallback);
 
     _syncService.startJob(syncWithAllKnownPeers);
+    _syncService.run();
   }
 
   bool get isServerRunning => _peer.isServerRunning;

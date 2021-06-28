@@ -8,7 +8,8 @@ import 'package:p2p_task/widgets/simple_dropdown.dart';
 import 'package:provider/provider.dart';
 
 class SyncListSection extends StatelessWidget {
-  final _intervalOptions = ['off', '1s', '5s', '10s', '15s', '30s', '60s'];
+  final _intervalOptions = ['off', '1min', '5min', '15min', '1h'];
+  final _intervalValues = [0, 60, 300, 900, 3600];
 
   @override
   Widget build(BuildContext context) {
@@ -57,24 +58,12 @@ class SyncListSection extends StatelessWidget {
                       : Text('Not running'),
             ),
             ListTile(
-              tileColor: Colors.white,
-              leading: Icon(Icons.sync),
-              title: Text('Sync interval'),
-              trailing: isWaiting
-                  ? null
-                  : SimpleDropdown(
-                      items: _intervalOptions,
-                      initialIndex: data![0] == 0
-                          ? 0
-                          : _intervalOptions
-                              .indexWhere((option) => option == '${data[0]}s'),
-                      onItemSelect: (item) async {
-                        await syncService.setInterval(item == 'off'
-                            ? 0
-                            : int.parse(item.replaceAll('s', '')));
-                      },
-                    ),
-            ),
+                tileColor: Colors.white,
+                leading: Icon(Icons.sync),
+                title: Text('Sync interval'),
+                trailing: isWaiting
+                    ? null
+                    : _buildIntervalDropdown(syncService, data![0])),
             ListTile(
               tileColor: Colors.white,
               leading: Icon(Icons.perm_device_info),
@@ -98,6 +87,19 @@ class SyncListSection extends StatelessWidget {
                     ),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Widget _buildIntervalDropdown(SyncService syncService, int interval) {
+    return SimpleDropdown(
+      items: _intervalOptions,
+      initialIndex: _intervalValues.indexWhere((value) => value == interval),
+      onItemSelect: (item) async {
+        await syncService.setInterval(
+          _intervalValues[
+              _intervalOptions.indexWhere((option) => option == item)],
         );
       },
     );

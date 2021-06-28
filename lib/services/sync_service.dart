@@ -6,11 +6,11 @@ import 'package:p2p_task/utils/log_mixin.dart';
 
 class SyncService with LogMixin, ChangeCallbackProvider {
   static final String syncIntervalKey = 'syncInterval';
-  static final int _syncIntervalDefaultValue = 5;
+  static final int _syncIntervalDefault = 60;
   static final String syncOnStartKey = 'syncOnStart';
-  static final bool _syncOnStartDefaultValue = true;
+  static final bool _syncOnStartDefault = true;
   static final String syncOnUpdateKey = 'syncOnUpdate';
-  static final bool _syncOnUpdateDefaultValue = true;
+  static final bool _syncOnUpdateDefault = true;
 
   final KeyValueRepository _settingsRepository;
   Timer? _syncTimer;
@@ -21,7 +21,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
 
   Future<int> get interval async =>
       (await _settingsRepository.get<int>(syncIntervalKey)) ??
-      _syncIntervalDefaultValue;
+      _syncIntervalDefault;
 
   Future<void> setInterval(int interval) async {
     final updatedInterval =
@@ -34,7 +34,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
 
   Future<bool> get syncOnStart async =>
       (await _settingsRepository.get<bool>(syncOnStartKey)) ??
-      _syncOnStartDefaultValue;
+      _syncOnStartDefault;
 
   Future<void> setSyncOnStart(bool syncOnStart) async {
     final updatedValue =
@@ -46,7 +46,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
 
   Future<bool> get syncOnUpdate async =>
       (await _settingsRepository.get<bool>(syncOnUpdateKey)) ??
-      _syncOnUpdateDefaultValue;
+      _syncOnUpdateDefault;
 
   Future<void> setSyncOnUpdate(bool syncOnUpdate) async {
     final updatedValue =
@@ -59,7 +59,6 @@ class SyncService with LogMixin, ChangeCallbackProvider {
   Future<void> startJob(Function() job) async {
     _job = job;
     await _updateSyncTimer(await interval);
-    if (await syncOnStart) _runJob();
   }
 
   Future<void> run() async {
