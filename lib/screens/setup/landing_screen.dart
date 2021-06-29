@@ -18,7 +18,8 @@ class LandingScreen extends StatelessWidget {
       SharedPreferences.getInstance(),
       (sharedPreferences) {
         final hasAlreadyVisited = sharedPreferences
-            .containsKey(SharedPreferencesKeys.databasePath.value);
+                .containsKey(SharedPreferencesKeys.databasePath.value) ||
+            sharedPreferences.containsKey(SharedPreferencesKeys.inMemory.value);
         final isDesktop = !kIsWeb && !(Platform.isIOS || Platform.isAndroid);
 
         return hasAlreadyVisited || !isDesktop

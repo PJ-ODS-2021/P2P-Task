@@ -1,3 +1,4 @@
+// ignore_for_file: prefer-trailing-comma
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/utils/data_model_repository.dart';
