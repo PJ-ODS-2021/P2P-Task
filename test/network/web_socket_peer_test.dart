@@ -39,7 +39,7 @@ void main() {
 
   setUp(() async {
     db = await databaseFactoryMemory.openDatabase('');
-    keyValueRepository = KeyValueRepository(db);
+    keyValueRepository = KeyValueRepository(db, StoreRef(''));
     identityService = IdentityService(keyValueRepository);
 
     keys = keyHelper.generateRSAkeyPair();

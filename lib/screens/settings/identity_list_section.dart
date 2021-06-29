@@ -36,7 +36,7 @@ class IdentityListSection extends StatelessWidget {
             );
           },
         ),
-        FutureBuilder<String>(
+        FutureBuilder<String?>(
           initialData: 'Loading...',
           future: identityService.name,
           builder: (context, snapshot) {
@@ -46,13 +46,13 @@ class IdentityListSection extends StatelessWidget {
                 title: Text('Error'),
               );
             }
-            final name = snapshot.data!;
+            final name = snapshot.data;
 
             return ListTile(
               tileColor: Colors.white,
               leading: Icon(Icons.call_to_action_outlined),
               title: Text('Name'),
-              subtitle: Text(name),
+              subtitle: Text(name ?? 'No name yet.'),
               onTap: () => showDialog(
                 context: context,
                 builder: (context) => UpdateSingleValueDialog(

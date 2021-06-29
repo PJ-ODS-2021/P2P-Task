@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/models/peer_info.dart';
-import 'package:p2p_task/services/change_callback_notifier.dart';
-import 'package:p2p_task/services/peer_info_service.dart';
+import 'package:p2p_task/viewmodels/device_list_viewmodel.dart';
 import 'package:provider/provider.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/identity_service.dart';
@@ -184,19 +183,18 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
   }
 
   void _onSubmit() async {
-    var location =
+
+        var location =
         PeerLocation('ws://${_ipController.text}:${_portController.text}');
-    var peerInfo = PeerInfo()
+
+    final peerInfo = PeerInfo()
       ..name = _nameController.text
-      ..publicKey = _publicKeyController.text
-      ..locations.add(location);
+       ..publicKey = _publicKeyController.text
+      ..locations.add(location),
+      );
+    Provider.of<DeviceListViewModel>(context, listen: false).upsert(peerInfo);
 
-    await Provider.of<ChangeCallbackNotifier<PeerInfoService>>(context,
-            listen: false)
-        .callbackProvider
-        .upsert(peerInfo);
-
-    var identityService = Provider.of<ChangeCallbackNotifier<IdentityService>>(
+     var identityService = Provider.of<ChangeCallbackNotifier<IdentityService>>(
       context,
       listen: false,
     ).callbackProvider;
