@@ -3,8 +3,15 @@ import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:provider/provider.dart';
+import 'package:p2p_task/services/peer_service.dart';
+import 'package:p2p_task/services/identity_service.dart';
+import 'package:p2p_task/screens/qr_code_dialog.dart';
 
 class DeviceFormScreen extends StatefulWidget {
+  PeerService peerService;
+  ConnectionInfo ownInfo;
+  DeviceFormScreen(this.peerService, this.ownInfo);
+
   @override
   _DeviceFormScreenState createState() => _DeviceFormScreenState();
 }
@@ -13,9 +20,11 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController(text: '');
   final _ipController = TextEditingController(text: '');
+  final _publicKeyController = TextEditingController(text: '');
   final _portController = TextEditingController(text: '');
   final _nameFocusNode = FocusNode();
   final _ipFocusNode = FocusNode();
+  final _publicKeyFocusNode = FocusNode();
   final _portFocusNode = FocusNode();
 
   @override
@@ -51,6 +60,29 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                   },
                   onFieldSubmitted: (value) {
                     if (value.isNotEmpty) _ipFocusNode.requestFocus();
+                    _nameFocusNode.requestFocus();
+                  },
+                ),
+                SizedBox(
+                  height: 15,
+                ),
+                TextFormField(
+                  focusNode: _publicKeyFocusNode,
+                  decoration: InputDecoration(
+                    hintText: 'Public Key',
+                    filled: true,
+                    fillColor: Colors.purple[50],
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                  ),
+                  controller: _publicKeyController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'The publicKey address is missing.';
+                    }
+
+                    return null;
+                  },
+                  onFieldSubmitted: (value) {
                     _nameFocusNode.requestFocus();
                   },
                 ),
@@ -151,14 +183,27 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
     );
   }
 
-  void _onSubmit() {
-    Provider.of<ChangeCallbackNotifier<PeerInfoService>>(context, listen: false)
+  void _onSubmit() async {
+    var location =
+        PeerLocation('ws://${_ipController.text}:${_portController.text}');
+    var peerInfo = PeerInfo()
+      ..name = _nameController.text
+      ..publicKey = _publicKeyController.text
+      ..locations.add(location);
+
+    await Provider.of<ChangeCallbackNotifier<PeerInfoService>>(context,
+            listen: false)
         .callbackProvider
-        .upsert(PeerInfo()
-          ..name = _nameController.text
-          ..locations.add(
-            PeerLocation('ws://${_ipController.text}:${_portController.text}'),
-          ));
+        .upsert(peerInfo);
+
+    var identityService = Provider.of<ChangeCallbackNotifier<IdentityService>>(
+      context,
+      listen: false,
+    ).callbackProvider;
+
+    await widget.peerService.sendIntroductionMessageToPeer(
+        widget.ownInfo, peerInfo, await identityService.privateKeyPem,
+        location: location);
     Navigator.of(context).pop();
   }
 }

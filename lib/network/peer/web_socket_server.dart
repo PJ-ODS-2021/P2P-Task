@@ -16,7 +16,10 @@ class WebSocketServer with LogMixin {
 
   static Future<WebSocketServer> start(
     int port,
-    Function(WebSocketClient, dynamic)? Function(WebSocketClient) createOnData,
+    Function(WebSocketClient, dynamic, String)? Function(
+            WebSocketClient, String)
+        createOnData,
+    String privateKey,
   ) async {
     final server = WebSocketServer._empty();
     server.l.info('Starting server on port $port...');
@@ -24,9 +27,10 @@ class WebSocketServer with LogMixin {
       webSocketHandler((WebSocketChannel channel) {
         server._connectedClients.add(channel);
         final channelClient = WebSocketClient.fromChannel(channel);
-        final onData = createOnData(channelClient);
+        final onData = createOnData(channelClient, privateKey);
         if (onData != null) {
-          channel.stream.listen((data) => onData(channelClient, data));
+          channel.stream
+              .listen((data) => onData(channelClient, data, privateKey));
         }
       }),
       InternetAddress.anyIPv4,

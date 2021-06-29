@@ -3,10 +3,13 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebSocketClient with LogMixin {
   late WebSocketChannel _channel;
+  late String publicKey;
 
   Stream get dataStream => _channel.stream;
 
   WebSocketClient.fromChannel(this._channel);
+
+  WebSocketClient.fromPublicKey(this.publicKey);
 
   WebSocketClient.connect(Uri uri) {
     l.info('Creating WebSocket channel to "$uri"...');

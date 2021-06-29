@@ -118,6 +118,20 @@ class KeyHelper {
     return encrypt_pem.RSAKeyParser().parse(publicKeyPem) as pc.RSAPublicKey;
   }
 
+  String encryptWithPublicKeyPem(String publicKeyPem, String message) {
+    var publicKey =
+        decodePublicKeyFromPem(publicKeyPem.replaceAll('\\r\\n', '\n'));
+
+    return encrypt(publicKey, message);
+  }
+
+  String decryptWithPrivateKeyPem(String privateKeyPem, String message) {
+    var privateKey =
+        decodePrivateKeyFromPem(privateKeyPem.replaceAll('\\r\\n', '\n'));
+
+    return decrypt(privateKey, message);
+  }
+
   String encodePublicKeyToPem(pc.RSAPublicKey publicKey) {
     var topLevel = ASN1Sequence();
 

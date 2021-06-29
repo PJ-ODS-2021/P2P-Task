@@ -6,6 +6,7 @@ import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:provider/provider.dart';
 import 'package:p2p_task/security/key_helper.dart';
 
+//can be ignored - will be replaced with Jacobs awesome screen
 class InitialSetupDialog extends StatelessWidget with LogMixin {
   late final _nameController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -51,13 +52,21 @@ class InitialSetupDialog extends StatelessWidget with LogMixin {
         centerTitle: true,
       ),
       body: FutureBuilder<String>(
-        future: identityService.privateKeyPem,
+        future: identityService.publicKeyPem,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return ListTile(
               tileColor: Colors.white,
               title: Text('Error'),
             );
+          } else {
+            ///print public key for copy
+            ///new line has to be replaced manually by \r\n
+            /// -----BEGIN RSA PRIVATE KEY-----
+            /// MIIFog...
+            /// -----END RSA PRIVATE KEY-----
+            /// => -----BEGIN RSA PRIVATE KEY-----\r\nMIIFog...\r\n-----BEGIN RSA PRIVATE KEY-----
+            print(snapshot.data);
           }
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());

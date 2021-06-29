@@ -7,8 +7,10 @@ part 'task_list_message.g.dart';
 class TaskListMessage extends Serializable {
   String taskListCrdtJson;
   bool requestReply;
+  String publicKey;
 
-  TaskListMessage(this.taskListCrdtJson, {this.requestReply = false});
+  TaskListMessage(this.taskListCrdtJson, this.publicKey,
+      {this.requestReply = false});
 
   factory TaskListMessage.fromJson(Map<String, dynamic> json) =>
       _$TaskListMessageFromJson(json);

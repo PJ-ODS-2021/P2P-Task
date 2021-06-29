@@ -29,7 +29,6 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
             identityService.ip,
             identityService.port,
             identityService.peerId,
-            deviceInfoService.deviceName,
             identityService.publicKeyPem,
           ]),
           builder: (context, snapshot) {
@@ -38,14 +37,13 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
 
             final storedIp = snapshot.data![1] as String?;
             final ips = networkInfoService.ips;
-            final connectionInfo = _ConnectionInfo(
+            final connectionInfo = ConnectionInfo(
               _selectIp(ips, storedIp),
               ips,
               snapshot.data![2] as int,
               snapshot.data![0] as String,
               snapshot.data![3] as String,
               snapshot.data![4] as String,
-              snapshot.data![5] as String,
             );
             if (connectionInfo.selectedIp != null &&
                 connectionInfo.selectedIp != storedIp) {
@@ -112,7 +110,7 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
 
   List<Widget> _createServerConnectionInfoWidgets(
     BuildContext context,
-    _ConnectionInfo connectionInfo,
+    ConnectionInfo connectionInfo,
     IdentityService identityService,
   ) {
     return connectionInfo.ips.isEmpty
@@ -163,7 +161,7 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
   }
 
   List<Widget> _createQrWidgets(
-    _ConnectionInfo connectionInfo,
+    ConnectionInfo connectionInfo,
     double displaySize,
   ) {
     return [
@@ -175,7 +173,6 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
             child: QrImage(
               data: _makeQrContent(
                   connectionInfo.name,
-                  connectionInfo.device,
                   connectionInfo.selectedIp!,
                   connectionInfo.port,
                   connectionInfo.publicKey,
@@ -193,9 +190,9 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
     return ips.isNotEmpty ? ips.first : null;
   }
 
-  String _makeQrContent(String name, String device, String ip, int port,
-      String publicKey, String peerID) {
-    return '$peerID,$name,$device,$ip,$port,$publicKey';
+  String _makeQrContent(
+      String name, String ip, int port, String publicKey, String peerID) {
+    return '$peerID,$name,$ip,$port,$publicKey';
   }
 
   /// size calculation is very hacky
@@ -209,22 +206,20 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
   }
 }
 
-class _ConnectionInfo {
+class ConnectionInfo {
   final String? selectedIp;
   final List<String> ips;
   final int port;
   final String name;
   final String peerID;
-  final String device;
   final String publicKey;
 
-  const _ConnectionInfo(
+  const ConnectionInfo(
     this.selectedIp,
     this.ips,
     this.port,
     this.name,
     this.peerID,
-    this.device,
     this.publicKey,
   );
 }

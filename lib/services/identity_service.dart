@@ -40,8 +40,8 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
     return updatedName;
   }
 
-  Future<String?> get publicKeyPem async =>
-      await _repository.get<String>(_PUBLIC_KEY);
+  Future<String> get publicKeyPem async =>
+      await _repository.get<String>(_PUBLIC_KEY) ?? '';
 
   Future setPublicKeyPem(String publicKey) async {
     final updatedPublicKey = await _repository.put(_PUBLIC_KEY, publicKey);

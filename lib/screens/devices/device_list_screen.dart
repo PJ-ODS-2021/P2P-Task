@@ -5,10 +5,14 @@ import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/screens/devices/device_form_screen.dart';
 import 'package:p2p_task/screens/qr_scanner_screen.dart';
+import 'package:p2p_task/screens/qr_code_dialog.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
+import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
+import 'package:p2p_task/services/device_info_service.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
+import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/widgets/list_section.dart';
 import 'package:provider/provider.dart';
 
@@ -20,25 +24,41 @@ class DeviceListScreen extends StatefulWidget {
 }
 
 class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
-  void _onQrCodeRead(String qrContent, BuildContext context) {
+  void _onQrCodeRead(
+    String qrContent,
+    PeerService peerService,
+    ConnectionInfo ownInfo,
+    BuildContext context,
+  ) async {
     var values = qrContent.split(',');
-    if (values.length < 6) {
+
+    if (values.length < 5) {
       l.warning(
-        'ignoring invalid qr content "$qrContent": less than 3 components',
+        'ignoring invalid qr content "$qrContent": less than 6 components',
       );
 
       return;
     }
-    Provider.of<ChangeCallbackNotifier<PeerInfoService>>(context, listen: false)
+
+    var peerInfo = PeerInfo()
+      ..id = values[0]
+      ..name = values[1]
+      ..locations.add(PeerLocation('ws://${values[2]}:${values[3]}'))
+      ..publicKey = values[4];
+
+    await Provider.of<ChangeCallbackNotifier<PeerInfoService>>(context,
+            listen: false)
         .callbackProvider
-        .upsert(
-          PeerInfo()
-            ..id = values[0]
-            ..name = values[1]
-            ..device = values[2]
-            ..locations.add(PeerLocation('ws://${values[3]}:${values[4]}'))
-            ..publicKey = values[5],
-        );
+        .upsert(peerInfo);
+
+    var identityService = Provider.of<ChangeCallbackNotifier<IdentityService>>(
+      context,
+      listen: false,
+    ).callbackProvider;
+
+    await peerService.sendIntroductionMessageToPeer(
+        ownInfo, peerInfo, await identityService.privateKeyPem,
+        location: PeerLocation('ws://${values[3]}:${values[4]}'));
   }
 
   @override
@@ -143,7 +163,15 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
           color: Colors.grey.shade400,
           icon: Icons.sync,
           onTap: () async {
-            await peerService.syncWithPeer(peerInfo, location: peerLocation);
+            var identityService =
+                Provider.of<ChangeCallbackNotifier<IdentityService>>(
+              context,
+              listen: false,
+            ).callbackProvider;
+
+            await peerService.syncWithPeer(
+                peerInfo, await identityService.privateKeyPem,
+                location: peerLocation);
           },
         ),
         IconSlideAction(
@@ -164,8 +192,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
     return ListTile(
       tileColor: Colors.white,
       leading: Icon(Icons.send_to_mobile),
-      title: Text('${peerInfo.device}'),
-      subtitle: Text(peerLocation.networkName == null
+      title: Text(peerLocation.networkName == null
           ? peerLocation.uriStr
           : '${peerLocation.uriStr} in ${peerLocation.networkName}'),
       trailing: Icon(Icons.keyboard_arrow_left),
@@ -173,21 +200,76 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
   }
 
   Future _openQrScanner(BuildContext context) {
+    final peerService = Provider.of<ChangeCallbackNotifier<PeerService>>(
+      context,
+      listen: false,
+    ).callbackProvider;
+    final identityService =
+        Provider.of<ChangeCallbackNotifier<IdentityService>>(
+      context,
+      listen: false,
+    ).callbackProvider;
+    final deviceInfoService =
+        Provider.of<DeviceInfoService>(context, listen: false);
+    final networkInfoService =
+        Provider.of<ChangeCallbackNotifier<NetworkInfoService>>(
+      context,
+      listen: false,
+    ).callbackProvider;
+
     return Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => QrScannerScreen(
-          onQRCodeRead: (qrContent) => _onQrCodeRead(qrContent, context),
+          onQRCodeRead: (qrContent) async {
+            _onQrCodeRead(
+                qrContent,
+                peerService,
+                ConnectionInfo(
+                  selectIp(networkInfoService.ips, await identityService.ip),
+                  networkInfoService.ips,
+                  await identityService.port,
+                  await identityService.name,
+                  await identityService.peerId,
+                  await identityService.publicKeyPem,
+                ),
+                context);
+          },
         ),
       ),
     );
   }
 
-  Future _openDeviceForm(BuildContext context) {
+  Future _openDeviceForm(BuildContext context) async {
+    final peerService = Provider.of<ChangeCallbackNotifier<PeerService>>(
+      context,
+      listen: false,
+    ).callbackProvider;
+    final identityService =
+        Provider.of<ChangeCallbackNotifier<IdentityService>>(
+      context,
+      listen: false,
+    ).callbackProvider;
+
+    final networkInfoService =
+        Provider.of<ChangeCallbackNotifier<NetworkInfoService>>(
+      context,
+      listen: false,
+    ).callbackProvider;
+
+    var ownInfo = ConnectionInfo(
+      selectIp(networkInfoService.ips, await identityService.ip),
+      networkInfoService.ips,
+      await identityService.port,
+      await identityService.name,
+      await identityService.peerId,
+      await identityService.publicKeyPem,
+    );
+
     return Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DeviceFormScreen(),
+        builder: (context) => DeviceFormScreen(peerService, ownInfo),
       ),
     );
   }
@@ -204,5 +286,11 @@ class _DeviceListScreenState extends State<DeviceListScreen> with LogMixin {
       default:
         return false;
     }
+  }
+
+  String? selectIp(List<String> ips, String? storedIp) {
+    if (ips.contains(storedIp)) return storedIp;
+
+    return ips.isNotEmpty ? ips.first : null;
   }
 }
