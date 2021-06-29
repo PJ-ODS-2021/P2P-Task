@@ -124,6 +124,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       children: devices.map((peerInfo) {
         return ListSection(
           title: peerInfo.name.isNotEmpty ? peerInfo.name : peerInfo.id,
+          subtitle: Text(peerInfo.publicKeyPem),
           children: peerInfo.locations.map((peerLocation) {
             return _buildSlidablePeerRow(
               peerInfo,
@@ -187,43 +188,12 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     );
   }
 
-  Future _openDeviceForm(BuildContext context) async {
-    final peerService = Provider.of<ChangeCallbackNotifier<PeerService>>(
-      context,
-      listen: false,
-    ).callbackProvider;
-    final identityService =
-        Provider.of<ChangeCallbackNotifier<IdentityService>>(
-      context,
-      listen: false,
-    ).callbackProvider;
-
-    final networkInfoService =
-        Provider.of<ChangeCallbackNotifier<NetworkInfoService>>(
-      context,
-      listen: false,
-    ).callbackProvider;
-
-    var ownInfo = ConnectionInfo(
-      selectIp(networkInfoService.ips, await identityService.ip),
-      networkInfoService.ips,
-      await identityService.port,
-      await identityService.name,
-      await identityService.peerId,
-      await identityService.publicKeyPem,
-    );
-
+  Future _openDeviceForm(BuildContext context) {
     return Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DeviceFormScreen(peerService, ownInfo),
+        builder: (context) => DeviceFormScreen(),
       ),
     );
   }
 }
-
-// String? selectIp(List<String> ips, String? storedIp) {
-//     if (ips.contains(storedIp)) return storedIp;
-
-//     return ips.isNotEmpty ? ips.first : null;
-//   }

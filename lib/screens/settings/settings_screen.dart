@@ -55,7 +55,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ).callbackProvider;
       final name = await identityService.name;
       await databaseService.deleteStore(StoreRefNames.settings.value);
-      await identityService.setName(name!);
+      await identityService.setName(name);
       setState(() {});
     }
   }

@@ -6,9 +6,8 @@ part 'debug_message.g.dart';
 @JsonSerializable()
 class DebugMessage extends Serializable {
   String value;
-  String publicKey;
 
-  DebugMessage(this.value, this.publicKey);
+  DebugMessage(this.value);
 
   factory DebugMessage.fromJson(Map<String, dynamic> json) =>
       _$DebugMessageFromJson(json);

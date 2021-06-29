@@ -82,6 +82,25 @@ class IdentityListSection extends StatelessWidget {
             );
           },
         ),
+        FutureBuilder<String>(
+          initialData: 'Loading...',
+          future: identityService.publicKeyPem,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return ListTile(
+                title: Text('Error'),
+              );
+            }
+            final publicKey = snapshot.data!;
+
+            return ListTile(
+              tileColor: Colors.white,
+              leading: Icon(Icons.vpn_key),
+              title: Text('Public key'),
+              subtitle: Text(publicKey),
+            );
+          },
+        ),
       ],
     );
   }

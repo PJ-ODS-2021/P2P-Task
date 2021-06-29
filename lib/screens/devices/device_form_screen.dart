@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/viewmodels/device_list_viewmodel.dart';
+import 'package:p2p_task/security/key_helper.dart';
 import 'package:provider/provider.dart';
-import 'package:p2p_task/services/peer_service.dart';
-import 'package:p2p_task/services/identity_service.dart';
-import 'package:p2p_task/screens/qr_code_dialog.dart';
 
 class DeviceFormScreen extends StatefulWidget {
-  PeerService peerService;
-  ConnectionInfo ownInfo;
-  DeviceFormScreen(this.peerService, this.ownInfo);
+  DeviceFormScreen();
 
   @override
   _DeviceFormScreenState createState() => _DeviceFormScreenState();
@@ -183,25 +179,18 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
   }
 
   void _onSubmit() async {
-
-        var location =
+    var location =
         PeerLocation('ws://${_ipController.text}:${_portController.text}');
 
     final peerInfo = PeerInfo()
       ..name = _nameController.text
-       ..publicKey = _publicKeyController.text
-      ..locations.add(location),
-      );
-    Provider.of<DeviceListViewModel>(context, listen: false).upsert(peerInfo);
+      ..publicKeyPem = _publicKeyController.text
+      ..locations.add(location);
 
-     var identityService = Provider.of<ChangeCallbackNotifier<IdentityService>>(
-      context,
-      listen: false,
-    ).callbackProvider;
+    var viewmodel = Provider.of<DeviceListViewModel>(context, listen: false);
+    viewmodel.upsert(peerInfo);
+    viewmodel.sendIntroductionMessageToPeer(peerInfo, location);
 
-    await widget.peerService.sendIntroductionMessageToPeer(
-        widget.ownInfo, peerInfo, await identityService.privateKeyPem,
-        location: location);
     Navigator.of(context).pop();
   }
 }

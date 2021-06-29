@@ -1,5 +1,6 @@
 import 'package:p2p_task/network/messages/packet.dart';
 import 'package:p2p_task/utils/serializable.dart';
+import 'package:pointycastle/export.dart';
 
 typedef JsonDecodeFunction = Object? Function(Map<String, dynamic> json);
 
@@ -13,8 +14,16 @@ class _TypeInfo {
 class PacketHandler<T> {
   static const version = '0.1.0';
 
-  void Function(Packet, T)? defaultCallback;
-  final Map<String, void Function(Packet, T)> _callbacks = {};
+  void Function(
+    Packet,
+    T,
+  )? defaultCallback;
+  final Map<
+      String,
+      void Function(
+    Packet,
+    T,
+  )> _callbacks = {};
   final Map<Type, _TypeInfo> _typenames = {};
 
   Packet toPacket<S extends Serializable>(S value) {
@@ -32,7 +41,13 @@ class PacketHandler<T> {
     }
   }
 
-  void registerCallback<E>(Function(E, T source) callback) {
+  void registerCallback<E>(
+    Function(
+      E,
+      T source,
+    )
+        callback,
+  ) {
     final typeInfo = _getTypeInfo(E);
     assert(!_callbacks.containsKey(typeInfo.typename),
         'a callback for this typename already exists');

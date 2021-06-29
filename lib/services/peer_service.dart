@@ -7,9 +7,9 @@ import 'package:p2p_task/network/peer/web_socket_client.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
 import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/services/identity_service.dart';
+import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
-import 'package:p2p_task/screens/qr_code_dialog.dart';
 import 'package:p2p_task/security/key_helper.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/services/task_lists_service.dart';
@@ -21,6 +21,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   final TaskListsService _taskListsService;
   final PeerInfoService _peerInfoService;
   final IdentityService _identityService;
+  final NetworkInfoService _networkInfoService;
   final SyncService _syncService;
   final keyHelper = KeyHelper();
 
@@ -30,6 +31,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     this._taskListsService,
     this._peerInfoService,
     this._identityService,
+    this._networkInfoService,
     this._syncService,
   ) {
     _peer.clear();
@@ -55,9 +57,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     _peer.registerCallback<TaskListMessage>(_taskListMessageCallback);
     _peer.registerCallback<IntroductionMessage>(_introductionMessageCallback);
 
-    // don't know how to handle privatekey
-    // _syncService
-    //     .startJob(syncWithAllKnownPeers();
+    _syncService.startJob(syncWithAllKnownPeers);
     _syncService.run(runOnSyncOnStart: true);
   }
 
@@ -109,13 +109,13 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       return;
     }
 
-    var publicKey = values[4].substring(0, values[4].length - 1);
+    var publicKeyPem = values[4];
 
     var peerInfo = PeerInfo()
       ..id = values[0]
       ..name = values[1]
       ..locations.add(PeerLocation('ws://${values[2]}:${values[3]}'))
-      ..publicKey = publicKey;
+      ..publicKeyPem = publicKeyPem;
 
     await _peerInfoService.upsert(peerInfo);
 
@@ -125,12 +125,11 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     _peer.sendPacketTo(
       source,
       IntroductionMessage('Hello back from $name,$peerID'),
-      publicKey,
+      keyHelper.decodePublicKeyFromPem(publicKeyPem),
     );
   }
 
   void _handleIntroductionReplyMessage(String encryptedMessage) async {
-    //encofing error of privateKey;
     var message = keyHelper.decryptWithPrivateKeyPem(
         await _identityService.privateKeyPem, encryptedMessage);
 
@@ -150,10 +149,16 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     await _taskListService.mergeCrdtJson(taskListMessage.taskListCrdtJson);
     if (taskListMessage.requestReply) {
       final taskListCrdtJson = await _taskListService.crdtToJson();
+      if (taskListMessage.publicKeyPem == null) {
+        l.severe('missing public key for request reply');
+
+        return;
+      }
       _peer.sendPacketTo(
-          source,
-          TaskListMessage(taskListCrdtJson, taskListMessage.publicKey),
-          taskListMessage.publicKey);
+        source,
+        TaskListMessage(taskListCrdtJson),
+        keyHelper.decodePublicKeyFromPem(taskListMessage.publicKeyPem!),
+      );
 
       // TODO: propagate new task list through the network using other connected and known peers (if updated)
     } else {
@@ -171,11 +176,16 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     await _taskListsService.mergeCrdtJson(taskListsMessage.taskListsCrdtJson);
     if (taskListsMessage.requestReply) {
       final taskListCrdtJson = await _taskListsService.crdtToJson();
-      source.publicKey = taskListsMessage.publicKey;
+      if (taskListsMessage.publicKeyPem == null) {
+        l.severe('missing public key for request reply');
+
+        return;
+      }
+
       _peer.sendPacketTo(
         source,
-        TaskListsMessage(taskListCrdtJson, taskListsMessage.publicKey),
-        taskListsMessage.publicKey,
+        TaskListsMessage(taskListCrdtJson),
+        keyHelper.decodePublicKeyFromPem(taskListsMessage.publicKeyPem!),
       );
 
       // TODO: propagate new task lists through the network using other connected and known peers (if updated)
@@ -186,7 +196,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
 
   Future<void> startServer() async {
     final port = await _identityService.port;
-    final privateKey = await _identityService.privateKeyPem;
+    final privateKey = await _identityService.privateKey;
     await _peer.startServer(port, privateKey);
     invokeChangeCallback();
   }
@@ -196,43 +206,79 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     invokeChangeCallback();
   }
 
-  Future<void> syncWithPeer(PeerInfo peerInfo, String privateKey,
-      {PeerLocation? location}) async {
+  Future<void> syncWithPeer(PeerInfo peerInfo, {PeerLocation? location}) async {
     final packetTasks = TaskListMessage(
       await _taskListService.crdtToJson(),
-      peerInfo.publicKey,
       requestReply: true,
+      publicKeyPem: await _identityService.publicKeyPem,
     );
     final packetLists = TaskListsMessage(
       await _taskListsService.crdtToJson(),
-      peerInfo.publicKey,
       requestReply: true,
+      publicKeyPem: await _identityService.publicKeyPem,
     );
 
-    await _peer.sendPacketToPeer(peerInfo, privateKey, packetLists,
+    await _peer.sendPacketToPeer(
+        peerInfo, await _identityService.privateKey, packetLists,
         location: location);
-    await _peer.sendPacketToPeer(peerInfo, privateKey, packetTasks,
+    await _peer.sendPacketToPeer(
+        peerInfo, await _identityService.privateKey, packetTasks,
         location: location);
   }
 
   Future<void> sendIntroductionMessageToPeer(
-      ConnectionInfo ownInfo, PeerInfo peerInfo, String privateKey,
-      {PeerLocation? location}) async {
+    PeerInfo peerInfo, {
+    PeerLocation? location,
+  }) async {
+    var peerID = await _identityService.peerId;
+    var name = await _identityService.name;
+    var ip = _selectIp(_networkInfoService.ips, await _identityService.ip);
+    var port = await _identityService.port;
+    var publicKey = await _identityService.publicKeyPem;
+
     final packetIntroduction = IntroductionMessage(
-      'Hallo from ${ownInfo.name} here are my informations: ${ownInfo.peerID},${ownInfo.name},${ownInfo.selectedIp},${ownInfo.port},${ownInfo.publicKey}',
+      'Hallo from $name here are my informations: $peerID,$name,$ip,$port,$publicKey',
       requestReply: true,
     );
-    await _peer.sendPacketToPeer(peerInfo, privateKey, packetIntroduction,
-        location: location);
+    await _peer.sendPacketToPeer(
+      peerInfo,
+      await _identityService.privateKey,
+      packetIntroduction,
+      location: location,
+    );
   }
 
-  Future<void> syncWithAllKnownPeers(String privateKey) async {
+  Future<void> syncWithAllKnownPeers() async {
     l.info('syncing task list with all known peers');
-
+    final packetTasks = TaskListMessage(
+      await _taskListService.crdtToJson(),
+      requestReply: true,
+      publicKeyPem: await _identityService.publicKeyPem,
+    );
+    final packetLists = TaskListsMessage(
+      await _taskListsService.crdtToJson(),
+      requestReply: true,
+      publicKeyPem: await _identityService.publicKeyPem,
+    );
     final peers = await _peerInfoService.devices;
+
     await _peer.sendPacketToAllPeers(
-        await _taskListsService.crdtToJson(), privateKey, true, peers);
+      packetLists,
+      peers,
+      await _identityService.privateKey,
+    );
+
     await _peer.sendPacketToAllPeers(
-        await _taskListService.crdtToJson(), privateKey, false, peers);
+      packetTasks,
+      peers,
+      await _identityService.privateKey,
+    );
   }
+}
+
+// refactor -> qr_code_dioalog
+String? _selectIp(List<String> ips, String? storedIp) {
+  if (ips.contains(storedIp)) return storedIp;
+
+  return ips.isNotEmpty ? ips.first : null;
 }

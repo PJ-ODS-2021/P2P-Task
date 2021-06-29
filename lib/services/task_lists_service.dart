@@ -68,7 +68,7 @@ class TaskListsService with LogMixin, ChangeCallbackProvider {
   Future<void> _store(MapCrdt<String, TaskList> update) async {
     await _keyValueRepository.put(_crdtTaskLisstKey, update.toJson());
     invokeChangeCallback();
-    l.info('notifying task list change');
+    l.info('notifying task lists change');
   }
 
   Future<String> crdtToJson() async {

@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:shelf/shelf_io.dart';
+import 'package:pointycastle/export.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -16,10 +17,10 @@ class WebSocketServer with LogMixin {
 
   static Future<WebSocketServer> start(
     int port,
-    Function(WebSocketClient, dynamic, String)? Function(
-            WebSocketClient, String)
+    Function(WebSocketClient, dynamic, RSAPrivateKey?)? Function(
+            WebSocketClient, RSAPrivateKey?)
         createOnData,
-    String privateKey,
+    RSAPrivateKey? privateKey,
   ) async {
     final server = WebSocketServer._empty();
     server.l.info('Starting server on port $port...');

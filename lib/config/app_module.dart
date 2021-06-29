@@ -83,6 +83,7 @@ class AppModule {
         i.get<TaskListsService>(),
         i.get<PeerInfoService>(),
         i.get<IdentityService>(),
+        i.get<NetworkInfoService>(),
         i.get<SyncService>(),
       ),
       isSingleton: true,

@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
       listen: false,
     ).callbackProvider;
     identityService.name.then((value) {
-      if (value == null) {
+      if (value == '') {
         Navigator.pushReplacement(
           context,
           FadeRoute(

@@ -6,8 +6,9 @@ import 'package:asn1lib/asn1lib.dart';
 import 'package:encrypt/encrypt.dart' as encrypt_pem;
 
 class KeyHelper {
-  pc.AsymmetricKeyPair<pc.RSAPublicKey, pc.RSAPrivateKey> generateRSAkeyPair(
-      {int bitLength = 2048}) {
+  pc.AsymmetricKeyPair<pc.RSAPublicKey, pc.RSAPrivateKey> generateRSAkeyPair({
+    int bitLength = 2048,
+  }) {
     // higher value of bitLength will lower the performance
 
     final keyGen = pc.KeyGenerator('RSA');
@@ -111,23 +112,36 @@ class KeyHelper {
   }
 
   pc.RSAPrivateKey decodePrivateKeyFromPem(String priavateKeyPem) {
-    return encrypt_pem.RSAKeyParser().parse(priavateKeyPem) as pc.RSAPrivateKey;
+    try {
+      var key = encrypt_pem.RSAKeyParser()
+          .parse(priavateKeyPem.replaceAll('\\r\\n', '\n')) as pc.RSAPrivateKey;
+
+      return key;
+    } on FormatException catch (e) {
+      return encrypt_pem.RSAKeyParser().parse(priavateKeyPem)
+          as pc.RSAPrivateKey;
+    }
   }
 
   pc.RSAPublicKey decodePublicKeyFromPem(String publicKeyPem) {
-    return encrypt_pem.RSAKeyParser().parse(publicKeyPem) as pc.RSAPublicKey;
+    try {
+      var key = encrypt_pem.RSAKeyParser()
+          .parse(publicKeyPem.replaceAll('\\r\\n', '\n')) as pc.RSAPublicKey;
+
+      return key;
+    } on FormatException catch (e) {
+      return encrypt_pem.RSAKeyParser().parse(publicKeyPem) as pc.RSAPublicKey;
+    }
   }
 
   String encryptWithPublicKeyPem(String publicKeyPem, String message) {
-    var publicKey =
-        decodePublicKeyFromPem(publicKeyPem.replaceAll('\\r\\n', '\n'));
+    var publicKey = decodePublicKeyFromPem(publicKeyPem);
 
     return encrypt(publicKey, message);
   }
 
   String decryptWithPrivateKeyPem(String privateKeyPem, String message) {
-    var privateKey =
-        decodePrivateKeyFromPem(privateKeyPem.replaceAll('\\r\\n', '\n'));
+    var privateKey = decodePrivateKeyFromPem(privateKeyPem);
 
     return decrypt(privateKey, message);
   }

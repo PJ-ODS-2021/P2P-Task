@@ -2,6 +2,8 @@ import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
+import 'package:p2p_task/security/key_helper.dart';
+import 'package:pointycastle/export.dart';
 
 class IdentityService with LogMixin, ChangeCallbackProvider {
   static const String peerIdKey = 'peerId';
@@ -42,6 +44,18 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
   Future<String> get publicKeyPem async =>
       await _repository.get<String>(publicKeyKey) ?? '';
 
+  Future<RSAPublicKey?> get publicKey async {
+    if (await publicKeyPem == '') {
+      return null;
+    }
+
+    try {
+      return KeyHelper().decodePublicKeyFromPem(await publicKeyPem);
+    } on Exception catch (error) {
+      l.severe('could not parse privateKey $error');
+    }
+  }
+
   Future setPublicKeyPem(String publicKey) async {
     final updatedPublicKey = await _repository.put(publicKeyKey, publicKey);
     invokeChangeCallback();
@@ -51,6 +65,18 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
 
   Future<String> get privateKeyPem async =>
       await _repository.get<String>(privateKeyKey) ?? '';
+
+  Future<RSAPrivateKey?> get privateKey async {
+    if (await privateKeyPem == '') {
+      return null;
+    }
+
+    try {
+      return KeyHelper().decodePrivateKeyFromPem(await privateKeyPem);
+    } on Exception catch (error) {
+      l.severe('could not parse privateKey $error');
+    }
+  }
 
   Future setPrivateKeyPem(String privateKey) async {
     final updatedPrivateKey = await _repository.put(privateKeyKey, privateKey);

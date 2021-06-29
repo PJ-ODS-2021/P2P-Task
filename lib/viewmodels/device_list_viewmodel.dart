@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
+import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 
@@ -48,17 +49,18 @@ class DeviceListViewModel with LogMixin {
 
   void handleQrCodeRead(String qrContent) async {
     var values = qrContent.split(',');
-    if (values.length < 3) {
+    if (values.length < 5) {
       l.warning(
-        'ignoring invalid qr content "$qrContent": less than 3 components',
+        'ignoring invalid qr content "$qrContent": less than 5 components',
       );
 
       return;
     }
     final peerInfo = PeerInfo()
       ..id = values[0]
-      ..name = values[0]
-      ..locations.add(PeerLocation('ws://${values[1]}:${values[2]}'));
+      ..name = values[1]
+      ..locations.add(PeerLocation('ws://${values[2]}:${values[3]}'))
+      ..publicKeyPem = values[4];
     await _peerInfoService.upsert(peerInfo);
     _loadDevices();
   }
@@ -71,6 +73,12 @@ class DeviceListViewModel with LogMixin {
   void upsert(PeerInfo peer) async {
     await _peerInfoService.upsert(peer);
     _loadDevices();
+  }
+
+  void sendIntroductionMessageToPeer(
+      PeerInfo peerInfo, PeerLocation location) async {
+    await _peerService.sendIntroductionMessageToPeer(peerInfo,
+        location: location);
   }
 
   void remove(PeerInfo peer) async {
