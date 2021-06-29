@@ -33,7 +33,7 @@ void main() {
 
   setUp(() async {
     db = await databaseFactoryMemory.openDatabase('');
-    keyValueRepository = KeyValueRepository(db);
+    keyValueRepository = KeyValueRepository(db, StoreRef(''));
     identityService = IdentityService(keyValueRepository);
     syncService = SyncService(keyValueRepository);
     await syncService.setInterval(0);

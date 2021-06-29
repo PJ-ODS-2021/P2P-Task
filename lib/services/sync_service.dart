@@ -93,6 +93,14 @@ class SyncService with LogMixin, ChangeCallbackProvider {
     }
   }
 
+  Future<void> clearJob() async {
+    if (_syncTimer != null) {
+      _syncTimer?.cancel();
+      _syncTimer = null;
+    }
+    _job = null;
+  }
+
   Future<void> _updateSyncTimer(int interval) async {
     if (_syncTimer != null) _syncTimer!.cancel();
     if (_job == null || interval == 0) return;
