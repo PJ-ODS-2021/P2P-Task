@@ -97,12 +97,14 @@ void main() {
   });
 
   test('crdt update less recent task in list', () async {
+    // TODO: use fake time
+
     final taskList = TaskList(id: 'listId', title: 'list');
     final task1 = Task(id: 'task1id', title: 'task1');
     final task2 = Task(id: 'task1id', title: 'task2');
     await devices[0].taskListService.upsertTaskList(taskList);
     await devices[0].taskListService.upsertTask('listId', task1);
-    await Future.delayed(Duration(milliseconds: 5));
+    await Future.delayed(Duration(milliseconds: 1));
     await devices[1].taskListService.upsertTaskList(taskList);
     await devices[1].taskListService.upsertTask('listId', task2);
 
@@ -118,6 +120,8 @@ void main() {
   });
 
   test('crdt keep more recent task in list', () async {
+    // TODO: use fake time
+
     final taskList = TaskList(id: 'listId', title: 'list');
     final task1 = Task(id: 'task1id', title: 'task1');
     final task2 = Task(id: 'task1id', title: 'task2');
