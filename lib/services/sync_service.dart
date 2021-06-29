@@ -1,76 +1,108 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
+import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 
-class SyncService extends ChangeNotifier with LogMixin {
-  final String _syncIntervalKey = 'syncInterval';
-  final int _syncIntervalDefaultValue = 15;
-  final String _syncOnStartKey = 'syncOnStart';
-  final String _syncOnUpdateKey = 'syncOnUpdate';
+class SyncService with LogMixin, ChangeCallbackProvider {
+  static final String syncIntervalKey = 'syncInterval';
+  static final int _syncIntervalDefault = 60;
+  static final String syncOnStartKey = 'syncOnStart';
+  static final bool _syncOnStartDefault = true;
+  static final String syncOnUpdateKey = 'syncOnUpdate';
+  static final bool _syncOnUpdateDefault = true;
+  static final String syncAfterDeviceAddedKey = 'syncAfterDeviceAdded';
+  static final bool _syncAfterDeviceAddedDefault = true;
 
-  KeyValueRepository _repository;
-  // ignore: cancel_subscriptions
-  StreamSubscription? _syncJob;
+  final KeyValueRepository _settingsRepository;
+  Timer? _syncTimer;
   Function()? _job;
 
-  SyncService(KeyValueRepository repository) : this._repository = repository;
+  SyncService(KeyValueRepository settingsRepository)
+      : _settingsRepository = settingsRepository;
 
   Future<int> get interval async =>
-      (await _repository.get<int>(_syncIntervalKey)) ??
-      _syncIntervalDefaultValue;
+      (await _settingsRepository.get<int>(syncIntervalKey)) ??
+      _syncIntervalDefault;
 
-  Future setInterval(int interval) async {
-    final updatedInterval = await _repository.put(_syncIntervalKey, interval);
-    notifyListeners();
+  Future<void> setInterval(int interval) async {
+    final updatedInterval =
+        await _settingsRepository.put(syncIntervalKey, interval);
+    await _updateSyncTimer(updatedInterval);
+    invokeChangeCallback();
+
     return updatedInterval;
   }
 
   Future<bool> get syncOnStart async =>
-      (await _repository.get<bool>(_syncOnStartKey)) ?? true;
+      (await _settingsRepository.get<bool>(syncOnStartKey)) ??
+      _syncOnStartDefault;
 
-  Future setSyncOnStart(bool syncOnStart) async {
-    final updatedValue = await _repository.put(_syncOnStartKey, syncOnStart);
-    notifyListeners();
+  Future<void> setSyncOnStart(bool syncOnStart) async {
+    final updatedValue =
+        await _settingsRepository.put(syncOnStartKey, syncOnStart);
+    invokeChangeCallback();
+
     return updatedValue;
   }
 
   Future<bool> get syncOnUpdate async =>
-      (await _repository.get<bool>(_syncOnUpdateKey)) ?? true;
+      (await _settingsRepository.get<bool>(syncOnUpdateKey)) ??
+      _syncOnUpdateDefault;
 
-  Future setSyncOnUpdate(bool syncOnUpdate) async {
-    final updatedValue = await _repository.put(_syncOnUpdateKey, syncOnUpdate);
-    notifyListeners();
+  Future<void> setSyncOnUpdate(bool syncOnUpdate) async {
+    final updatedValue =
+        await _settingsRepository.put(syncOnUpdateKey, syncOnUpdate);
+    invokeChangeCallback();
+
     return updatedValue;
   }
 
-  Future startJob(Function() job) async {
+  Future<bool> retrieveSyncAfterDeviceAdded() async =>
+      (await _settingsRepository.get<bool>(syncAfterDeviceAddedKey)) ??
+      _syncAfterDeviceAddedDefault;
+
+  Future<void> setSyncAfterDeviceAdded(bool syncAfterDeviceAdded) async {
+    final updatedValue = await _settingsRepository.put(
+      syncAfterDeviceAddedKey,
+      syncAfterDeviceAdded,
+    );
+    invokeChangeCallback();
+
+    return updatedValue;
+  }
+
+  Future<void> startJob(Function() job) async {
     _job = job;
-    if (_syncJob != null) await _syncJob!.cancel();
-    final currentInterval = await interval;
-    if (currentInterval < 1) return;
-    if (await syncOnStart && currentInterval > 1) job();
-    _syncJob = Stream.periodic(Duration(seconds: 1), (count) => count)
-        .listen((count) async {
-      _runJob(count);
-    });
+    await _updateSyncTimer(await interval);
   }
 
-  Future run() async {
-    if (_job != null && await syncOnUpdate) _job!();
-  }
-
-  Future _runJob(int count) async {
-    final currentInterval = await interval;
-    if (currentInterval < 1) return;
-    if (count % currentInterval == 0) {
-      l.info('Syncing job started...');
-      _job!();
+  Future<void> run({
+    bool runOnSyncOnStart = false,
+    bool runOnSyncOnUpdate = false,
+    bool runOnSyncAfterDeviceAdded = false,
+  }) async {
+    if (_job == null) return;
+    final conditions = [
+      runOnSyncOnStart ? await syncOnStart : false,
+      runOnSyncOnUpdate ? await syncOnUpdate : false,
+      runOnSyncAfterDeviceAdded ? await retrieveSyncAfterDeviceAdded() : false,
+    ];
+    if (conditions.any((element) => element)) {
+      _runJob();
     }
   }
 
-  @override
-  // ignore: must_call_super
-  void dispose() async {}
+  Future<void> _updateSyncTimer(int interval) async {
+    if (_syncTimer != null) _syncTimer!.cancel();
+    if (_job == null || interval == 0) return;
+    _syncTimer = Timer.periodic(Duration(seconds: interval), (_) {
+      _runJob();
+    });
+  }
+
+  void _runJob() {
+    l.info('Syncing job started...');
+    _job!();
+  }
 }

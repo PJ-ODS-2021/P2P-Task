@@ -85,3 +85,9 @@ In Visual Studio Code:
 select Format Document. You can add a keyboard shortcut to this VS Code Preferences.
 >
 > To automatically format code whenever you save a file, set the _editor.formatOnSave_ setting to true.
+
+## Run code metrics locally
+
+Run the following command to get information about the code metrics
+
+    flutter pub run dart_code_metrics:metrics lib

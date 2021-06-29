@@ -1,29 +1,81 @@
 import 'dart:convert';
 
 import 'package:crdt/crdt.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:p2p_task/models/task.dart';
+import 'package:p2p_task/models/task_list.dart';
+import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
 
-class TaskListService extends ChangeNotifier with LogMixin {
+class TaskListService with LogMixin, ChangeCallbackProvider {
   final String _crdtTaskListKey = 'crdtTaskList';
 
-  KeyValueRepository _keyValueRepository;
-  IdentityService _identityService;
-  SyncService _syncService;
+  final KeyValueRepository _keyValueRepository;
+  final IdentityService _identityService;
+  final SyncService _syncService;
 
-  TaskListService(KeyValueRepository keyValueRepository,
-      IdentityService identityService, SyncService syncService)
-      : this._keyValueRepository = keyValueRepository,
-        this._identityService = identityService,
-        this._syncService = syncService;
+  TaskListService(
+    this._keyValueRepository,
+    this._identityService,
+    this._syncService,
+  );
 
   Future<List<Task>> get tasks async {
     return (await _taskListCrdt).values;
+  }
+
+  Future<List<Task>> getTasksForList(TaskList taskList) async {
+    var sorted = <Task>[];
+
+    List allTasks = await tasks;
+    for (var i = 0; i < allTasks.length; i++) {
+      if (allTasks[i].taskListID == taskList.id) {
+        sorted.add(allTasks[i]);
+      }
+    }
+
+    switch (taskList.sortBy) {
+      case SortOption.Title:
+        sorted.sort((a, b) => a.title.toString().compareTo(b.title.toString()));
+        break;
+      case SortOption.Flag:
+        sorted.sort((a, b) {
+          if (b.isFlagged) {
+            return 1;
+          }
+
+          return 0;
+        });
+        break;
+      case SortOption.Status:
+        sorted.sort((a, b) {
+          if (b.completed) {
+            return 0;
+          }
+
+          return 1;
+        });
+        break;
+      case SortOption.DueDate:
+        sorted.sort((a, b) {
+          if (b.due == null) {
+            return 0;
+          }
+          if (a.due == null) {
+            return 1;
+          }
+
+          return a.due!.compareTo(b.due!);
+        });
+        break;
+      case SortOption.Created:
+        break;
+    }
+
+    return sorted;
   }
 
   Future upsert(Task task) async {
@@ -32,19 +84,28 @@ class TaskListService extends ChangeNotifier with LogMixin {
     final update = (await _taskListCrdt)
       ..put(task.id ?? id, task..id = (task.id ?? id));
     await _store(update);
-    await _syncService.run();
+    await _syncService.run(runOnSyncOnUpdate: true);
   }
 
   Future remove(Task task) async {
     final update = (await _taskListCrdt)..delete(task.id!);
     await _store(update);
-    await _syncService.run();
+    await _syncService.run(runOnSyncOnUpdate: true);
+  }
+
+  Future removeByListID(String taskListID) async {
+    List allTasks = await tasks;
+    for (var i = 0; i < allTasks.length; i++) {
+      if (allTasks[i].taskListID == taskListID) {
+        await remove(allTasks[i]);
+      }
+    }
   }
 
   Future delete() async {
     await _keyValueRepository.purge(key: _crdtTaskListKey);
-    notifyListeners();
-    await _syncService.run();
+    invokeChangeCallback();
+    await _syncService.run(runOnSyncOnUpdate: true);
   }
 
   Future<int> count() async {
@@ -53,7 +114,7 @@ class TaskListService extends ChangeNotifier with LogMixin {
 
   Future<void> _store(MapCrdt<String, Task> update) async {
     await _keyValueRepository.put(_crdtTaskListKey, update.toJson());
-    notifyListeners();
+    invokeChangeCallback();
     l.info('notifying task list change');
   }
 
@@ -77,13 +138,14 @@ class TaskListService extends ChangeNotifier with LogMixin {
   }
 
   Future<MapCrdt<String, Task>> get _taskListCrdt async => await _fromJson(
-      await _keyValueRepository.get<String>(_crdtTaskListKey) ?? '{}');
+        await _keyValueRepository.get<String>(_crdtTaskListKey) ?? '{}',
+      );
 
   Future<MapCrdt<String, Task>> _fromJson(String json) async {
     final Map<String, dynamic> map = jsonDecode(json);
     final keys = map.keys.toList();
-    final recordMap = Map<String, Record<Task>>();
-    for (int i = 0; i < map.length; ++i) {
+    final recordMap = <String, Record<Task>>{};
+    for (var i = 0; i < map.length; ++i) {
       recordMap.putIfAbsent(
         keys[i],
         () => Record(
@@ -95,10 +157,7 @@ class TaskListService extends ChangeNotifier with LogMixin {
         ),
       );
     }
+
     return MapCrdt(await _identityService.peerId, recordMap);
   }
-
-  @override
-  // ignore: must_call_super
-  void dispose() {}
 }

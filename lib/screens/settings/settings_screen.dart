@@ -12,7 +12,7 @@ class SettingsScreen extends StatelessWidget {
         SyncListSection(),
         IdentityListSection(),
         NetworkListSection(),
-        DatabaseListSection(),
+        DatabaseSection(),
       ],
     );
   }
