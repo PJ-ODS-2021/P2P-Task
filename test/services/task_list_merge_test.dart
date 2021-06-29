@@ -185,6 +185,76 @@ void main() {
     expect(allTasks.first.description, 'task2 description');
   });
 
+  test('crdt recursive task merge in list out-of sync clocks', () async {
+    final taskList = TaskList(id: 'listId', title: 'list');
+    final task = Task(title: 'task1', completed: false, isFlagged: false);
+    await devices[0].taskListService.upsertTaskList(taskList);
+    await devices[0].taskListService.upsertTask('listId', task);
+
+    // two-way merge
+    await devices[0]
+        .taskListService
+        .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
+    await devices[1]
+        .taskListService
+        .mergeCrdtJson(await devices[0].taskListService.crdtToJson());
+
+    final setTaskPropertyTimestamp = (
+      Map<String, dynamic> crdt,
+      String taskListId,
+      String taskId,
+      int timestamp, {
+      String? property,
+    }) async {
+      final taskCrdt = crdt['records'][taskListId]['value'][taskId];
+      final clock = property != null
+          ? taskCrdt['value'][property]['clock']
+          : taskCrdt['clock'];
+      clock['timestamp'] = timestamp;
+    };
+
+    // mark as completed in device 0 and backdate timestamp
+    await devices[0].taskListService.upsertTask(
+          'listId',
+          Task(
+            id: task.id,
+            title: task.title,
+            completed: true,
+            isFlagged: task.isFlagged,
+          ),
+        );
+    final device0Crdt =
+        jsonDecode(await devices[0].taskListService.crdtToJson());
+    await setTaskPropertyTimestamp(
+      device0Crdt,
+      'listId',
+      task.id!,
+      0,
+      property: 'completed',
+    );
+
+    // mark flagged in device 1
+    await devices[1].taskListService.upsertTask(
+          'listId',
+          Task(
+            id: task.id,
+            title: task.title,
+            completed: task.completed,
+            isFlagged: true,
+          ),
+        );
+
+    await devices[0].taskListService.mergeCrdtJson(jsonEncode(device0Crdt));
+    final expectedTask =
+        Task(id: task.id, title: task.title, completed: true, isFlagged: true);
+
+    // completed and flagged should be marked as true
+    print((await devices[0].taskListService.allTasks)
+        .toSet()
+        .map((e) => e.toJson()));
+    expect((await devices[0].taskListService.allTasks).toSet(), {expectedTask});
+  });
+
   tearDown(() async {
     await Future.wait(devices.map((device) => device.close()));
   });
