@@ -4,10 +4,13 @@ import 'package:p2p_task/screens/activity_log_screen.dart';
 import 'package:p2p_task/screens/devices/device_list_screen.dart';
 import 'package:p2p_task/screens/qr_code_dialog.dart';
 import 'package:p2p_task/screens/settings/settings_screen.dart';
+import 'package:p2p_task/screens/setup/welcome_screen.dart';
 import 'package:p2p_task/screens/task_lists_screen.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
+import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
+import 'package:p2p_task/widgets/fade_route_builder.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,6 +24,26 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final identityService =
+        Provider.of<ChangeCallbackNotifier<IdentityService>>(
+      context,
+      listen: false,
+    ).callbackProvider;
+    identityService.name.then((value) {
+      if (value == null) {
+        Navigator.pushReplacement(
+          context,
+          FadeRoute(
+            (_) => WelcomeScreen(),
+          ),
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

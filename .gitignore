@@ -33,6 +33,7 @@ local.properties
 .pub/
 /build/
 *.g.dart
+*.mocks.dart
 
 # Web related
 lib/generated_plugin_registrant.dart

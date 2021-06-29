@@ -19,7 +19,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
 
   final KeyValueRepository _keyValueRepository;
   final IdentityService _identityService;
-  final SyncService _syncService;
+  final SyncService? _syncService;
 
   TaskListService(
     this._keyValueRepository,
@@ -77,9 +77,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
           ..merge(currentValue),
       );
     }
-
-    await _store(crdt);
-    await _syncService.run();
+    await _store(crdt, triggerSyncUpdate: true);
 
     return true;
   }
@@ -115,36 +113,35 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
         )..merge(currentValue),
       );
     }
-
-    await _store(crdt);
-    await _syncService.run();
+    await _store(crdt, triggerSyncUpdate: true);
   }
 
   Future<void> removeTaskList(String taskListId) async {
     final update = (await _readAndDecodeTaskListCollectionCrdt())
       ..delete(taskListId);
-    await _store(update);
-    await _syncService.run();
+    await _store(update, triggerSyncUpdate: true);
   }
 
   Future<void> removeTask(String taskListId, String taskId) async {
     final update = (await _readAndDecodeTaskListCollectionCrdt())
       ..get(taskListId)?.delete(taskId);
-    await _store(update);
-    await _syncService.run();
+    await _store(update, triggerSyncUpdate: true);
   }
 
   Future<void> delete() async {
     await _keyValueRepository.purge(key: _crdtTaskListKey);
     invokeChangeCallback();
-    await _syncService.run();
+    await _syncService?.run(runOnSyncOnUpdate: true);
   }
 
   Future<int> count() async {
     return (await allTasks).length;
   }
 
-  Future<void> _store(_TaskListCollectionCrdtType value) async {
+  Future<void> _store(
+    _TaskListCollectionCrdtType value, {
+    required bool triggerSyncUpdate,
+  }) async {
     await _keyValueRepository.put(
       _crdtTaskListKey,
       jsonEncode(value.toJson(
@@ -155,6 +152,9 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     );
     invokeChangeCallback();
     l.info('notifying task list change');
+    if (triggerSyncUpdate) {
+      await _syncService?.run(runOnSyncOnUpdate: true);
+    }
   }
 
   Future<String> crdtToJson() async =>
@@ -167,7 +167,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     if (other == null) return;
     self.merge(other);
     l.info('Merge result ${self.toJson()}');
-    await _store(self);
+    await _store(self, triggerSyncUpdate: false);
   }
 
   Future<_TaskListCollectionCrdtType>

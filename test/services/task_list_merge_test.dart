@@ -244,15 +244,12 @@ void main() {
           ),
         );
 
-    await devices[0].taskListService.mergeCrdtJson(jsonEncode(device0Crdt));
+    await devices[1].taskListService.mergeCrdtJson(jsonEncode(device0Crdt));
     final expectedTask =
         Task(id: task.id, title: task.title, completed: true, isFlagged: true);
 
     // completed and flagged should be marked as true
-    print((await devices[0].taskListService.allTasks)
-        .toSet()
-        .map((e) => e.toJson()));
-    expect((await devices[0].taskListService.allTasks).toSet(), {expectedTask});
+    expect((await devices[1].taskListService.allTasks).toSet(), {expectedTask});
   });
 
   tearDown(() async {

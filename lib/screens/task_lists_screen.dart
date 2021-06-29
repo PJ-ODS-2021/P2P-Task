@@ -68,7 +68,7 @@ class TaskListsScreen extends StatelessWidget {
         child: Column(
           children: [
             Spacer(),
-            Text('🔥 Start getting productive.', style: kHeroFont),
+            Text('🔥 Start getting productive.', style: heroFont),
             Text('Click the plus button below to add a list.'),
             Spacer(flex: 2),
           ],
