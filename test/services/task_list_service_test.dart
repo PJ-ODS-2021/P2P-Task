@@ -13,36 +13,60 @@ void main() {
   });
 
   test('create task list', () async {
-    final id = Uuid().v4();
-    await device.taskListService
-        .upsertTaskList(TaskList(id: id, title: 'list1'));
-    final taskListRecordMap = await device.taskListService.taskLists;
-    expect(taskListRecordMap.map((e) => e.id!), [id]);
-    expect(taskListRecordMap.first.title, 'list1');
+    final listId = Uuid().v4();
+    final taskList = TaskList(id: listId, title: 'list1');
+    await device.taskListService.upsertTaskList(taskList);
+    final taskLists = (await device.taskListService.taskLists).toList();
+    expect(taskLists.length, 1);
+    expect(taskLists.first.id, listId);
+    expect(taskLists.first.title, 'list1');
+    expect(taskLists.first.elements, []);
   });
 
-  test('should store and retrieve tasks after first task is deleted', () async {
-    const taskTitle1 = 'Catch a cat falling from the sky';
-    const taskTitle2 = 'Drink a cold cat';
+  test('create and remove task list', () async {
+    final listId = Uuid().v4();
+    final taskList = TaskList(id: listId, title: 'list1');
+    await device.taskListService.upsertTaskList(taskList);
+    await device.taskListService.removeTaskList(listId);
+    expect((await device.taskListService.taskLists).toList(), []);
+  });
 
+  test('create and get task', () async {
+    final task = Task(title: 'Catch a cat falling from the sky');
     await device.taskListService
-        .upsertTaskList(TaskList(id: 'id1', title: 'list1'));
-    await device.taskListService.upsertTask('id1', Task(title: taskTitle1));
-    var tasks = (await device.taskListService.allTasks).toList();
-    expect(tasks.length, 1);
-    expect(tasks.first.title, taskTitle1);
-    final taskId = tasks.first.id!;
-    expect(taskId, isNot(null));
+        .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
+    await device.taskListService.upsertTask('listId', task);
+    expect(task.id, isNot(null));
+    expect((await device.taskListService.allTasks).toList(), [task]);
+  });
 
-    await device.taskListService.removeTask('id1', taskId);
-    tasks = (await device.taskListService.allTasks).toList();
-    expect(tasks.isEmpty, true);
+  test('create and remove task', () async {
+    final task = Task(title: 'Catch a cat falling from the sky');
+    await device.taskListService
+        .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
+    await device.taskListService.upsertTask('listId', task);
+    await device.taskListService.removeTask('listId', task.id!);
+    expect((await device.taskListService.allTasks).toList(), []);
+  });
 
-    await device.taskListService.upsertTask('id1', Task(title: taskTitle2));
-    tasks = (await device.taskListService.allTasks).toList();
+  test('create, remove and re-insert task', () async {
+    final task1 = Task(title: 'Catch a cat falling from the sky');
+    final task2 = Task(title: 'Drink a cold cat');
+    await device.taskListService
+        .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
+    await device.taskListService.upsertTask('listId', task1);
+    await device.taskListService.removeTask('listId', task1.id!);
+    await device.taskListService.upsertTask('listId', task2..id = task1.id);
+    expect((await device.taskListService.allTasks).toList(), [task2]);
+  });
 
-    expect(tasks.length, 1);
-    expect(tasks.first.title, taskTitle2);
+  test('create task and remove its task list', () async {
+    final task = Task(title: 'Catch a cat falling from the sky');
+    await device.taskListService
+        .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
+    await device.taskListService.upsertTask('listId', task);
+    await device.taskListService.removeTaskList('listId');
+    expect((await device.taskListService.allTasks).toList(), []);
   });
 
   test('should retrieve tasks with allTaskRecords', () async {
@@ -55,7 +79,6 @@ void main() {
 
     final allTaskRecords =
         (await device.taskListService.allTaskRecords).toList();
-    expect(allTaskRecords.length, 2);
     expect(allTaskRecords.map((v) => v.task).toSet(), {task1, task2});
     expect(allTaskRecords.map((v) => v.taskListId).toList(), ['id1', 'id1']);
   });
