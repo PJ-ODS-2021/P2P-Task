@@ -102,6 +102,7 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
     await _handleDatabasePathSubmitted(
       _databasePathController.text,
     );
+    await _handleInMemoryChanged(_inMemoryRadioGroupValue);
     DependenciesProvider.rebuild(context);
   }
 

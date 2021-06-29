@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/screens/setup/dependencies_provider.dart';
+import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
@@ -90,12 +91,17 @@ class DatabaseSection extends StatelessWidget {
       context,
       listen: false,
     ).callbackProvider;
+    final peerService = Provider.of<ChangeCallbackNotifier<PeerService>>(
+      context,
+      listen: false,
+    ).callbackProvider;
     final confirmed =
         await YesNoDialog.show(context, title: 'Delete all data?') ?? false;
     if (confirmed) {
+      await syncService.clearJob();
+      await peerService.stopServer();
       await databaseService.delete();
       await sharedPreferences.clear();
-      await syncService.clearJob();
       DependenciesProvider.rebuild(context);
     }
   }
