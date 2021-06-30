@@ -32,10 +32,13 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         context,
         listen: false,
       ).callbackProvider;
-      taskListService.upsert(_task
-        ..title = _formTitleController.text
-        ..description = _formDescriptionController.text
-        ..due = _due);
+      taskListService.upsertTask(
+        widget.taskListID,
+        _task
+          ..title = _formTitleController.text
+          ..description = _formDescriptionController.text
+          ..due = _due,
+      );
       Navigator.pop(context);
     }
   }
@@ -48,7 +51,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       _due = widget.task!.due;
       _editing = true;
     } else {
-      _task = Task(title: '', taskListID: widget.taskListID);
+      _task = Task(title: '');
     }
   }
 

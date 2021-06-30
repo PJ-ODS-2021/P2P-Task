@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:crdt/crdt.dart';
+import 'package:lww_crdt/lww_crdt.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/services/change_callback_provider.dart';
@@ -10,12 +10,16 @@ import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
 
+typedef _TaskCrdtType = MapCrdtNode<String, dynamic>;
+typedef _TaskListCrdtType = MapCrdtNode<String, dynamic>;
+typedef _TaskListCollectionCrdtType = MapCrdtRoot<String, _TaskListCrdtType>;
+
 class TaskListService with LogMixin, ChangeCallbackProvider {
-  final String _crdtTaskListKey = 'crdtTaskList';
+  final String _crdtTaskListKey = 'crdtTaskLists';
 
   final KeyValueRepository _keyValueRepository;
   final IdentityService _identityService;
-  final SyncService _syncService;
+  final SyncService? _syncService;
 
   TaskListService(
     this._keyValueRepository,
@@ -23,141 +27,342 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     this._syncService,
   );
 
-  Future<List<Task>> get tasks async {
-    return (await _taskListCrdt).values;
-  }
+  Future<Iterable<TaskRecord>> get allTaskRecords async =>
+      _decodeTasks(await _readAndDecodeTaskListCollectionCrdt()).map(
+        (recordAndListId) => TaskRecord(
+          recordAndListId.taskRecord.value,
+          recordAndListId.taskRecord.clock.node,
+          DateTime.fromMillisecondsSinceEpoch(
+            recordAndListId.taskRecord.clock.timestamp,
+          ),
+          recordAndListId.taskListId,
+        ),
+      );
 
-  Future<List<Task>> getTasksForList(TaskList taskList) async {
-    var sorted = <Task>[];
+  Future<Iterable<Task>> get allTasks async =>
+      (await taskLists).map((taskList) => taskList.elements).expand((e) => e);
 
-    List allTasks = await tasks;
-    for (var i = 0; i < allTasks.length; i++) {
-      if (allTasks[i].taskListID == taskList.id) {
-        sorted.add(allTasks[i]);
-      }
-    }
+  Future<Iterable<TaskList>> get taskLists async => (await _taskListRecords)
+      .where((record) => !record.isDeleted)
+      .map((record) => record.value!);
 
-    switch (taskList.sortBy) {
-      case SortOption.Title:
-        sorted.sort((a, b) => a.title.toString().compareTo(b.title.toString()));
-        break;
-      case SortOption.Flag:
-        sorted.sort((a, b) {
-          if (b.isFlagged) {
-            return 1;
-          }
+  Future<TaskList?> getTaskListById(String taskListId) async =>
+      (await _taskListRecordMap)[taskListId]?.value;
 
-          return 0;
-        });
-        break;
-      case SortOption.Status:
-        sorted.sort((a, b) {
-          if (b.completed) {
-            return 0;
-          }
+  Future<Iterable<Task>> getTasksFromList(String taskListId) async =>
+      getTaskListById(taskListId)
+          .then((taskList) => taskList != null ? taskList.elements : []);
 
-          return 1;
-        });
-        break;
-      case SortOption.DueDate:
-        sorted.sort((a, b) {
-          if (b.due == null) {
-            return 0;
-          }
-          if (a.due == null) {
-            return 1;
-          }
+  Future<Iterable<Record<TaskList>>> get _taskListRecords async =>
+      (await _taskListRecordMap).values;
 
-          return a.due!.compareTo(b.due!);
-        });
-        break;
-      case SortOption.Created:
-        break;
-    }
+  Future<Map<String, Record<TaskList>>> get _taskListRecordMap async =>
+      _decodeTaskListCollection(await _readAndDecodeTaskListCollectionCrdt());
 
-    return sorted;
-  }
-
-  Future upsert(Task task) async {
+  /// Returns false if the task list does not exist
+  Future<bool> upsertTask(String taskListId, Task task) async {
     l.info('Upsert task ${task.toJson()}');
-    final id = Uuid().v4();
-    final update = (await _taskListCrdt)
-      ..put(task.id ?? id, task..id = (task.id ?? id));
-    await _store(update);
-    await _syncService.run(runOnSyncOnUpdate: true);
-  }
+    final crdt = await _readAndDecodeTaskListCollectionCrdt();
+    final taskListCrdt = crdt.get(taskListId);
+    if (taskListCrdt == null) return false;
 
-  Future remove(Task task) async {
-    final update = (await _taskListCrdt)..delete(task.id!);
-    await _store(update);
-    await _syncService.run(runOnSyncOnUpdate: true);
-  }
-
-  Future removeByListID(String taskListID) async {
-    List allTasks = await tasks;
-    for (var i = 0; i < allTasks.length; i++) {
-      if (allTasks[i].taskListID == taskListID) {
-        await remove(allTasks[i]);
-      }
+    task.id ??= Uuid().v4();
+    final taskNode = taskListCrdt.getRecord(task.id!);
+    if (taskNode == null || taskNode.isDeleted) {
+      taskListCrdt.put(task.id!, _encodeTask(task, parent: crdt));
+    } else {
+      taskListCrdt.updateValue(
+        task.id!,
+        (currentValue) => _encodeTask(task, parent: crdt, base: currentValue)
+          ..merge(currentValue),
+      );
     }
+    await _store(crdt, triggerSyncUpdate: true);
+
+    return true;
   }
 
-  Future delete() async {
+  /// Returns the id of the  new task list.
+  ///
+  /// If [ignoreTasks] is set to true, tasks that are contained in this list will not be stored.
+  Future<void> upsertTaskList(
+    TaskList taskList, {
+    bool ignoreTasks = false,
+  }) async {
+    l.info('Upsert task list ${taskList.toJson()}');
+    final crdt = await _readAndDecodeTaskListCollectionCrdt();
+    taskList.id ??= Uuid().v4();
+    final taskListNode = crdt.getRecord(taskList.id!);
+    if (taskListNode == null || taskListNode.isDeleted) {
+      crdt.put(
+        taskList.id!,
+        _encodeTaskList(
+          taskList,
+          parent: crdt,
+          ignoreTasks: ignoreTasks,
+        ),
+      );
+    } else {
+      crdt.updateValue(
+        taskList.id!,
+        (currentValue) => _encodeTaskList(
+          taskList,
+          parent: crdt,
+          base: currentValue,
+          ignoreTasks: ignoreTasks,
+        )..merge(currentValue),
+      );
+    }
+    await _store(crdt, triggerSyncUpdate: true);
+  }
+
+  Future<void> removeTaskList(String taskListId) async {
+    final update = (await _readAndDecodeTaskListCollectionCrdt())
+      ..delete(taskListId);
+    await _store(update, triggerSyncUpdate: true);
+  }
+
+  Future<void> removeTask(String taskListId, String taskId) async {
+    final update = (await _readAndDecodeTaskListCollectionCrdt())
+      ..get(taskListId)?.delete(taskId);
+    await _store(update, triggerSyncUpdate: true);
+  }
+
+  Future<void> delete() async {
     await _keyValueRepository.purge(key: _crdtTaskListKey);
     invokeChangeCallback();
-    await _syncService.run(runOnSyncOnUpdate: true);
+    await _syncService?.run(runOnSyncOnUpdate: true);
   }
 
   Future<int> count() async {
-    return (await tasks).length;
+    return (await allTasks).length;
   }
 
-  Future<void> _store(MapCrdt<String, Task> update) async {
-    await _keyValueRepository.put(_crdtTaskListKey, update.toJson());
+  Future<void> _store(
+    _TaskListCollectionCrdtType value, {
+    required bool triggerSyncUpdate,
+  }) async {
+    await _keyValueRepository.put(
+      _crdtTaskListKey,
+      jsonEncode(value.toJson(
+        valueEncode: (taskList) => taskList.toJson(
+          valueEncode: (task) => task is _TaskCrdtType ? task.toJson() : task,
+        ),
+      )),
+    );
     invokeChangeCallback();
     l.info('notifying task list change');
+    if (triggerSyncUpdate) {
+      await _syncService?.run(runOnSyncOnUpdate: true);
+    }
   }
 
-  Future<String> crdtToJson() async {
-    return (await _taskListCrdt).toJson();
+  Future<String> crdtToJson() async =>
+      _readTaskListCollectionCrdtStringFromDatabase().then((v) => v ?? '');
+
+  Future<void> mergeCrdtJson(String otherJson) async {
+    l.info('Merging with $otherJson');
+    final self = (await _readAndDecodeTaskListCollectionCrdt());
+    final other = _decodeTaskListCollectionCrdt(otherJson);
+    if (other == null) return;
+    self.merge(other);
+    l.info('Merge result ${self.toJson()}');
+    await _store(self, triggerSyncUpdate: false);
   }
 
-  Future mergeCrdtJson(String crdtJson) async {
-    l.info('Merging with $crdtJson');
-    final self = (await _taskListCrdt);
-    final other = CrdtJson.decode<String, Task>(
-      crdtJson,
-      self.canonicalTime,
-      valueDecoder: (key, value) => Task.fromJson(value),
-    );
-    // Remove records from this node from the task list. This could also be done in the sender.
-    other.removeWhere((key, value) => value.hlc.nodeId == self.nodeId);
-    final update = self..merge(other);
-    l.info('Merge result ${update.toJson()}');
-    await _store(update);
+  Future<_TaskListCollectionCrdtType>
+      _readAndDecodeTaskListCollectionCrdt() async =>
+          _decodeTaskListCollectionCrdt(
+            await _readTaskListCollectionCrdtStringFromDatabase(),
+            await _identityService.peerId,
+          )!;
+
+  Future<String?> _readTaskListCollectionCrdtStringFromDatabase() async =>
+      await _keyValueRepository.get<String>(_crdtTaskListKey);
+
+  /// Can only return null if [peerId] is null
+  _TaskListCollectionCrdtType? _decodeTaskListCollectionCrdt(
+    String? value, [
+    String? peerId,
+  ]) {
+    final Map<String, dynamic> json =
+        value != null && value.isNotEmpty ? jsonDecode(value) : {};
+    if (json.isEmpty) {
+      return peerId != null ? _TaskListCollectionCrdtType(peerId) : null;
+    }
+    final taskListCrdt = _crdtFromJson(json);
+    if (peerId != null) _validateCrdtPeer(taskListCrdt, peerId);
+
+    return taskListCrdt;
   }
 
-  Future<MapCrdt<String, Task>> get _taskListCrdt async => await _fromJson(
-        await _keyValueRepository.get<String>(_crdtTaskListKey) ?? '{}',
+  /// Changes the crdt node if [expectedNode] differs from the [crdt].node
+  void _validateCrdtPeer(
+    _TaskListCollectionCrdtType crdt,
+    String expectedNode,
+  ) {
+    if (crdt.node != expectedNode) {
+      l.severe(
+        'Got invalid node id when reading task list from disk (disk != peerId): "${crdt.node}" != "$expectedNode". Changing node id, the old node id might be dead for now on',
       );
+      if (crdt.containsNode(expectedNode)) {
+        l.severe(
+          'A node with this peer id already exists. This could indicate another device is using the same node id which is VERY unlikely and potentially breaks the algorithm',
+        );
+      }
+      crdt.changeNode(expectedNode);
+    }
+  }
 
-  Future<MapCrdt<String, Task>> _fromJson(String json) async {
-    final Map<String, dynamic> map = jsonDecode(json);
-    final keys = map.keys.toList();
-    final recordMap = <String, Record<Task>>{};
-    for (var i = 0; i < map.length; ++i) {
-      recordMap.putIfAbsent(
-        keys[i],
-        () => Record(
-          Hlc.parse(map[keys[i]]['hlc']),
-          map[keys[i]]['value'] == null
-              ? null
-              : Task.fromJson(map[keys[i]]['value']),
-          Hlc.parse(map[keys[i]]['modified'] ?? map[keys[i]]['hlc']),
-        ),
+  _TaskListCollectionCrdtType _crdtFromJson(Map<String, dynamic> json) {
+    return _TaskListCollectionCrdtType.fromJson(
+      json,
+      lateValueDecode: (crdt, taskListJson) => _TaskListCrdtType.fromJson(
+        taskListJson,
+        parent: crdt,
+        valueDecode: (taskJson) => taskJson is Map<String, dynamic>
+            ? _TaskCrdtType.fromJson(taskJson, parent: crdt)
+            : taskJson,
+      ),
+    );
+  }
+
+  Iterable<_TaskRecordAndListId> _decodeTasks(
+    _TaskListCollectionCrdtType crdt,
+  ) {
+    return crdt.records.entries
+        .where((taskListRecordEntry) => !taskListRecordEntry.value.isDeleted)
+        .map((taskListRecordEntry) =>
+            taskListRecordEntry.value.value!.records.entries.where((entry) {
+              return entry.value.value is _TaskCrdtType ||
+                  (entry.value.isDeleted &&
+                      !TaskList.crdtMembers.contains(entry.key));
+            }).map((entry) => _TaskRecordAndListId(
+                  Record(
+                    clock: entry.value.clock,
+                    value: entry.value.isDeleted
+                        ? null
+                        : _decodeTask(entry.value.value, id: entry.key),
+                  ),
+                  taskListRecordEntry.key,
+                )))
+        .expand((v) => v);
+  }
+
+  Map<String, Record<TaskList>> _decodeTaskListCollection(
+    _TaskListCollectionCrdtType crdt,
+  ) {
+    return crdt.records.map((key, record) => MapEntry(
+          key,
+          Record<TaskList>(
+            clock: record.clock,
+            value: record.isDeleted
+                ? null
+                : _decodeTaskList(record.value!, id: key),
+          ),
+        ));
+  }
+
+  TaskList _decodeTaskList(_TaskListCrdtType crdt, {String? id}) {
+    final tasks = crdt.records.entries
+        .where((entry) =>
+            !entry.value.isDeleted && entry.value.value is _TaskCrdtType)
+        .map((entry) => _decodeTask(entry.value.value, id: entry.key));
+
+    return TaskList.fromJson({
+      'id': id,
+      'elements': [],
+    }..addAll(Map.fromEntries(
+        TaskList.crdtMembers.map((e) => MapEntry(e, crdt.get(e))),
+      )))
+      ..elements.addAll(tasks);
+  }
+
+  Task _decodeTask(_TaskCrdtType crdt, {String? id}) {
+    final task = Task.fromJson(crdt.map);
+    if (id != null) task.id = id;
+
+    return task;
+  }
+
+  _TaskListCrdtType _encodeTaskList(
+    TaskList taskList, {
+    required _TaskListCollectionCrdtType parent,
+    _TaskListCrdtType? base,
+    bool ignoreTasks = false,
+  }) {
+    final taskListCrdt = _TaskListCrdtType(parent);
+    final taskListJson = taskList.toJson()
+      ..remove('id')
+      ..remove('elements'); // TODO: hacky, hard to maintain
+    if (base == null) {
+      if (!ignoreTasks) {
+        taskListJson.addAll(Map.fromEntries(taskList.elements.map(
+          (task) => MapEntry(
+            task.id ?? Uuid().v4(),
+            _encodeTask(task, parent: parent),
+          ),
+        )));
+      }
+      taskListCrdt.putAll(taskListJson);
+    } else {
+      taskListJson.removeWhere((key, value) => base.get(key) == value);
+      if (!ignoreTasks) {
+        taskListJson.addAll(Map.fromEntries(taskList.elements.map(
+          (task) {
+            task.id ??= Uuid().v4();
+            final baseTask = base.get(task.id!);
+
+            return MapEntry(
+              task.id!,
+              _encodeTask(
+                task,
+                parent: parent,
+                base: baseTask is _TaskCrdtType ? baseTask : null,
+              ),
+            );
+          },
+        )));
+      }
+      taskListCrdt.putAll(taskListJson);
+    }
+
+    return taskListCrdt;
+  }
+
+  /// If [base] is set, only add changed entries from [task] to the crdt node
+  _TaskCrdtType _encodeTask(
+    Task task, {
+    required _TaskListCollectionCrdtType parent,
+    _TaskCrdtType? base,
+  }) {
+    final taskCrdt = _TaskCrdtType(parent);
+    final taskJson = task.toJson()
+      ..remove('id'); // TODO: hacky, hard to maintain
+    if (base == null) {
+      taskCrdt.putAll(taskJson);
+    } else {
+      taskCrdt.putAll(
+        taskJson..removeWhere((key, value) => base.get(key) == value),
       );
     }
 
-    return MapCrdt(await _identityService.peerId, recordMap);
+    return taskCrdt;
   }
+}
+
+class _TaskRecordAndListId {
+  Record<Task> taskRecord;
+  String taskListId;
+
+  _TaskRecordAndListId(this.taskRecord, this.taskListId);
+}
+
+class TaskRecord {
+  final Task? task;
+  final String peerId;
+  final DateTime timestamp;
+  final String taskListId;
+
+  const TaskRecord(this.task, this.peerId, this.timestamp, this.taskListId);
 }

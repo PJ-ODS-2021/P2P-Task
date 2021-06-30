@@ -10,7 +10,6 @@ import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
-import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:p2p_task/utils/data_model_repository.dart';
 import 'package:p2p_task/utils/platform_database_factory.dart';
 import 'package:p2p_task/utils/shared_preferences_keys.dart';
@@ -80,7 +79,6 @@ class AppModule {
       (i) => PeerService(
         i.get<WebSocketPeer>(),
         i.get<TaskListService>(),
-        i.get<TaskListsService>(),
         i.get<PeerInfoService>(),
         i.get<IdentityService>(),
         i.get<SyncService>(),
@@ -95,14 +93,6 @@ class AppModule {
     );
     injector.map<TaskListService>(
       (i) => TaskListService(
-        i.get<KeyValueRepository>(key: StoreRefNames.tasks.value),
-        i.get<IdentityService>(),
-        i.get<SyncService>(),
-      ),
-      isSingleton: true,
-    );
-    injector.map<TaskListsService>(
-      (i) => TaskListsService(
         i.get<KeyValueRepository>(key: StoreRefNames.tasks.value),
         i.get<IdentityService>(),
         i.get<SyncService>(),

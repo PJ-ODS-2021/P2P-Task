@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:p2p_task/screens/setup/dependencies_provider.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
-import 'package:p2p_task/services/task_lists_service.dart';
+import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/database_service.dart';
-import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/widgets/list_section.dart';
 import 'package:p2p_task/widgets/yes_no_dialog.dart';
 import 'package:provider/provider.dart';
@@ -14,9 +13,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 class DatabaseSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final taskListsService =
-        Provider.of<ChangeCallbackNotifier<TaskListsService>>(context)
-            .callbackProvider;
     final taskListService =
         Provider.of<ChangeCallbackNotifier<TaskListService>>(context)
             .callbackProvider;
@@ -25,14 +21,14 @@ class DatabaseSection extends StatelessWidget {
 
     return FutureBuilder<int>(
       initialData: -1,
-      future: taskListsService.count(),
+      future: taskListService.count(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
             child: Text('Error'),
           );
         }
-        final listEntries = snapshot.data!;
+        final taskCount = snapshot.data!;
 
         return ListSection(
           title: 'Database',
@@ -51,7 +47,6 @@ class DatabaseSection extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () async {
-                          await taskListsService.delete();
                           await taskListService.delete();
                           Navigator.pop(context);
                         },
@@ -63,7 +58,7 @@ class DatabaseSection extends StatelessWidget {
               ),
               leading: Icon(Icons.data_usage),
               title: Text('Delete all Task Lists'),
-              subtitle: Text(listEntries.toString()),
+              subtitle: Text(taskCount.toString()),
             ),
             ListTile(
               tileColor: Colors.white,

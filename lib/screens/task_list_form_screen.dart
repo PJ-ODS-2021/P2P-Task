@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/models/task_list.dart';
-import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
+import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 
 class TaskListFormScreen extends StatefulWidget {
@@ -14,7 +14,7 @@ class TaskListFormScreen extends StatefulWidget {
 }
 
 class _TaskListFormScreenState extends State<TaskListFormScreen> {
-  late final _taskList;
+  late final TaskList _taskList;
   final _formKey = GlobalKey<FormState>();
   late final _formTitleController =
       TextEditingController(text: _taskList.title);
@@ -23,11 +23,13 @@ class _TaskListFormScreenState extends State<TaskListFormScreen> {
 
   void _onSubmitPressed(context) {
     if (_formKey.currentState!.validate()) {
-      final listService = Provider.of<ChangeCallbackNotifier<TaskListsService>>(
+      final taskListService =
+          Provider.of<ChangeCallbackNotifier<TaskListService>>(
         context,
         listen: false,
       ).callbackProvider;
-      listService.upsert(_taskList..title = _formTitleController.text);
+      taskListService
+          .upsertTaskList(_taskList..title = _formTitleController.text);
       Navigator.pop(context);
     }
   }
@@ -36,7 +38,7 @@ class _TaskListFormScreenState extends State<TaskListFormScreen> {
   void initState() {
     super.initState();
     if (widget.taskList != null) {
-      _taskList = widget.taskList;
+      _taskList = widget.taskList!;
       _editing = true;
     } else {
       _taskList = TaskList(title: '');
