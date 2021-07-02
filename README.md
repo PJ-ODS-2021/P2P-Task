@@ -8,6 +8,7 @@ Because your data belongs to you!
 Follow the instruction on <https://flutter.dev/docs/get-started/install> to install flutter.
 
 Clone this repository and open a terminal window in the root directory:
+
 - Run `git submodule init && git submodule update` (this project uses the lww_crdt library as a submodule)
 - Run `flutter pub get` in the terminal to load all dependencies
 - Run `flutter pub run build_runner build` in the terminal to autogenerate some relevant files
@@ -33,7 +34,7 @@ Read this section, if you want to contribute to the project.
 3. Write your code and add tests for it
 4. Format your files (`flutter run format <filenames>` or `dart run format <filenames>`)
 5. Run all tests (`flutter test`) and make sure they complete without errors or warnings
-6. Run code metrics (`flutter pub run dart_code_metrics:metrics lib`) and fix warnings related to your changes
+6. [Run code metrics](#run-code-metrics-locally) (`flutter pub run dart_code_metrics:metrics lib`) and fix warnings related to your changes
 7. Write a descriptive commit message and commit your changes (use the
    [JIRA Smart Commit syntax](https://support.atlassian.com/jira-software-cloud/docs/process-issues-with-smart-commits/)
    to reference the issue)
@@ -44,7 +45,7 @@ Read this section, if you want to contribute to the project.
 The Continuous Integration (CI) Pipeline runs whenever you push your changes to the repository.
 With each Pull Request the following happens:
 
-- Files are formatted using `flutter format`
+- Files are checked to be formatted as `flutter format` would do
 - Tests are executed and checked for errors
 - Metrics are created (warnings added to the respective lines)
 - Codecov report is created (used as an indicator on code quality)
@@ -96,9 +97,13 @@ In Visual Studio Code:
 
 ## Run code metrics locally
 
-Run the following command to get information about the code metrics
+Run the following command to create code metrics for the `lib` directory (or the `lib` and the `test` directory, respectively):
 
-    flutter pub run dart_code_metrics:metrics lib
+```sh
+flutter pub run dart_code_metrics:metrics lib
+flutter pub run dart_code_metrics:metrics lib test
+```
+    
 
 Add `-r console-verbose` for more information e.g. on the cyclomatic complexity (lower is better) and maintainability
 (higher is better).
