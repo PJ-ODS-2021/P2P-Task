@@ -80,7 +80,8 @@ void main() {
     final allTaskRecords =
         (await device.taskListService.allTaskRecords).toList();
     expect(allTaskRecords.map((v) => v.task).toSet(), {task1, task2});
-    expect(allTaskRecords.map((v) => v.taskListId).toList(), ['id1', 'id1']);
+    allTaskRecords
+        .forEach((taskRecord) => expect(taskRecord.taskListId, 'id1'));
   });
 
   test('should retrieve deleted task record with allTaskRecords', () async {
