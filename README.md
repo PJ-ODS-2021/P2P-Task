@@ -53,6 +53,7 @@ With each Pull Request the following happens:
 Find all the commands run on CI in `.github/workflows/main.yaml`.
 
 ### Directory Structure
+
 ```
 root
 // Contains the application code
@@ -103,10 +104,8 @@ Run the following command to create code metrics for the `lib` directory (or the
 flutter pub run dart_code_metrics:metrics lib
 flutter pub run dart_code_metrics:metrics lib test
 ```
-    
 
 Add `-r console-verbose` for more information e.g. on the cyclomatic complexity (lower is better) and maintainability
 (higher is better).
 
 Add `-r html` to create an HTML report.
-
