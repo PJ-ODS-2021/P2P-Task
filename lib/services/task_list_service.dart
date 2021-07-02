@@ -365,4 +365,6 @@ class TaskRecord {
   final String taskListId;
 
   const TaskRecord(this.task, this.peerId, this.timestamp, this.taskListId);
+
+  bool get isDeleted => task == null;
 }
