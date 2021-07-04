@@ -21,7 +21,8 @@ class ActivityLogScreen extends StatelessWidget {
 
     return FutureBuilder<List>(
       future: Future.wait([
-        taskListService.allTaskRecords.then((v) => _getActivityEntries(v)),
+        taskListService.allActivities
+            .then((activities) => _transformActivities(activities).toList()),
         identityService.peerId,
       ]),
       builder: (context, snapshot) {
@@ -38,7 +39,10 @@ class ActivityLogScreen extends StatelessWidget {
         }
         final data = snapshot.data!;
 
-        return _buildActivityEntries(context, data[0], data[1]);
+        final activities = data[0] as List<ActivityEntry>;
+        activities.sort(_activityEntryCompare);
+
+        return _buildActivityEntries(context, activities, data[1]);
       },
     );
   }
@@ -90,16 +94,16 @@ class ActivityLogScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _getActivityName(activity),
-                    _getActivityDate(activity),
+                    _makeActivityName(activity),
+                    _makeActivityDate(activity),
                   ],
                 ),
                 const SizedBox(height: 8.0),
                 Row(
                   children: [
-                    getActivityIcon(activity, currentPeerId),
+                    _makeActivityIcon(activity, currentPeerId),
                     const SizedBox(width: 8.0),
-                    _getActivityDescription(activity, currentPeerId),
+                    _makeActivityDescription(activity, currentPeerId),
                   ],
                 ),
                 const SizedBox(height: 8.0),
@@ -112,9 +116,9 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  Widget _getActivityName(ActivityEntry activity) {
+  Widget _makeActivityName(ActivityEntry activity) {
     return Text(
-      activity.event.isNotEmpty ? activity.event : '',
+      _getActivityDescriptionStr(activity),
       style: TextStyle(
         fontWeight: FontWeight.normal,
         color: Colors.black,
@@ -123,9 +127,9 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  Widget _getActivityDate(ActivityEntry activity) {
+  Widget _makeActivityDate(ActivityEntry activity) {
     return Text(
-      DateFormat('dd.MM.yyyy').format(activity.timestamp!),
+      DateFormat('dd.MM.yyyy HH:mm:ss').format(activity.timestamp),
       style: TextStyle(
         color: Colors.black.withOpacity(0.6),
         fontSize: 14,
@@ -133,13 +137,13 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  Widget getActivityIcon(ActivityEntry activity, String currentPeerId) {
-    return Icon(activity.device == currentPeerId
+  Widget _makeActivityIcon(ActivityEntry activity, String currentPeerId) {
+    return Icon(activity.peerID == currentPeerId
         ? Icons.arrow_upward
         : Icons.arrow_downward);
   }
 
-  Widget _getActivityDescription(
+  Widget _makeActivityDescription(
     ActivityEntry activity,
     String currentPeerId,
   ) {
@@ -149,26 +153,14 @@ class ActivityLogScreen extends StatelessWidget {
         style: TextStyle(color: Colors.black, fontSize: 18),
         children: [
           TextSpan(
-            text: activity.device == currentPeerId
+            text: activity.peerID == currentPeerId
                 ? 'this device'
-                : activity.device,
+                : activity.peerID,
             style: TextStyle(
               color: Colors.black,
-              fontWeight: activity.device == currentPeerId
+              fontWeight: activity.peerID == currentPeerId
                   ? FontWeight.normal
                   : FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-          TextSpan(
-            text: ' in ',
-            style: TextStyle(color: Colors.black, fontSize: 18),
-          ),
-          TextSpan(
-            text: activity.peerInfoID,
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
               fontSize: 18,
             ),
           ),
@@ -177,18 +169,74 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  List<ActivityEntry> _getActivityEntries(
-    Iterable<TaskRecord> taskEntries,
+  Iterable<ActivityEntry> _transformActivities(
+    Iterable<ActivityRecord> activities,
   ) {
-    return taskEntries
-        .map((taskEntry) => ActivityEntry(
-              event: taskEntry.task == null ? 'Task deleted' : 'Task updated',
-              device: taskEntry.peerId,
-              taskID: taskEntry.task?.id,
-              taskListID: taskEntry.taskListId,
-              timestamp: taskEntry.timestamp,
-            ))
-        .toList()
-          ..sort((a, b) => b.timestamp!.compareTo(a.timestamp!));
+    return activities
+        .map((activity) => activity is TaskListActivity
+            ? _transformListActivity(activity)
+            : (activity is TaskActivity
+                ? _transformTaskActivity(activity)
+                : null))
+        .where((activity) => activity != null)
+        .map((activity) => activity!);
+  }
+
+  ActivityEntry _transformListActivity(TaskListActivity activity) {
+    return ActivityEntry(
+      peerID: activity.peerId,
+      type: activity.taskList != null
+          ? ActivityType.Created
+          : ActivityType.Deleted,
+      timestamp: activity.timestamp,
+      name: activity.taskList != null ? activity.taskList!.title : '',
+      taskID: null,
+      taskListID: activity.id,
+    );
+  }
+
+  ActivityEntry _transformTaskActivity(TaskActivity activity) {
+    return ActivityEntry(
+      peerID: activity.peerId,
+      type: activity.isRecursiveUpdate
+          ? ActivityType.Updated
+          : (activity.task != null
+              ? ActivityType.Created
+              : ActivityType.Deleted),
+      timestamp: activity.timestamp,
+      name: activity.task != null ? activity.task!.title : '',
+      taskID: activity.id,
+      taskListID: activity.taskListId,
+    );
+  }
+
+  String _getActivityDescriptionStr(ActivityEntry activityEntry) {
+    final entity = activityEntry.isTaskActivity ? 'Task' : 'Task list';
+    final suffix = activityEntry.name.isEmpty ? '' : ': ${activityEntry.name}';
+    switch (activityEntry.type) {
+      case ActivityType.Created:
+        return '$entity created$suffix';
+      case ActivityType.Updated:
+        return '$entity updated$suffix';
+      case ActivityType.Deleted:
+        return '$entity deleted$suffix';
+      default:
+        return '$entity$suffix';
+    }
+  }
+
+  /// Compares timestamp (descending), isTaskActivity, taskListID, peerID, taskID
+  int _activityEntryCompare(ActivityEntry a, ActivityEntry b) {
+    var cmp = b.timestamp.compareTo(a.timestamp);
+    if (cmp != 0) return cmp;
+    if (a.isTaskActivity != b.isTaskActivity) {
+      return a.isTaskActivity ? -1 : 1;
+    }
+    cmp = a.taskListID!.compareTo(b.taskListID!);
+    if (cmp != 0) return cmp;
+    cmp = a.peerID.compareTo(b.peerID);
+    if (cmp != 0 || a.taskID == null) return cmp;
+
+    return a.taskID!.compareTo(b.taskID!);
   }
 }

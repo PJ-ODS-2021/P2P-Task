@@ -69,7 +69,7 @@ void main() {
     expect((await device.taskListService.allTasks).toList(), []);
   });
 
-  test('should retrieve tasks with allTaskRecords', () async {
+  test('should retrieve activities for created tasks', () async {
     final task1 = Task(title: 'Catch a cat falling from the sky');
     final task2 = Task(title: 'Drink a cold cat');
     await device.taskListService
@@ -78,12 +78,12 @@ void main() {
     await device.taskListService.upsertTask('id1', task2);
 
     final allTaskRecords =
-        (await device.taskListService.allTaskRecords).toList();
+        (await device.taskListService.taskActivities).toList();
     expect(allTaskRecords.map((v) => v.task).toSet(), {task1, task2});
     expect(allTaskRecords.map((v) => v.taskListId).toList(), ['id1', 'id1']);
   });
 
-  test('should retrieve deleted task record with allTaskRecords', () async {
+  test('should retrieve activities for deleted tasks', () async {
     final task1 = Task(title: 'Catch a cat falling from the sky');
     await device.taskListService
         .upsertTaskList(TaskList(id: 'id1', title: 'list1'));
@@ -91,7 +91,7 @@ void main() {
     await device.taskListService.removeTask('id1', task1.id!);
 
     final allTaskRecords =
-        (await device.taskListService.allTaskRecords).toList();
+        (await device.taskListService.taskActivities).toList();
     expect(allTaskRecords.length, 1);
     expect(allTaskRecords.first.task, null);
   });
