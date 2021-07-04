@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
-import 'package:p2p_task/services/activity_entry_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/database_service.dart';
 import 'package:p2p_task/services/device_info_service.dart';
@@ -68,7 +67,6 @@ class _DependenciesProviderState extends State<DependenciesProvider> {
           ),
           dispose: (_, viewModel) => viewModel.dispose(),
         ),
-        ChangeNotifierProvider(create: (_) => ActivityEntryService()),
         ChangeNotifierProvider(
           create: (_) => ChangeCallbackNotifier<TaskListService>(
             Injector().get<TaskListService>(),
