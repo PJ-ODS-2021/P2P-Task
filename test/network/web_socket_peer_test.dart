@@ -20,17 +20,20 @@ class Device {
   static Future<Device> create({String? name, int? port}) async {
     final taskList = await DeviceTaskList.create(name: name);
     if (port != null) await taskList.identityService.setPort(port);
-    final peerInfoService = PeerInfoService(DataModelRepository(
-      taskList.database,
-      (json) => PeerInfo.fromJson(json),
-      'PeerInfo',
-    ));
+    final peerInfoService = PeerInfoService(
+      DataModelRepository(
+        taskList.database,
+        (json) => PeerInfo.fromJson(json),
+        'PeerInfo',
+      ),
+      null,
+    );
     final peerService = PeerService(
       WebSocketPeer(),
       taskList.taskListService,
       peerInfoService,
       taskList.identityService,
-      taskList.syncService,
+      null,
     );
 
     return Device(taskList, peerInfoService, peerService);

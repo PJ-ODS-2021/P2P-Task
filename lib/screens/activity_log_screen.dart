@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/models/activity_entry.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/identity_service.dart';
@@ -9,8 +10,6 @@ import 'package:intl/intl.dart';
 import '../models/activity_entry.dart';
 
 class ActivityLogScreen extends StatelessWidget {
-  final _heroFont = TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold);
-
   @override
   Widget build(BuildContext context) {
     final taskListService =
@@ -54,7 +53,7 @@ class ActivityLogScreen extends StatelessWidget {
         child: Column(
           children: [
             Spacer(),
-            Text('⚡️ No activities yet.', style: _heroFont),
+            Text('⚡️ No activities yet.', style: heroFont),
             Text('Changes to your Tasks will be shown here.'),
             Text('Create a new Task or pair a device to see some activities.'),
             Spacer(flex: 2),
@@ -135,13 +134,9 @@ class ActivityLogScreen extends StatelessWidget {
   }
 
   Widget getActivityIcon(ActivityEntry activity, String currentPeerId) {
-    return Image.asset(
-      activity.device == currentPeerId
-          ? 'assets/up_arrow_icon.png'
-          : 'assets/down_arrow_icon.png',
-      width: 22,
-      height: 22,
-    );
+    return Icon(activity.device == currentPeerId
+        ? Icons.arrow_upward
+        : Icons.arrow_downward);
   }
 
   Widget _getActivityDescription(

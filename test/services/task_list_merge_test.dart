@@ -97,14 +97,16 @@ void main() {
   });
 
   test('crdt update less recent task in list', () async {
-    final taskList = TaskList(id: 'id', title: 'list');
+    // TODO: use fake time
+
+    final taskList = TaskList(id: 'listId', title: 'list');
     final task1 = Task(id: 'task1id', title: 'task1');
-    final task2 = Task(id: task1.id, title: 'task2');
+    final task2 = Task(id: 'task1id', title: 'task2');
     await devices[0].taskListService.upsertTaskList(taskList);
-    await devices[0].taskListService.upsertTask(taskList.id!, task1);
-    await Future.delayed(Duration(milliseconds: 10));
+    await devices[0].taskListService.upsertTask('listId', task1);
+    await Future.delayed(Duration(milliseconds: 1));
     await devices[1].taskListService.upsertTaskList(taskList);
-    await devices[1].taskListService.upsertTask(taskList.id!, task2);
+    await devices[1].taskListService.upsertTask('listId', task2);
 
     await devices[0]
         .taskListService
@@ -118,14 +120,16 @@ void main() {
   });
 
   test('crdt keep more recent task in list', () async {
-    final taskList = TaskList(id: 'id', title: 'list');
+    // TODO: use fake time
+
+    final taskList = TaskList(id: 'listId', title: 'list');
     final task1 = Task(id: 'task1id', title: 'task1');
-    final task2 = Task(id: task1.id, title: 'task2');
+    final task2 = Task(id: 'task1id', title: 'task2');
     await devices[1].taskListService.upsertTaskList(taskList);
-    await devices[1].taskListService.upsertTask(taskList.id!, task2);
-    await Future.delayed(Duration(milliseconds: 10));
+    await devices[1].taskListService.upsertTask('listId', task2);
+    await Future.delayed(Duration(milliseconds: 1));
     await devices[0].taskListService.upsertTaskList(taskList);
-    await devices[0].taskListService.upsertTask(taskList.id!, task1);
+    await devices[0].taskListService.upsertTask('listId', task1);
 
     await devices[0]
         .taskListService
@@ -139,21 +143,21 @@ void main() {
   });
 
   test('crdt recursive task merge in list', () async {
-    final taskList = TaskList(id: 'id', title: 'list');
+    final taskList = TaskList(id: 'listId', title: 'list');
     final task1 = Task(
       id: 'task1Id',
       title: 'task1',
       description: 'description1',
     );
     final task2 = Task(
-      id: task1.id,
+      id: 'task1Id',
       title: 'task2',
       description: 'description2',
     );
     await devices[0].taskListService.upsertTaskList(taskList);
-    await devices[0].taskListService.upsertTask(taskList.id!, task1);
+    await devices[0].taskListService.upsertTask('listId', task1);
     await devices[1].taskListService.upsertTaskList(taskList);
-    await devices[1].taskListService.upsertTask(taskList.id!, task2);
+    await devices[1].taskListService.upsertTask('listId', task2);
 
     // two-way merge:
     await devices[0]
@@ -166,21 +170,86 @@ void main() {
     // update title in device 1 and description in device 2:
     await devices[0]
         .taskListService
-        .upsertTask(taskList.id!, task1..title = 'task1 updated');
+        .upsertTask('listId', task1..title = 'task1 updated');
     await devices[1]
         .taskListService
-        .upsertTask(taskList.id!, task2..description = 'task2 description');
+        .upsertTask('listId', task2..description = 'task2 description');
 
     await devices[0]
         .taskListService
         .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
-    expect((await devices[0].taskListService.allTasks).toSet(), {
-      Task(
-        id: task2.id,
-        title: 'task1 updated',
-        description: 'task2 description',
-      ),
-    });
+    final allTasks = (await devices[0].taskListService.allTasks).toSet();
+    expect(allTasks.length, 1);
+    expect(allTasks.first.id, 'task1Id');
+    expect(allTasks.first.title, 'task1 updated');
+    expect(allTasks.first.description, 'task2 description');
+  });
+
+  test('crdt recursive task merge in list out-of sync clocks', () async {
+    final taskList = TaskList(id: 'listId', title: 'list');
+    final task = Task(title: 'task1', completed: false, isFlagged: false);
+    await devices[0].taskListService.upsertTaskList(taskList);
+    await devices[0].taskListService.upsertTask('listId', task);
+
+    // two-way merge
+    await devices[0]
+        .taskListService
+        .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
+    await devices[1]
+        .taskListService
+        .mergeCrdtJson(await devices[0].taskListService.crdtToJson());
+
+    final setTaskPropertyTimestamp = (
+      Map<String, dynamic> crdt,
+      String taskListId,
+      String taskId,
+      int timestamp, {
+      String? property,
+    }) async {
+      final taskCrdt = crdt['records'][taskListId]['value'][taskId];
+      final clock = property != null
+          ? taskCrdt['value'][property]['clock']
+          : taskCrdt['clock'];
+      clock['timestamp'] = timestamp;
+    };
+
+    // mark as completed in device 0 and backdate timestamp
+    await devices[0].taskListService.upsertTask(
+          'listId',
+          Task(
+            id: task.id,
+            title: task.title,
+            completed: true,
+            isFlagged: task.isFlagged,
+          ),
+        );
+    final device0Crdt =
+        jsonDecode(await devices[0].taskListService.crdtToJson());
+    await setTaskPropertyTimestamp(
+      device0Crdt,
+      'listId',
+      task.id!,
+      0,
+      property: 'completed',
+    );
+
+    // mark flagged in device 1
+    await devices[1].taskListService.upsertTask(
+          'listId',
+          Task(
+            id: task.id,
+            title: task.title,
+            completed: task.completed,
+            isFlagged: true,
+          ),
+        );
+
+    await devices[1].taskListService.mergeCrdtJson(jsonEncode(device0Crdt));
+    final expectedTask =
+        Task(id: task.id, title: task.title, completed: true, isFlagged: true);
+
+    // completed and flagged should be marked as true
+    expect((await devices[1].taskListService.allTasks).toSet(), {expectedTask});
   });
 
   tearDown(() async {

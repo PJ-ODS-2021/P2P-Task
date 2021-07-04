@@ -8,6 +8,7 @@ analyzer:
     - ios/**
     - android/**
     - lww_crdt/**
+    - test/**/*.mocks.dart
   plugins:
     - dart_code_metrics
 

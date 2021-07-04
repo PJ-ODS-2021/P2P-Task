@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:p2p_task/screens/simple_error_popup_dialog.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
@@ -8,7 +9,8 @@ import 'package:p2p_task/widgets/simple_dropdown.dart';
 import 'package:provider/provider.dart';
 
 class SyncListSection extends StatelessWidget {
-  final _intervalOptions = ['off', '1s', '5s', '10s', '15s', '30s', '60s'];
+  final _intervalOptions = ['off', '1min', '5min', '15min', '1h'];
+  final _intervalValues = [0, 60, 300, 900, 3600];
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +26,7 @@ class SyncListSection extends StatelessWidget {
           syncService.interval,
           syncService.syncOnStart,
           syncService.syncOnUpdate,
+          syncService.retrieveSyncAfterDeviceAdded(),
         ],
       ),
       builder: (context, snapshot) {
@@ -44,9 +47,7 @@ class SyncListSection extends StatelessWidget {
               leading: Icon(Icons.electrical_services),
               trailing: Switch.adaptive(
                 value: peer.isServerRunning,
-                onChanged: kIsWeb
-                    ? (value) => null
-                    : (value) => value ? peer.startServer() : peer.stopServer(),
+                onChanged: (value) => _setServerStatus(context, peer, value),
               ),
               subtitle: peer.isServerRunning
                   ? Text(
@@ -62,18 +63,7 @@ class SyncListSection extends StatelessWidget {
               title: Text('Sync interval'),
               trailing: isWaiting
                   ? null
-                  : SimpleDropdown(
-                      items: _intervalOptions,
-                      initialIndex: data![0] == 0
-                          ? 0
-                          : _intervalOptions
-                              .indexWhere((option) => option == '${data[0]}s'),
-                      onItemSelect: (item) async {
-                        await syncService.setInterval(item == 'off'
-                            ? 0
-                            : int.parse(item.replaceAll('s', '')));
-                      },
-                    ),
+                  : _buildIntervalDropdown(syncService, data![0]),
             ),
             ListTile(
               tileColor: Colors.white,
@@ -97,9 +87,53 @@ class SyncListSection extends StatelessWidget {
                       onChanged: (value) => syncService.setSyncOnUpdate(value),
                     ),
             ),
+            ListTile(
+              tileColor: Colors.white,
+              leading: Icon(Icons.add_to_home_screen),
+              title: Text('Sync after device added'),
+              trailing: isWaiting
+                  ? null
+                  : Switch.adaptive(
+                      value: data![3],
+                      onChanged: (value) =>
+                          syncService.setSyncAfterDeviceAdded(value),
+                    ),
+            ),
           ],
         );
       },
     );
+  }
+
+  Widget _buildIntervalDropdown(SyncService syncService, int interval) {
+    return SimpleDropdown(
+      items: _intervalOptions,
+      initialIndex: _intervalValues.indexWhere((value) => value == interval),
+      onItemSelect: (item) async {
+        await syncService.setInterval(
+          _intervalValues[
+              _intervalOptions.indexWhere((option) => option == item)],
+        );
+      },
+    );
+  }
+
+  void _setServerStatus(
+    BuildContext context,
+    PeerService peerService,
+    bool startServer,
+  ) {
+    if (kIsWeb) return;
+    if (startServer) {
+      peerService.startServer().onError((error, stackTrace) => showDialog(
+            context: context,
+            builder: (context) => SimpleErrorPopupDialog(
+              'Could not start server',
+              error.toString(),
+            ),
+          ));
+    } else {
+      peerService.stopServer();
+    }
   }
 }

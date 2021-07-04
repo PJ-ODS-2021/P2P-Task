@@ -15,7 +15,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   final TaskListService _taskListService;
   final PeerInfoService _peerInfoService;
   final IdentityService _identityService;
-  final SyncService _syncService;
+  final SyncService? _syncService;
 
   PeerService(
     this._peer,
@@ -37,7 +37,8 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     _peer.registerCallback<DebugMessage>(_debugMessageCallback);
     _peer.registerCallback<TaskListMessage>(_taskListMessageCallback);
 
-    _syncService.startJob(syncWithAllKnownPeers);
+    _syncService?.startJob(syncWithAllKnownPeers);
+    _syncService?.run(runOnSyncOnStart: true);
   }
 
   bool get isServerRunning => _peer.isServerRunning;

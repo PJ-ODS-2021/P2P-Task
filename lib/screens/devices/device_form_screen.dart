@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/models/peer_info.dart';
-import 'package:p2p_task/services/change_callback_notifier.dart';
-import 'package:p2p_task/services/peer_info_service.dart';
+import 'package:p2p_task/viewmodels/device_list_viewmodel.dart';
 import 'package:provider/provider.dart';
 
 class DeviceFormScreen extends StatefulWidget {
@@ -152,13 +151,12 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
   }
 
   void _onSubmit() {
-    Provider.of<ChangeCallbackNotifier<PeerInfoService>>(context, listen: false)
-        .callbackProvider
-        .upsert(PeerInfo()
-          ..name = _nameController.text
-          ..locations.add(
-            PeerLocation('ws://${_ipController.text}:${_portController.text}'),
-          ));
+    final peerInfo = PeerInfo()
+      ..name = _nameController.text
+      ..locations.add(
+        PeerLocation('ws://${_ipController.text}:${_portController.text}'),
+      );
+    Provider.of<DeviceListViewModel>(context, listen: false).upsert(peerInfo);
     Navigator.of(context).pop();
   }
 }
