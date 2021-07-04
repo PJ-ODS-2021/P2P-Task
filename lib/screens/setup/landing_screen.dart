@@ -23,7 +23,7 @@ class LandingScreen extends StatelessWidget {
         final isDesktop = !kIsWeb && !(Platform.isIOS || Platform.isAndroid);
 
         return hasAlreadyVisited || !isDesktop
-            ? DependenciesInitializor(
+            ? DependencyInitializerWidget(
                 child: HomeScreen(title: 'P2P Task Manager'),
               )
             : SplashScreen<Directory>(

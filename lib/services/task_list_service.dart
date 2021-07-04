@@ -61,7 +61,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
 
   /// Returns false if the task list does not exist
   Future<bool> upsertTask(String taskListId, Task task) async {
-    l.info('Upsert task ${task.toJson()}');
+    logger.info('Upsert task ${task.toJson()}');
     final crdt = await _readAndDecodeTaskListCollectionCrdt();
     final taskListCrdt = crdt.get(taskListId);
     if (taskListCrdt == null) return false;
@@ -89,7 +89,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     TaskList taskList, {
     bool ignoreTasks = false,
   }) async {
-    l.info('Upsert task list ${taskList.toJson()}');
+    logger.info('Upsert task list ${taskList.toJson()}');
     final crdt = await _readAndDecodeTaskListCollectionCrdt();
     taskList.id ??= Uuid().v4();
     final taskListNode = crdt.getRecord(taskList.id!);
@@ -151,7 +151,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
       )),
     );
     invokeChangeCallback();
-    l.info('notifying task list change');
+    logger.info('notifying task list change');
     if (triggerSyncUpdate) {
       await _syncService?.run(runOnSyncOnUpdate: true);
     }
@@ -161,12 +161,12 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
       _readTaskListCollectionCrdtStringFromDatabase().then((v) => v ?? '');
 
   Future<void> mergeCrdtJson(String otherJson) async {
-    l.info('Merging with $otherJson');
+    logger.info('Merging with $otherJson');
     final self = (await _readAndDecodeTaskListCollectionCrdt());
     final other = _decodeTaskListCollectionCrdt(otherJson);
     if (other == null) return;
     self.merge(other);
-    l.info('Merge result ${self.toJson()}');
+    logger.info('Merge result ${self.toJson()}');
     await _store(self, triggerSyncUpdate: false);
   }
 
@@ -202,11 +202,11 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     String expectedNode,
   ) {
     if (crdt.node != expectedNode) {
-      l.severe(
+      logger.severe(
         'Got invalid node id when reading task list from disk (disk != peerId): "${crdt.node}" != "$expectedNode". Changing node id, the old node id might be dead for now on',
       );
       if (crdt.containsNode(expectedNode)) {
-        l.severe(
+        logger.severe(
           'A node with this peer id already exists. This could indicate another device is using the same node id which is VERY unlikely and potentially breaks the algorithm',
         );
       }

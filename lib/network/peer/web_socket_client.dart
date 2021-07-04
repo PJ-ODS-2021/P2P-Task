@@ -9,7 +9,7 @@ class WebSocketClient with LogMixin {
   WebSocketClient.fromChannel(this._channel);
 
   WebSocketClient.connect(Uri uri) {
-    l.info('Creating WebSocket channel to "$uri"...');
+    logger.info('Creating WebSocket channel to "$uri"...');
     _channel = WebSocketChannel.connect(uri);
   }
 
@@ -18,8 +18,8 @@ class WebSocketClient with LogMixin {
   }
 
   Future<void> close([int? closeCode, String? closeReason]) async {
-    l.info('Closing WebSocket sink');
+    logger.info('Closing WebSocket sink');
     await _channel.sink.close(closeCode, closeReason);
-    l.info('Closed WebSocket sink');
+    logger.info('Closed WebSocket sink');
   }
 }

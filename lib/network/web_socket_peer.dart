@@ -26,17 +26,17 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
 
   /// Calling this function while it is already running could lead to an error.
   Future<void> startServer(int port) async {
-    l.info('Starting initialization of Peer...');
+    logger.info('Starting initialization of Peer...');
     await _server?.close();
     _server = await WebSocketServer.start(port, (client) {
-      l.info('a client connected to the server');
+      logger.info('a client connected to the server');
 
       return _onData;
     });
   }
 
   void _onData(WebSocketClient client, dynamic data) {
-    l.info('Received message from connected peer: $data');
+    logger.info('Received message from connected peer: $data');
     _handleMessage(client, data);
   }
 
@@ -45,7 +45,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     List<PeerInfo> knownPeerInfos = const [],
   ]) async {
     final payload = marshallPacket(packet);
-    l.info('sending packet to all peers');
+    logger.info('sending packet to all peers');
 
     // This should implement a broadcast.
     // The difficulty is that clients can be connected to the server and/or have a server running that we can connect to.
@@ -82,7 +82,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
       return _sendToPeerLocation(location, payload);
     }
     if (peerInfo.locations.isEmpty) {
-      l.warning('Cannot sync with invalid peer $peerInfo: no locations');
+      logger.warning('Cannot sync with invalid peer $peerInfo: no locations');
 
       return false;
     }
@@ -90,11 +90,11 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     for (final location in peerInfo.locations) {
       final success = await _sendToPeerLocation(location, payload);
       if (success) {
-        l.info('successfully synced with $peerInfo using $location');
+        logger.info('successfully synced with $peerInfo using $location');
 
         return true;
       }
-      l.info('could not sync with $peerInfo using $location');
+      logger.info('could not sync with $peerInfo using $location');
     }
 
     return false;
@@ -105,13 +105,13 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     String payload, {
     Duration timeout = const Duration(seconds: 2),
   }) async {
-    l.info('Trying to sync with $location...');
+    logger.info('Trying to sync with $location...');
     final connection = tryWebSocketClientConnect(location.uri);
     if (connection == null) return false;
     final completer = Completer<bool>();
     connection.dataStream.listen(
       (data) async {
-        l.info('Received message from server: $data');
+        logger.info('Received message from server: $data');
         _handleMessage(connection, data);
 
         // for now just always close after having received a message
@@ -119,7 +119,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
       },
       onError: (error, stackTrace) {
         completer.complete(false);
-        l.severe(
+        logger.severe(
           'Error listening on websocket data stream to $location',
           error,
           stackTrace,
@@ -128,9 +128,9 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
       onDone: () => completer.complete(true),
     );
     connection.send(payload);
-    l.info('Client sent message to $location: $payload');
+    logger.info('Client sent message to $location: $payload');
     Future.delayed(timeout, () {
-      l.info('closing connection to $location due to timeout');
+      logger.info('closing connection to $location due to timeout');
       connection.close();
     });
 
@@ -141,7 +141,11 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     try {
       return WebSocketClient.connect(uri);
     } on WebSocketChannelException catch (error, stackTrace) {
-      l.severe('could not create websocket channel to $uri', error, stackTrace);
+      logger.severe(
+        'could not create websocket channel to $uri',
+        error,
+        stackTrace,
+      );
     }
 
     return null;
@@ -158,7 +162,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
 
   void sendPacketTo<T extends Serializable>(WebSocketClient client, T packet) {
     final payload = marshallPacket(packet);
-    l.info('sending $payload to client');
+    logger.info('sending $payload to client');
     client.send(payload);
   }
 
@@ -167,7 +171,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     try {
       packet = Packet.fromJson(jsonDecode(message));
     } on FormatException catch (e) {
-      l.severe('could not decode received json: $e');
+      logger.severe('could not decode received json: $e');
 
       return;
     }
