@@ -71,104 +71,108 @@ void main() {
     expect((await device.taskListService.allTasks).toList(), []);
   });
 
-  test('should retrieve activities for created tasks', () async {
-    final task1 = Task(title: 'Catch a cat falling from the sky');
-    final task2 = Task(title: 'Drink a cold cat');
-    await device.taskListService
-        .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
-    await device.taskListService.upsertTask('listId', task1);
-    await device.taskListService.upsertTask('listId', task2);
+  group('activities', () {
+    test('for created tasks', () async {
+      final task1 = Task(title: 'Catch a cat falling from the sky');
+      final task2 = Task(title: 'Drink a cold cat');
+      await device.taskListService
+          .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
+      await device.taskListService.upsertTask('listId', task1);
+      await device.taskListService.upsertTask('listId', task2);
 
-    final taskActivities =
-        (await device.taskListService.taskActivities).toList();
-    expect(
-      unorderedListEquality(
-        taskActivities.map((v) => v.task).toList(),
-        {task1, task2},
-      ),
-      true,
-    );
-    taskActivities
-        .forEach((taskRecord) => expect(taskRecord.taskListId, 'listId'));
-  });
-
-  test('should retrieve activities for deleted tasks', () async {
-    final task1 = Task(title: 'Catch a cat falling from the sky');
-    await device.taskListService
-        .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
-    await device.taskListService.upsertTask('listId', task1);
-    await device.taskListService.removeTask('listId', task1.id!);
-
-    final taskActivities =
-        (await device.taskListService.taskActivities).toList();
-    expect(taskActivities.length, 1);
-    expect(taskActivities.first.isDeleted, true);
-    expect(taskActivities.first.taskListId, 'listId');
-  });
-
-  test('should retrieve activities for updated tasks', () async {
-    final task1 = Task(title: 'Catch a cat falling from the sky');
-    await device.taskListService
-        .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
-    await device.taskListService.upsertTask('listId', task1);
-    await device.taskListService
-        .upsertTask('listId', task1..description = 'a new description');
-
-    final taskActivities =
-        (await device.taskListService.taskActivities).toList();
-    expect(taskActivities.length, 2);
-    taskActivities.forEach((activity) {
-      expect(activity.task, task1);
-      expect(activity.taskListId, 'listId');
+      final taskActivities =
+          (await device.taskListService.taskActivities).toList();
+      expect(
+        unorderedListEquality(
+          taskActivities.map((v) => v.task).toList(),
+          {task1, task2},
+        ),
+        true,
+      );
+      taskActivities
+          .forEach((taskRecord) => expect(taskRecord.taskListId, 'listId'));
     });
-    expect(
-      taskActivities.where((activity) => activity.isRecursiveUpdate).length,
-      1,
-    );
-  });
 
-  test('should retrieve activities for created task lists', () async {
-    final list1 = TaskList(id: 'listId1', title: 'list1');
-    final list2 = TaskList(id: 'listId2', title: 'list2');
-    await device.taskListService.upsertTaskList(list1);
-    await device.taskListService.upsertTaskList(list2);
+    test('for deleted tasks', () async {
+      final task1 = Task(title: 'Catch a cat falling from the sky');
+      await device.taskListService
+          .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
+      await device.taskListService.upsertTask('listId', task1);
+      await device.taskListService.removeTask('listId', task1.id!);
 
-    final listActivities =
-        (await device.taskListService.taskListActivities).toList();
-    expect(
-      unorderedListEquality(
-        listActivities.map((v) => v.taskList).toList(),
-        {list1, list2},
-      ),
-      true,
-    );
-  });
+      final taskActivities =
+          (await device.taskListService.taskActivities).toList();
+      expect(taskActivities.length, 1);
+      expect(taskActivities.first.isDeleted, true);
+      expect(taskActivities.first.taskListId, 'listId');
+    });
 
-  test('should retrieve activities for deleted task lists', () async {
-    final list = TaskList(id: 'listId', title: 'list');
-    await device.taskListService.upsertTaskList(list);
-    await device.taskListService.removeTaskList('listId');
+    test('for updated tasks', () async {
+      final task1 = Task(title: 'Catch a cat falling from the sky');
+      await device.taskListService
+          .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
+      await device.taskListService.upsertTask('listId', task1);
+      await device.taskListService
+          .upsertTask('listId', task1..description = 'a new description');
 
-    final listActivities =
-        (await device.taskListService.taskListActivities).toList();
-    expect(listActivities.length, 1);
-    expect(listActivities.first.isDeleted, true);
-  });
+      final taskActivities =
+          (await device.taskListService.taskActivities).toList();
+      expect(taskActivities.length, 2);
+      taskActivities.forEach((activity) {
+        expect(activity.task, task1);
+        expect(activity.taskListId, 'listId');
+      });
+      expect(
+        taskActivities.where((activity) => activity.isRecursiveUpdate).length,
+        1,
+      );
+    });
 
-  test('should retrieve all activities', () async {
-    final list = TaskList(id: 'listId', title: 'list');
-    final task = Task(title: 'task');
-    await device.taskListService.upsertTaskList(list);
-    await device.taskListService.upsertTask('listId', task);
+    test('for created task lists', () async {
+      final list1 = TaskList(id: 'listId1', title: 'list1');
+      final list2 = TaskList(id: 'listId2', title: 'list2');
+      await device.taskListService.upsertTaskList(list1);
+      await device.taskListService.upsertTaskList(list2);
 
-    final allActivities = (await device.taskListService.allActivities).toList();
-    expect(allActivities.length, 2);
-    final taskActivities = allActivities.whereType<TaskActivity>().toList();
-    expect(taskActivities.length, 1);
-    expect(taskActivities.first.task, task);
-    final listActivities = allActivities.whereType<TaskListActivity>().toList();
-    expect(listActivities.length, 1);
-    expect(listActivities.first.taskList, list);
+      final listActivities =
+          (await device.taskListService.taskListActivities).toList();
+      expect(
+        unorderedListEquality(
+          listActivities.map((v) => v.taskList).toList(),
+          {list1, list2},
+        ),
+        true,
+      );
+    });
+
+    test('for deleted task lists', () async {
+      final list = TaskList(id: 'listId', title: 'list');
+      await device.taskListService.upsertTaskList(list);
+      await device.taskListService.removeTaskList('listId');
+
+      final listActivities =
+          (await device.taskListService.taskListActivities).toList();
+      expect(listActivities.length, 1);
+      expect(listActivities.first.isDeleted, true);
+    });
+
+    test('of all types', () async {
+      final list = TaskList(id: 'listId', title: 'list');
+      final task = Task(title: 'task');
+      await device.taskListService.upsertTaskList(list);
+      await device.taskListService.upsertTask('listId', task);
+
+      final allActivities =
+          (await device.taskListService.allActivities).toList();
+      expect(allActivities.length, 2);
+      final taskActivities = allActivities.whereType<TaskActivity>().toList();
+      expect(taskActivities.length, 1);
+      expect(taskActivities.first.task, task);
+      final listActivities =
+          allActivities.whereType<TaskListActivity>().toList();
+      expect(listActivities.length, 1);
+      expect(listActivities.first.taskList, list);
+    });
   });
 
   tearDown(() async {
