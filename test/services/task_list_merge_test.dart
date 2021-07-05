@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/models/task_list.dart';
 import '../utils/device_task_list.dart';
+import '../utils/unordered_list_compare.dart';
 
 void main() {
   var devices = <DeviceTaskList>[];
@@ -15,33 +16,7 @@ void main() {
     ];
   });
 
-  test('distinct task lists', () async {
-    final task1 = Task(title: 'task1');
-    final task2 = Task(title: 'task2');
-    await devices[0]
-        .taskListService
-        .upsertTaskList(TaskList(id: 'id1', title: 'list1'));
-    await devices[0].taskListService.upsertTask('id1', task1);
-    await devices[1]
-        .taskListService
-        .upsertTaskList(TaskList(id: 'id2', title: 'list2'));
-    await devices[1].taskListService.upsertTask('id2', task2);
-
-    expect(await devices[0].taskListService.allTasks, [task1]);
-    expect(
-      (await devices[0].taskListService.getTaskListById('id1'))?.elements,
-      [task1],
-    );
-    expect(await devices[0].taskListService.getTasksFromList('id1'), [task1]);
-    expect(await devices[1].taskListService.allTasks, [task2]);
-    expect(
-      (await devices[1].taskListService.getTaskListById('id2'))?.elements,
-      [task2],
-    );
-    expect(await devices[1].taskListService.getTasksFromList('id2'), [task2]);
-  });
-
-  test('crdt merge tasks unordered same list', () async {
+  test('crdt onw-way-merge tasks unordered same list', () async {
     final task1 = Task(title: 'task1');
     final task2 = Task(title: 'task2');
     await devices[0]
@@ -61,15 +36,30 @@ void main() {
     expect(taskLists.length, 1);
     expect(taskLists.first.id, 'id');
     expect(taskLists.first.title, 'list');
-    expect(taskLists.first.elements.toSet(), {task1, task2});
     expect(
-      (await devices[0].taskListService.getTasksFromList('id')).toSet(),
-      {task1, task2},
+      unorderedListEquality(
+        taskLists.first.elements.toList(),
+        {task1, task2},
+      ),
+      true,
     );
-    expect((await devices[0].taskListService.allTasks).toSet(), {task1, task2});
+    expect(
+      unorderedListEquality(
+        (await devices[0].taskListService.getTasksFromList('id')).toList(),
+        {task1, task2},
+      ),
+      true,
+    );
+    expect(
+      unorderedListEquality(
+        (await devices[0].taskListService.allTasks).toList(),
+        {task1, task2},
+      ),
+      true,
+    );
   });
 
-  test('crdt merge clock drift', () async {
+  test('crdt one-way-merge clock drift', () async {
     // This test is highly dependent on the underlying crdt implementation.
     // The flutter crdt library throws a ClockDriftException when trying to merge with a Hlc timestamp that is more than 1 minute in the future.
     // The new implementation should not care.
@@ -91,12 +81,15 @@ void main() {
 
     await devices[0].taskListService.mergeCrdtJson(jsonEncode(device1Crdt));
     expect(
-      (await devices[0].taskListService.taskLists).toSet(),
-      {taskList1, taskList2},
+      unorderedListEquality(
+        (await devices[0].taskListService.taskLists).toList(),
+        {taskList1, taskList2},
+      ),
+      true,
     );
   });
 
-  test('crdt update less recent task in list', () async {
+  test('crdt one-way-merge update less recent task in list', () async {
     // TODO: use fake time
 
     final taskList = TaskList(id: 'listId', title: 'list');
@@ -116,10 +109,13 @@ void main() {
     expect(mergedTaskLists.length, 1);
     final mergedTaskList = mergedTaskLists.first;
     expect(mergedTaskList.title, taskList.title);
-    expect(mergedTaskList.elements.toSet(), {task2});
+    expect(
+      unorderedListEquality(mergedTaskList.elements.toList(), {task2}),
+      true,
+    );
   });
 
-  test('crdt keep more recent task in list', () async {
+  test('crdt one-way-merge keep more recent task in list', () async {
     // TODO: use fake time
 
     final taskList = TaskList(id: 'listId', title: 'list');
@@ -139,10 +135,13 @@ void main() {
     expect(mergedTaskLists.length, 1);
     final mergedTaskList = mergedTaskLists.first;
     expect(mergedTaskList.title, taskList.title);
-    expect(mergedTaskList.elements.toSet(), {task1});
+    expect(
+      unorderedListEquality(mergedTaskList.elements.toList(), {task1}),
+      true,
+    );
   });
 
-  test('crdt recursive task merge in list', () async {
+  test('crdt two-way-merge recursive task in list', () async {
     final taskList = TaskList(id: 'listId', title: 'list');
     final task1 = Task(
       id: 'task1Id',
@@ -178,79 +177,92 @@ void main() {
     await devices[0]
         .taskListService
         .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
-    final allTasks = (await devices[0].taskListService.allTasks).toSet();
+    final allTasks = (await devices[0].taskListService.allTasks).toList();
     expect(allTasks.length, 1);
     expect(allTasks.first.id, 'task1Id');
     expect(allTasks.first.title, 'task1 updated');
     expect(allTasks.first.description, 'task2 description');
   });
 
-  test('crdt recursive task merge in list out-of sync clocks', () async {
-    final taskList = TaskList(id: 'listId', title: 'list');
-    final task = Task(title: 'task1', completed: false, isFlagged: false);
-    await devices[0].taskListService.upsertTaskList(taskList);
-    await devices[0].taskListService.upsertTask('listId', task);
+  test(
+    'crdt two-way-merge recursive task in list with out-of-sync clocks',
+    () async {
+      final taskList = TaskList(id: 'listId', title: 'list');
+      final task = Task(title: 'task1', completed: false, isFlagged: false);
+      await devices[0].taskListService.upsertTaskList(taskList);
+      await devices[0].taskListService.upsertTask('listId', task);
 
-    // two-way merge
-    await devices[0]
-        .taskListService
-        .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
-    await devices[1]
-        .taskListService
-        .mergeCrdtJson(await devices[0].taskListService.crdtToJson());
+      // two-way merge
+      await devices[0]
+          .taskListService
+          .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
+      await devices[1]
+          .taskListService
+          .mergeCrdtJson(await devices[0].taskListService.crdtToJson());
 
-    final setTaskPropertyTimestamp = (
-      Map<String, dynamic> crdt,
-      String taskListId,
-      String taskId,
-      int timestamp, {
-      String? property,
-    }) async {
-      final taskCrdt = crdt['records'][taskListId]['value'][taskId];
-      final clock = property != null
-          ? taskCrdt['value'][property]['clock']
-          : taskCrdt['clock'];
-      clock['timestamp'] = timestamp;
-    };
+      final setTaskPropertyTimestamp = (
+        Map<String, dynamic> crdt,
+        String taskListId,
+        String taskId,
+        int timestamp, {
+        String? property,
+      }) async {
+        final taskCrdt = crdt['records'][taskListId]['value'][taskId];
+        final clock = property != null
+            ? taskCrdt['value'][property]['clock']
+            : taskCrdt['clock'];
+        clock['timestamp'] = timestamp;
+      };
 
-    // mark as completed in device 0 and backdate timestamp
-    await devices[0].taskListService.upsertTask(
-          'listId',
-          Task(
-            id: task.id,
-            title: task.title,
-            completed: true,
-            isFlagged: task.isFlagged,
-          ),
-        );
-    final device0Crdt =
-        jsonDecode(await devices[0].taskListService.crdtToJson());
-    await setTaskPropertyTimestamp(
-      device0Crdt,
-      'listId',
-      task.id!,
-      0,
-      property: 'completed',
-    );
+      // mark as completed in device 0 and backdate timestamp
+      await devices[0].taskListService.upsertTask(
+            'listId',
+            Task(
+              id: task.id,
+              title: task.title,
+              completed: true,
+              isFlagged: task.isFlagged,
+            ),
+          );
+      final device0Crdt =
+          jsonDecode(await devices[0].taskListService.crdtToJson());
+      await setTaskPropertyTimestamp(
+        device0Crdt,
+        'listId',
+        task.id!,
+        0,
+        property: 'completed',
+      );
 
-    // mark flagged in device 1
-    await devices[1].taskListService.upsertTask(
-          'listId',
-          Task(
-            id: task.id,
-            title: task.title,
-            completed: task.completed,
-            isFlagged: true,
-          ),
-        );
+      // mark flagged in device 1
+      await devices[1].taskListService.upsertTask(
+            'listId',
+            Task(
+              id: task.id,
+              title: task.title,
+              completed: task.completed,
+              isFlagged: true,
+            ),
+          );
 
-    await devices[1].taskListService.mergeCrdtJson(jsonEncode(device0Crdt));
-    final expectedTask =
-        Task(id: task.id, title: task.title, completed: true, isFlagged: true);
+      await devices[1].taskListService.mergeCrdtJson(jsonEncode(device0Crdt));
+      final expectedTask = Task(
+        id: task.id,
+        title: task.title,
+        completed: true,
+        isFlagged: true,
+      );
 
-    // completed and flagged should be marked as true
-    expect((await devices[1].taskListService.allTasks).toSet(), {expectedTask});
-  });
+      // completed and flagged should be marked as true
+      expect(
+        unorderedListEquality(
+          (await devices[1].taskListService.allTasks).toList(),
+          {expectedTask},
+        ),
+        true,
+      );
+    },
+  );
 
   tearDown(() async {
     await Future.wait(devices.map((device) => device.close()));
