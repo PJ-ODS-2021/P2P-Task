@@ -4,6 +4,7 @@ import 'package:p2p_task/models/task_list.dart';
 import 'package:uuid/uuid.dart';
 
 import '../utils/device_task_list.dart';
+import '../utils/unordered_list_compare.dart';
 
 void main() {
   late DeviceTaskList device;
@@ -77,10 +78,17 @@ void main() {
     await device.taskListService.upsertTask('id1', task1);
     await device.taskListService.upsertTask('id1', task2);
 
-    final allTaskRecords =
+    final taskActivities =
         (await device.taskListService.taskActivities).toList();
-    expect(allTaskRecords.map((v) => v.task).toSet(), {task1, task2});
-    expect(allTaskRecords.map((v) => v.taskListId).toList(), ['id1', 'id1']);
+    expect(
+      unorderedListEquality(
+        taskActivities.map((v) => v.task).toList(),
+        {task1, task2},
+      ),
+      true,
+    );
+    taskActivities
+        .forEach((taskRecord) => expect(taskRecord.taskListId, 'id1'));
   });
 
   test('should retrieve activities for deleted tasks', () async {
@@ -93,7 +101,7 @@ void main() {
     final allTaskRecords =
         (await device.taskListService.taskActivities).toList();
     expect(allTaskRecords.length, 1);
-    expect(allTaskRecords.first.task, null);
+    expect(allTaskRecords.first.isDeleted, true);
   });
 
   tearDown(() async {
