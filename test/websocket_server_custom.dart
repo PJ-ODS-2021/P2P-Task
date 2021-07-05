@@ -2,20 +2,21 @@ import 'dart:isolate';
 
 import 'package:p2p_task/network/messages/debug_message.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
+import 'package:pointycastle/pointycastle.dart';
 
 class ServerOptions {
   final SendPort sendPort;
   final int? port;
   final bool echoDebugMessages;
-  final String publicKeyForDebugMessage;
-  final String privateKey;
+  final RSAPublicKey? publicKeyForDebugMessage;
+  final RSAPrivateKey? privateKey;
 
   const ServerOptions({
     required this.sendPort,
     this.port,
     this.echoDebugMessages = false,
-    this.publicKeyForDebugMessage = '',
     required this.privateKey,
+    this.publicKeyForDebugMessage,
   });
 }
 

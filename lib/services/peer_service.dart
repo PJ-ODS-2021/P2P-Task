@@ -121,10 +121,16 @@ class PeerService with LogMixin, ChangeCallbackProvider {
 
     var peerID = await _identityService.peerId;
     var name = await _identityService.name;
+    var privateKey = await _identityService.privateKey;
+
+    var message = 'Hello back from $peerID';
+
+    var signature = keyHelper.rsaSign(message, message);
 
     _peer.sendPacketTo(
       source,
-      IntroductionMessage('Hello back from $name,$peerID'),
+      IntroductionMessage(
+          message + ' sig: ' + keyHelper.rsaSign(privateKey!, message)),
       keyHelper.decodePublicKeyFromPem(publicKeyPem),
     );
   }

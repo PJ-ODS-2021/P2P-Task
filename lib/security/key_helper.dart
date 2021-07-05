@@ -45,6 +45,34 @@ class KeyHelper {
     );
   }
 
+  String decryptUnit8List(pc.RSAPrivateKey myPrivate, Uint8List cipherText) {
+    final decryptor = pc.OAEPEncoding(pc.RSAEngine())
+      ..init(
+        false,
+        pc.PrivateKeyParameter<pc.RSAPrivateKey>(myPrivate),
+      );
+
+    return String.fromCharCodes(
+      _processInBlocks(
+        decryptor,
+        cipherText,
+      ),
+    );
+  }
+
+  Uint8List decryptTEST(pc.RSAPrivateKey myPrivate, Uint8List cipherText) {
+    final decryptor = pc.OAEPEncoding(pc.RSAEngine())
+      ..init(
+        false,
+        pc.PrivateKeyParameter<pc.RSAPrivateKey>(myPrivate),
+      );
+
+    return _processInBlocks(
+      decryptor,
+      cipherText,
+    );
+  }
+
   Uint8List _processInBlocks(pc.AsymmetricBlockCipher engine, Uint8List input) {
     final numBlocks = input.length ~/ engine.inputBlockSize +
         ((input.length % engine.inputBlockSize != 0) ? 1 : 0);
@@ -90,6 +118,38 @@ class KeyHelper {
     );
 
     return String.fromCharCodes(blocks);
+  }
+
+  String rsaSign(pc.RSAPrivateKey privateKey, String dataToSign) {
+    final signer = pc.RSASigner(pc.SHA256Digest(), '0609608648016503040201');
+
+    signer.init(true, pc.PrivateKeyParameter<pc.RSAPrivateKey>(privateKey));
+
+    final sig = signer.generateSignature(Uint8List.fromList(
+      utf8.encode(dataToSign),
+    ));
+
+    return sig.bytes;
+  }
+
+  bool rsaVerify(
+      pc.RSAPublicKey publicKey, String signedData, String signature) {
+    final sig = pc.RSASignature(signature);
+
+    final verifier = pc.RSASigner(pc.SHA256Digest(), '0609608648016503040201');
+
+    verifier.init(false,
+        pc.PublicKeyParameter<pc.RSAPublicKey>(publicKey)); // false=verify
+
+    try {
+      return verifier.verifySignature(
+          Uint8List.fromList(
+            utf8.encode(signedData),
+          ),
+          sig);
+    } on ArgumentError {
+      return false; // for Pointy Castle 1.0.2 when signature has been modified
+    }
   }
 
   pc.SecureRandom _generateeSecureRandom() {

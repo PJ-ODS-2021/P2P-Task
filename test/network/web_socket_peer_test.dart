@@ -22,6 +22,7 @@ import 'package:p2p_task/utils/data_model_repository.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:sembast/sembast.dart';
 import 'package:sembast/sembast_memory.dart';
+import 'package:p2p_task/services/network_info_service.dart';
 import 'package:pointycastle/export.dart';
 
 void main() {
@@ -32,6 +33,7 @@ void main() {
   late TaskListsService taskListsService;
   late SyncService syncService;
   late PeerInfoService peerInfoService;
+  late NetworkInfoService networkInfoService;
   late PeerService peerService;
   late AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey> keys;
 
@@ -62,12 +64,14 @@ void main() {
       ),
       syncService,
     );
+    networkInfoService = NetworkInfoService();
     peerService = PeerService(
       WebSocketPeer(),
       taskListService,
       taskListsService,
       peerInfoService,
       identityService,
+      networkInfoService,
       syncService,
     );
     await peerService.startServer();
@@ -102,7 +106,7 @@ void main() {
           'TaskListMessage',
           object: TaskListMessage(
             jsonEncode(message),
-            keyHelper.encodePublicKeyToPem(keys.publicKey),
+            publicKeyPem: keyHelper.encodePublicKeyToPem(keys.publicKey),
             requestReply: true,
           ).toJson(),
         ),
@@ -159,7 +163,7 @@ void main() {
         'TaskListsMessage',
         object: TaskListsMessage(
           jsonEncode(message),
-          keyHelper.encodePublicKeyToPem(keys.publicKey),
+          publicKeyPem: keyHelper.encodePublicKeyToPem(keys.publicKey),
           requestReply: true,
         ).toJson(),
       ));
