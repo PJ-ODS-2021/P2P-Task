@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:p2p_task/models/task.dart';
 
@@ -40,8 +41,11 @@ class TaskList {
 
   @override
   bool operator ==(Object other) {
-    if (!(other is TaskList)) return false;
-
-    return other.id == id && other.title == title;
+    return other is TaskList &&
+        other.id == id &&
+        other.isShared == isShared &&
+        other.title == title &&
+        other.sortBy == sortBy &&
+        ListEquality().equals(other.elements, elements);
   }
 }
