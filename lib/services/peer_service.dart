@@ -1,9 +1,8 @@
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/network/messages/debug_message.dart';
 import 'package:p2p_task/network/messages/task_list_message.dart';
-import 'package:p2p_task/network/messages/introduction_message.dart';
-import 'package:p2p_task/network/messages/task_lists_message.dart';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
+import 'package:p2p_task/network/messages/introduction_message.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
 import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/services/identity_service.dart';
@@ -12,23 +11,20 @@ import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/security/key_helper.dart';
 import 'package:p2p_task/services/task_list_service.dart';
-import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 
 class PeerService with LogMixin, ChangeCallbackProvider {
   final WebSocketPeer _peer;
   final TaskListService _taskListService;
-  final TaskListsService _taskListsService;
   final PeerInfoService _peerInfoService;
   final IdentityService _identityService;
   final NetworkInfoService _networkInfoService;
-  final SyncService _syncService;
+  final SyncService? _syncService;
   final keyHelper = KeyHelper();
 
   PeerService(
     this._peer,
     this._taskListService,
-    this._taskListsService,
     this._peerInfoService,
     this._identityService,
     this._networkInfoService,
@@ -40,10 +36,6 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       'DebugMessage',
       (json) => DebugMessage.fromJson(json),
     );
-    _peer.registerTypename<TaskListsMessage>(
-      'TaskListsMessage',
-      (json) => TaskListsMessage.fromJson(json),
-    );
     _peer.registerTypename<TaskListMessage>(
       'TaskListMessage',
       (json) => TaskListMessage.fromJson(json),
@@ -53,12 +45,11 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       (json) => IntroductionMessage.fromJson(json),
     );
     _peer.registerCallback<DebugMessage>(_debugMessageCallback);
-    _peer.registerCallback<TaskListsMessage>(_taskListsMessageCallback);
     _peer.registerCallback<TaskListMessage>(_taskListMessageCallback);
     _peer.registerCallback<IntroductionMessage>(_introductionMessageCallback);
 
-    _syncService.startJob(syncWithAllKnownPeers);
-    _syncService.run(runOnSyncOnStart: true);
+    _syncService?.startJob(syncWithAllKnownPeers);
+    _syncService?.run(runOnSyncOnStart: true);
   }
 
   bool get isServerRunning => _peer.isServerRunning;
@@ -125,7 +116,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
 
     var message = 'Hello back from $peerID';
 
-    var signature = keyHelper.rsaSign(message, message);
+    var signature = keyHelper.rsaSign(privateKey!, message);
 
     _peer.sendPacketTo(
       source,
@@ -172,34 +163,6 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     }
   }
 
-  Future<void> _taskListsMessageCallback(
-    TaskListsMessage taskListsMessage,
-    WebSocketClient source,
-  ) async {
-    l.info(
-      'Received TaskListsMessage',
-    );
-    await _taskListsService.mergeCrdtJson(taskListsMessage.taskListsCrdtJson);
-    if (taskListsMessage.requestReply) {
-      final taskListCrdtJson = await _taskListsService.crdtToJson();
-      if (taskListsMessage.publicKeyPem == null) {
-        l.severe('missing public key for request reply');
-
-        return;
-      }
-
-      _peer.sendPacketTo(
-        source,
-        TaskListsMessage(taskListCrdtJson),
-        keyHelper.decodePublicKeyFromPem(taskListsMessage.publicKeyPem!),
-      );
-
-      // TODO: propagate new task lists through the network using other connected and known peers (if updated)
-    } else {
-      l.info('Server received TaskListsMessage');
-    }
-  }
-
   Future<void> startServer() async {
     final port = await _identityService.port;
     final privateKey = await _identityService.privateKey;
@@ -213,22 +176,13 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<void> syncWithPeer(PeerInfo peerInfo, {PeerLocation? location}) async {
-    final packetTasks = TaskListMessage(
+    final tasksPacket = TaskListMessage(
       await _taskListService.crdtToJson(),
       requestReply: true,
       publicKeyPem: await _identityService.publicKeyPem,
     );
-    final packetLists = TaskListsMessage(
-      await _taskListsService.crdtToJson(),
-      requestReply: true,
-      publicKeyPem: await _identityService.publicKeyPem,
-    );
-
     await _peer.sendPacketToPeer(
-        peerInfo, await _identityService.privateKey, packetLists,
-        location: location);
-    await _peer.sendPacketToPeer(
-        peerInfo, await _identityService.privateKey, packetTasks,
+        peerInfo, await _identityService.privateKey, tasksPacket,
         location: location);
   }
 
@@ -256,26 +210,14 @@ class PeerService with LogMixin, ChangeCallbackProvider {
 
   Future<void> syncWithAllKnownPeers() async {
     l.info('syncing task list with all known peers');
-    final packetTasks = TaskListMessage(
+    final tasksPacket = TaskListMessage(
       await _taskListService.crdtToJson(),
       requestReply: true,
       publicKeyPem: await _identityService.publicKeyPem,
     );
-    final packetLists = TaskListsMessage(
-      await _taskListsService.crdtToJson(),
-      requestReply: true,
-      publicKeyPem: await _identityService.publicKeyPem,
-    );
     final peers = await _peerInfoService.devices;
-
     await _peer.sendPacketToAllPeers(
-      packetLists,
-      peers,
-      await _identityService.privateKey,
-    );
-
-    await _peer.sendPacketToAllPeers(
-      packetTasks,
+      tasksPacket,
       peers,
       await _identityService.privateKey,
     );

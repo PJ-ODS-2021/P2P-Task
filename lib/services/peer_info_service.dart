@@ -5,7 +5,7 @@ import 'package:p2p_task/utils/data_model_repository.dart';
 
 class PeerInfoService with ChangeCallbackProvider {
   final DataModelRepository<PeerInfo> _repository;
-  final SyncService _syncService;
+  final SyncService? _syncService;
 
   PeerInfoService(this._repository, this._syncService);
 
@@ -13,7 +13,7 @@ class PeerInfoService with ChangeCallbackProvider {
 
   Future<void> upsert(PeerInfo peerInfo) async {
     await _repository.upsert(peerInfo);
-    await _syncService.run(runOnSyncAfterDeviceAdded: true);
+    await _syncService?.run(runOnSyncAfterDeviceAdded: true);
     invokeChangeCallback();
   }
 

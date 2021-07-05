@@ -68,8 +68,9 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
 
     // temporary implementation:
     // _server?.sendToClients(payload);
-    knownPeerInfos
-        .forEach((peerInfo) => sendToPeer(peerInfo, payload, privateKey));
+    await Future.wait(knownPeerInfos.map(
+      (peerInfo) => sendToPeer(peerInfo, payload, privateKey),
+    ));
   }
 
   Future<bool> sendPacketToPeer<T extends Serializable>(

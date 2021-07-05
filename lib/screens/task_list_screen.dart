@@ -8,10 +8,10 @@ import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:p2p_task/services/task_lists_service.dart';
 
 class TaskListScreen extends StatefulWidget {
   final TaskList taskList;
+
   TaskListScreen(this.taskList);
 
   @override
@@ -24,12 +24,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
     final taskListService =
         Provider.of<ChangeCallbackNotifier<TaskListService>>(context)
             .callbackProvider;
+    final taskListId = widget.taskList.id!;
 
-    final futureBuilder = FutureBuilder<List<Task>>(
-      initialData: [],
-      future: taskListService.getTasksForList(widget.taskList),
+    final futureBuilder = FutureBuilder<TaskList?>(
+      initialData: null,
+      future: taskListService.getTaskListById(taskListId),
       builder: (context, snapshot) {
-        final data = snapshot.data;
         if (snapshot.hasError) {
           return Column(
             children: [
@@ -38,8 +38,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
             ],
           );
         }
+        final taskList = snapshot.data;
+        final tasks = taskList != null
+            ? _sortTasks(taskList.sortBy, taskList.elements)
+            : <Task>[];
 
-        return _buildTaskList(context, taskListService, data!);
+        return _buildTaskList(context, taskListService, tasks);
       },
     );
 
@@ -49,7 +53,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         title: Text(widget.taskList.title),
         centerTitle: true,
         actions: [
-          _getSortButton(),
+          _getSortButton(taskListService),
         ],
       ),
       body: Stack(
@@ -111,7 +115,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
-  Widget _getSortButton() {
+  Widget _getSortButton(TaskListService taskListService) {
     return IconButton(
       onPressed: () {
         showDialog(
@@ -120,11 +124,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
             return SimpleDialog(
               title: Text('Sort tasks by'),
               children: [
-                _getSortOption(SortOption.Title),
-                _getSortOption(SortOption.Flag),
-                _getSortOption(SortOption.Status),
-                _getSortOption(SortOption.DueDate),
-                _getSortOption(SortOption.Created),
+                _getSortOption(taskListService, SortOption.Title),
+                _getSortOption(taskListService, SortOption.Flag),
+                _getSortOption(taskListService, SortOption.Status),
+                _getSortOption(taskListService, SortOption.DueDate),
+                _getSortOption(taskListService, SortOption.Created),
               ],
             );
           },
@@ -134,17 +138,17 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
-  SimpleDialogOption _getSortOption(SortOption sortOption) {
+  SimpleDialogOption _getSortOption(
+    TaskListService taskListService,
+    SortOption sortOption,
+  ) {
     return SimpleDialogOption(
       onPressed: () {
         setState(() {
-          widget.taskList.sortBy = sortOption;
-          final listService =
-              Provider.of<ChangeCallbackNotifier<TaskListsService>>(
-            context,
-            listen: false,
-          ).callbackProvider;
-          listService.upsert(widget.taskList);
+          taskListService.upsertTaskList(
+            widget.taskList..sortBy = sortOption,
+            ignoreTasks: true,
+          );
         });
         Navigator.pop(context);
       },
@@ -182,14 +186,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
           icon: Icons.flag,
           onTap: () {
             task.isFlagged = !task.isFlagged;
-            service.upsert(task);
+            service.upsertTask(widget.taskList.id!, task);
           },
         ),
         IconSlideAction(
           caption: 'Delete',
           color: Colors.red,
           icon: Icons.delete,
-          onTap: () => service.remove(task),
+          onTap: () => service.removeTask(widget.taskList.id!, task.id!),
         ),
       ],
       child: _buildTaskContainer(service, task, index),
@@ -242,9 +246,48 @@ class _TaskListScreenState extends State<TaskListScreen> {
         trailing: Icon(Icons.chevron_left),
         onTap: () {
           task.completed = !task.completed;
-          service.upsert(task);
+          service.upsertTask(widget.taskList.id!, task);
         },
       ),
     );
+  }
+
+  List<Task> _sortTasks(SortOption sortOption, List<Task> tasks) {
+    switch (sortOption) {
+      case SortOption.Title:
+        return tasks..sort(_titleIdCompare);
+      case SortOption.Flag:
+        return tasks
+          ..sort((a, b) => a.isFlagged != b.isFlagged
+              ? (a.isFlagged ? -1 : 1)
+              : _titleIdCompare(a, b));
+      case SortOption.Status:
+        return tasks
+          ..sort((a, b) => a.completed != b.completed
+              ? (a.completed ? -1 : 1)
+              : _titleIdCompare(a, b));
+      case SortOption.DueDate:
+        return tasks
+          ..sort((a, b) {
+            if (a.due == null) return b.due == null ? _titleIdCompare(a, b) : 1;
+            if (b.due == null) return -1;
+            final cmp = a.due!.compareTo(b.due!);
+            if (cmp != 0) return cmp;
+
+            return _titleIdCompare(a, b);
+          });
+      case SortOption.Created:
+      default:
+        return tasks..sort(_titleIdCompare);
+    }
+  }
+
+  int _titleIdCompare(Task a, Task b) {
+    final cmp = a.title.compareTo(b.title);
+    if (cmp != 0) return cmp;
+    if (a.id == null) return b.id == null ? 0 : 1;
+    if (b.id == null) return -1;
+
+    return a.id!.compareTo(b.id!);
   }
 }

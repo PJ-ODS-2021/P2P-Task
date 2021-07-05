@@ -1,47 +1,110 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/task.dart';
-import 'package:p2p_task/services/identity_service.dart';
-import 'package:p2p_task/services/sync_service.dart';
-import 'package:p2p_task/services/task_list_service.dart';
-import 'package:p2p_task/utils/key_value_repository.dart';
-import 'package:sembast/sembast.dart';
-import 'package:sembast/sembast_memory.dart';
+import 'package:p2p_task/models/task_list.dart';
+import 'package:uuid/uuid.dart';
+
+import '../utils/device_task_list.dart';
+import '../utils/unordered_list_compare.dart';
 
 void main() {
-  late Database database;
-  late KeyValueRepository keyValueRepository;
-  late IdentityService identityService;
-  late SyncService syncService;
-  late TaskListService taskListService;
+  late DeviceTaskList device;
 
   setUp(() async {
-    database = await databaseFactoryMemory.openDatabase('');
-    keyValueRepository = KeyValueRepository(database, StoreRef(''));
-    identityService = IdentityService(keyValueRepository);
-    syncService = SyncService(keyValueRepository);
-    taskListService =
-        TaskListService(keyValueRepository, identityService, syncService);
+    device = await DeviceTaskList.create(name: 'device');
   });
 
-  test('should store and retrieve tasks after first task is deleted', () async {
-    final taskTitle = 'Drink a cold cat';
+  test('create task list', () async {
+    final listId = Uuid().v4();
+    final taskList = TaskList(id: listId, title: 'list1');
+    await device.taskListService.upsertTaskList(taskList);
+    final taskLists = (await device.taskListService.taskLists).toList();
+    expect(taskLists.length, 1);
+    expect(taskLists.first.id, listId);
+    expect(taskLists.first.title, 'list1');
+    expect(taskLists.first.elements, []);
+  });
 
-    await taskListService.upsert(
-      Task(
-        title: 'Catch a cat falling from the sky',
-        taskListID: '1',
+  test('create and remove task list', () async {
+    final listId = Uuid().v4();
+    final taskList = TaskList(id: listId, title: 'list1');
+    await device.taskListService.upsertTaskList(taskList);
+    await device.taskListService.removeTaskList(listId);
+    expect((await device.taskListService.taskLists).toList(), []);
+  });
+
+  test('create and get task', () async {
+    final task = Task(title: 'Catch a cat falling from the sky');
+    await device.taskListService
+        .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
+    await device.taskListService.upsertTask('listId', task);
+    expect(task.id, isNot(null));
+    expect((await device.taskListService.allTasks).toList(), [task]);
+  });
+
+  test('create and remove task', () async {
+    final task = Task(title: 'Catch a cat falling from the sky');
+    await device.taskListService
+        .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
+    await device.taskListService.upsertTask('listId', task);
+    await device.taskListService.removeTask('listId', task.id!);
+    expect((await device.taskListService.allTasks).toList(), []);
+  });
+
+  test('create, remove and re-insert task', () async {
+    final task1 = Task(title: 'Catch a cat falling from the sky');
+    final task2 = Task(title: 'Drink a cold cat');
+    await device.taskListService
+        .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
+    await device.taskListService.upsertTask('listId', task1);
+    await device.taskListService.removeTask('listId', task1.id!);
+    await device.taskListService.upsertTask('listId', task2..id = task1.id);
+    expect((await device.taskListService.allTasks).toList(), [task2]);
+  });
+
+  test('create task and remove its task list', () async {
+    final task = Task(title: 'Catch a cat falling from the sky');
+    await device.taskListService
+        .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
+    await device.taskListService.upsertTask('listId', task);
+    await device.taskListService.removeTaskList('listId');
+    expect((await device.taskListService.allTasks).toList(), []);
+  });
+
+  test('should retrieve tasks with allTaskRecords', () async {
+    final task1 = Task(title: 'Catch a cat falling from the sky');
+    final task2 = Task(title: 'Drink a cold cat');
+    await device.taskListService
+        .upsertTaskList(TaskList(id: 'id1', title: 'list1'));
+    await device.taskListService.upsertTask('id1', task1);
+    await device.taskListService.upsertTask('id1', task2);
+
+    final allTaskRecords =
+        (await device.taskListService.allTaskRecords).toList();
+    expect(
+      unorderedListEquality(
+        allTaskRecords.map((v) => v.task).toList(),
+        {task1, task2},
       ),
+      true,
     );
-    final task = (await taskListService.tasks).first;
-    await taskListService.remove(task);
-    await taskListService.upsert(Task(title: taskTitle, taskListID: '1'));
-    final tasks = await taskListService.tasks;
+    allTaskRecords
+        .forEach((taskRecord) => expect(taskRecord.taskListId, 'id1'));
+  });
 
-    expect(tasks.length, equals(1));
-    expect(tasks.first.title, equals(taskTitle));
+  test('should retrieve deleted task record with allTaskRecords', () async {
+    final task1 = Task(title: 'Catch a cat falling from the sky');
+    await device.taskListService
+        .upsertTaskList(TaskList(id: 'id1', title: 'list1'));
+    await device.taskListService.upsertTask('id1', task1);
+    await device.taskListService.removeTask('id1', task1.id!);
+
+    final allTaskRecords =
+        (await device.taskListService.allTaskRecords).toList();
+    expect(allTaskRecords.length, 1);
+    expect(allTaskRecords.first.isDeleted, true);
   });
 
   tearDown(() async {
-    await database.close();
+    await device.close();
   });
 }

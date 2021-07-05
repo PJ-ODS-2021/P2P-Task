@@ -5,23 +5,20 @@ import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/screens/task_list_screen.dart';
 import 'package:p2p_task/screens/task_list_form_screen.dart';
-import 'package:p2p_task/services/task_lists_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 
 class TaskListsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final listService =
-        Provider.of<ChangeCallbackNotifier<TaskListsService>>(context)
-            .callbackProvider;
     final taskService =
         Provider.of<ChangeCallbackNotifier<TaskListService>>(context)
             .callbackProvider;
 
     final futureBuilder = FutureBuilder<List<TaskList>>(
       initialData: [],
-      future: listService.lists,
+      future: taskService.taskLists
+          .then((v) => v.toList()..sort((a, b) => a.title.compareTo(b.title))),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Column(
@@ -34,9 +31,8 @@ class TaskListsScreen extends StatelessWidget {
 
         return _buildTaskList(
           context,
-          listService,
           taskService,
-          snapshot.data!,
+          snapshot.data!.toList(),
         );
       },
     );
@@ -64,7 +60,6 @@ class TaskListsScreen extends StatelessWidget {
 
   Widget _buildTaskList(
     BuildContext context,
-    TaskListsService listService,
     TaskListService taskService,
     List<TaskList> tasks,
   ) {
@@ -86,7 +81,6 @@ class TaskListsScreen extends StatelessWidget {
       itemBuilder: (context, index) {
         return _buildSlidableTaskRow(
           context,
-          listService,
           taskService,
           tasks[index],
           index,
@@ -97,7 +91,6 @@ class TaskListsScreen extends StatelessWidget {
 
   Widget _buildSlidableTaskRow(
     BuildContext context,
-    TaskListsService listService,
     TaskListService taskService,
     TaskList taskList,
     int index,
@@ -124,8 +117,7 @@ class TaskListsScreen extends StatelessWidget {
           color: Colors.red,
           icon: Icons.delete,
           onTap: () {
-            taskService.removeByListID(taskList.id!);
-            listService.remove(taskList);
+            if (taskList.id != null) taskService.removeTaskList(taskList.id!);
           },
         ),
       ],
