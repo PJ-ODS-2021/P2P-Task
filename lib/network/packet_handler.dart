@@ -18,12 +18,7 @@ class PacketHandler<T> {
     Packet,
     T,
   )? defaultCallback;
-  final Map<
-      String,
-      void Function(
-    Packet,
-    T,
-  )> _callbacks = {};
+  final Map<String, void Function(Packet, T)> _callbacks = {};
   final Map<Type, _TypeInfo> _typenames = {};
 
   Packet toPacket<S extends Serializable>(S value) {
@@ -42,11 +37,7 @@ class PacketHandler<T> {
   }
 
   void registerCallback<E>(
-    Function(
-      E,
-      T source,
-    )
-        callback,
+    Function(E, T source) callback,
   ) {
     final typeInfo = _getTypeInfo(E);
     assert(!_callbacks.containsKey(typeInfo.typename),

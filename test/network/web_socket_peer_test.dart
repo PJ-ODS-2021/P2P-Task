@@ -76,46 +76,6 @@ void main() {
       expect(device2TaskLists.first.title, taskList.title);
       expect(device2TaskLists.first.elements, [task]);
     });
-
-    test('should send introduction message', () async {
-      final peerLocation =
-          PeerLocation('ws://localhost:${await identityService.port}');
-      final client = WebSocketClient.connect(peerLocation.uri);
-      var completer = Completer();
-      client.dataStream.listen((data) {
-        var dataConv = keyHelper.decrypt(keys.privateKey, data as String);
-        completer.complete(dataConv);
-      });
-
-      var introMessage =
-          'Hallo from Clementine here are my informations: 123455,Clementine ,iPhone,0.0.0.0,12345,${keyHelper.encodePublicKeyToPem(keys.publicKey)}';
-
-      final message = jsonEncode(Packet(
-        'IntroductionMessage',
-        object: IntroductionMessage(
-          jsonEncode(introMessage),
-          requestReply: true,
-        ).toJson(),
-      ));
-
-      var payload = keyHelper.encrypt(
-        keys.publicKey,
-        message,
-      );
-
-      client.send(payload);
-      final serverData =
-          await completer.future.timeout(Duration(seconds: 5), onTimeout: () {
-        return null;
-      }) as String;
-      expect(
-        serverData,
-        isNot(equals(null)),
-        reason: 'server did not answer within 5s',
-      );
-
-      expect(true, serverData.contains('Hello back from'));
-    });
   });
 
   tearDown(() async {

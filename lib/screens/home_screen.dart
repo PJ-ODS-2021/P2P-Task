@@ -11,6 +11,7 @@ import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
 import 'package:p2p_task/widgets/fade_route_builder.dart';
+import 'package:p2p_task/security/key_helper.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -33,6 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       listen: false,
     ).callbackProvider;
+
+    _handleEncryptionKeys(identityService);
     identityService.name.then((value) {
       if (value == '') {
         Navigator.pushReplacement(
@@ -43,6 +46,25 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     });
+  }
+
+  void _handleEncryptionKeys(IdentityService identityService) async {
+    if (await identityService.publicKeyPem == '') {
+      var keyHelper = KeyHelper();
+      var pair = keyHelper.generateRSAkeyPair();
+      var privatekeyPem = keyHelper.encodePrivateKeyToPem(pair.privateKey);
+      var publicKeyPem = keyHelper.encodePublicKeyToPem(pair.publicKey);
+      await identityService.setPrivateKeyPem(privatekeyPem);
+      await identityService.setPublicKeyPem(publicKeyPem);
+    } else {
+      // print public key for copy
+      // new line has to be replaced manually by \r\n
+      // -----BEGIN RSA PUBLIC KEY-----
+      // MIIFog...
+      // -----END RSA PUBLIC KEY-----
+      // => -----BEGIN RSA PUBLIC KEY-----\r\nMIIFog...\r\n-----BEGIN RSA PUBLIC KEY-----
+      print(await identityService.publicKeyPem);
+    }
   }
 
   @override
