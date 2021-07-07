@@ -17,6 +17,16 @@ class PeerInfoService with ChangeCallbackProvider {
     invokeChangeCallback();
   }
 
+  Future<PeerInfo?> getByID(String id) async {
+    var allDevices = await devices;
+    for (var i = 0; i < allDevices.length; i++) {
+      if (allDevices[i].id == id) {
+        return allDevices[i];
+      }
+    }
+    return null;
+  }
+
   Future<void> remove(PeerInfo peerInfo) async {
     if (peerInfo.id == null) return;
     await _repository.remove(peerInfo.id!);

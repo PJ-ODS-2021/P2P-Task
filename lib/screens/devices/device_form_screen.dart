@@ -14,10 +14,12 @@ class DeviceFormScreen extends StatefulWidget {
 class _DeviceFormScreenState extends State<DeviceFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController(text: '');
+  final _idController = TextEditingController(text: '');
   final _ipController = TextEditingController(text: '');
   final _publicKeyController = TextEditingController(text: '');
   final _portController = TextEditingController(text: '');
   final _nameFocusNode = FocusNode();
+  final _idFocusNode = FocusNode();
   final _ipFocusNode = FocusNode();
   final _publicKeyFocusNode = FocusNode();
   final _portFocusNode = FocusNode();
@@ -62,6 +64,30 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                   height: 15,
                 ),
                 TextFormField(
+                  autofocus: true,
+                  focusNode: _idFocusNode,
+                  decoration: InputDecoration(
+                    hintText: 'ID',
+                    filled: true,
+                    fillColor: Colors.purple[50],
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                  ),
+                  controller: _idController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Give the device an id.';
+                    }
+
+                    return null;
+                  },
+                  onFieldSubmitted: (value) {
+                    _idFocusNode.requestFocus();
+                  },
+                ),
+                SizedBox(
+                  height: 15,
+                ),
+                TextFormField(
                   focusNode: _publicKeyFocusNode,
                   decoration: InputDecoration(
                     hintText: 'Public Key',
@@ -78,7 +104,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                     return null;
                   },
                   onFieldSubmitted: (value) {
-                    _nameFocusNode.requestFocus();
+                    _publicKeyFocusNode.requestFocus();
                   },
                 ),
                 SizedBox(
@@ -183,6 +209,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
         PeerLocation('ws://${_ipController.text}:${_portController.text}');
 
     final peerInfo = PeerInfo()
+      ..id = _idController.text
       ..name = _nameController.text
       ..publicKeyPem = _publicKeyController.text
       ..locations.add(location);

@@ -197,7 +197,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     }
     final payload = keyHelper.encrypt(publicKey, marshallPacket(packet));
 
-    l.info('sending to client use key');
+    l.info('sending to client');
     client.send(payload);
   }
 
@@ -220,19 +220,25 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
       l.info('decrypt message');
       payload = keyHelper.decrypt(privateKey, message);
     } on Exception catch (e) {
-      l.severe('canot handle message - could not decrypt received message: $e');
+      l.severe(
+          'could not handle message - could not decrypt received message: $e');
 
       return;
     }
 
+    print(payload);
+
     try {
+      print("1");
       packet = Packet.fromJson(jsonDecode(payload));
+      print("2");
     } on FormatException catch (e) {
       l.severe('could not decode received json: $e');
 
       return;
     }
 
+    print("okii");
     invokeCallback(packet, source);
   }
 }

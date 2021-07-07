@@ -124,7 +124,6 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       children: devices.map((peerInfo) {
         return ListSection(
           title: peerInfo.name.isNotEmpty ? peerInfo.name : peerInfo.id,
-          subtitle: Text(peerInfo.publicKeyPem),
           children: peerInfo.locations.map((peerLocation) {
             return _buildSlidablePeerRow(
               peerInfo,
@@ -153,13 +152,21 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           onTap: () => viewModel.syncWithPeer(peerInfo, location: peerLocation),
         ),
         IconSlideAction(
+          caption: 'Introduction',
+          color: Colors.yellow.shade200,
+          icon: Icons.settings_ethernet,
+          onTap: () =>
+              viewModel.sendIntroductionMessageToPeer(peerInfo, peerLocation),
+        ),
+        IconSlideAction(
           caption: 'Delete',
           color: Colors.red.shade400,
           icon: Icons.delete,
           onTap: () => viewModel.remove(peerInfo),
         ),
       ],
-      child: _buildPeerLocationEntry(_listTileTitle(peerLocation)),
+      child: _buildPeerLocationEntry(
+          _listTileTitle(peerLocation), 'ID: ${peerInfo.id!}'),
     );
   }
 
@@ -168,11 +175,12 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           ? peerLocation.uriStr
           : '${peerLocation.uriStr} in ${peerLocation.networkName}';
 
-  Widget _buildPeerLocationEntry(String title) {
+  Widget _buildPeerLocationEntry(String location, String peerID) {
     return ListTile(
       tileColor: Colors.white,
       leading: Icon(Icons.send_to_mobile),
-      title: Text(title),
+      title: Text(location),
+      subtitle: Text(peerID),
       trailing: Icon(Icons.keyboard_arrow_left),
     );
   }

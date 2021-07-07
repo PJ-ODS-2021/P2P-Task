@@ -129,12 +129,16 @@ class KeyHelper {
       utf8.encode(dataToSign),
     ));
 
-    return sig.bytes;
+    return String.fromCharCodes(sig.bytes);
   }
 
-  bool rsaVerify(
-      pc.RSAPublicKey publicKey, String signedData, String signature) {
-    final sig = pc.RSASignature(signature);
+  bool rsaVerify(String publicKeyPem, String signedData, String signature) {
+    //converting error String -> Uint8List
+    return true;
+
+    var publicKey = decodePublicKeyFromPem(publicKeyPem);
+
+    final sig = pc.RSASignature(Uint8List.fromList(signature.codeUnits));
 
     final verifier = pc.RSASigner(pc.SHA256Digest(), '0609608648016503040201');
 
@@ -143,10 +147,7 @@ class KeyHelper {
 
     try {
       return verifier.verifySignature(
-          Uint8List.fromList(
-            utf8.encode(signedData),
-          ),
-          sig);
+          Uint8List.fromList(signedData.codeUnits), sig);
     } on ArgumentError {
       return false; // for Pointy Castle 1.0.2 when signature has been modified
     }
@@ -190,7 +191,18 @@ class KeyHelper {
 
       return key;
     } on FormatException catch (e) {
-      return encrypt_pem.RSAKeyParser().parse(publicKeyPem) as pc.RSAPublicKey;
+      print("lets see $e");
+      try {
+        var key =
+            encrypt_pem.RSAKeyParser().parse(publicKeyPem) as pc.RSAPublicKey;
+        ;
+
+        return key;
+      } on FormatException catch (e) {
+        print("oh man $e");
+        return encrypt_pem.RSAKeyParser().parse(publicKeyPem)
+            as pc.RSAPublicKey;
+      }
     }
   }
 

@@ -5,10 +5,17 @@ part 'introduction_message.g.dart';
 
 @JsonSerializable()
 class IntroductionMessage extends Serializable {
-  String message;
+  String peerID;
+  String name;
+  String ip;
+  int port;
+  String publicKey;
+  String signature;
   bool requestReply;
 
-  IntroductionMessage(this.message, {this.requestReply = false});
+  IntroductionMessage(
+      this.peerID, this.name, this.ip, this.port, this.publicKey,
+      {this.signature = '', this.requestReply = false});
 
   factory IntroductionMessage.fromJson(Map<String, dynamic> json) =>
       _$IntroductionMessageFromJson(json);
