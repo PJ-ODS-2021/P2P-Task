@@ -6,6 +6,7 @@ import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/screens/task_form_screen.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/widgets/pull_to_sync_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -90,28 +91,31 @@ class _TaskListScreenState extends State<TaskListScreen> {
     List<Task> tasks,
   ) {
     if (tasks.isEmpty) {
-      return Center(
-        child: Column(
+      final oneQuarterScreenHeight = MediaQuery.of(context).size.height / 4;
+
+      return PullToSyncWidget(
+        child: ListView(
           children: [
-            Spacer(),
-            Text('🎉 Nothing to do.', style: heroFont),
-            Text('Click the plus button below to add a ToDo.'),
-            Spacer(flex: 2),
+            SizedBox(height: oneQuarterScreenHeight),
+            Center(child: Text('🎉 Nothing to do.', style: heroFont)),
+            Center(child: Text('Click the plus button below to add a ToDo.')),
           ],
         ),
       );
     }
 
-    return ListView.builder(
-      itemCount: tasks.length,
-      itemBuilder: (context, index) {
-        return _buildSlidableTaskRow(
-          context,
-          service,
-          tasks[index],
-          index,
-        );
-      },
+    return PullToSyncWidget(
+      child: ListView.builder(
+        itemCount: tasks.length,
+        itemBuilder: (context, index) {
+          return _buildSlidableTaskRow(
+            context,
+            service,
+            tasks[index],
+            index,
+          );
+        },
+      ),
     );
   }
 
