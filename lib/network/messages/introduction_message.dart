@@ -18,9 +18,15 @@ class IntroductionMessage extends Serializable {
 
   bool requestReply;
 
-  IntroductionMessage(this.peerID, this.name, this.ip, this.port,
-      this.publicKey, this.signature,
-      {this.requestReply = false});
+  IntroductionMessage(
+    this.peerID,
+    this.name,
+    this.ip,
+    this.port,
+    this.publicKey,
+    this.signature, {
+    this.requestReply = false,
+  });
 
   factory IntroductionMessage.fromJson(Map<String, dynamic> json) =>
       _$IntroductionMessageFromJson(json);

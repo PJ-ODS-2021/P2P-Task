@@ -126,14 +126,18 @@ class KeyHelper {
 
     final verifier = pc.RSASigner(pc.SHA256Digest(), '0609608648016503040201');
 
-    verifier.init(false,
-        pc.PublicKeyParameter<pc.RSAPublicKey>(publicKey)); // false=verify
+    verifier.init(
+      false,
+      pc.PublicKeyParameter<pc.RSAPublicKey>(publicKey),
+    );
 
     try {
       return verifier.verifySignature(
-          Uint8List.fromList(signedData.codeUnits), sig);
+        Uint8List.fromList(signedData.codeUnits),
+        sig,
+      );
     } on ArgumentError {
-      return false; // for Pointy Castle 1.0.2 when signature has been modified
+      return false;
     }
   }
 
@@ -211,6 +215,7 @@ class KeyHelper {
     );
 
     var dataBase64 = base64.encode(topLevel.encodedBytes);
+
     return '-----BEGIN RSA PUBLIC KEY-----\r\n$dataBase64\r\n-----END RSA PUBLIC KEY-----';
   }
 

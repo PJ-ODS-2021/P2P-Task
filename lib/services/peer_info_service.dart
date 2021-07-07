@@ -24,6 +24,7 @@ class PeerInfoService with ChangeCallbackProvider {
         return allDevices[i];
       }
     }
+
     return null;
   }
 

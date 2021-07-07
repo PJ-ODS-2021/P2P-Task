@@ -75,9 +75,13 @@ class DeviceListViewModel with LogMixin {
   }
 
   void sendIntroductionMessageToPeer(
-      PeerInfo peerInfo, PeerLocation location) async {
-    await _peerService.sendIntroductionMessageToPeer(peerInfo,
-        location: location);
+    PeerInfo peerInfo,
+    PeerLocation location,
+  ) async {
+    await _peerService.sendIntroductionMessageToPeer(
+      peerInfo,
+      location: location,
+    );
   }
 
   void remove(PeerInfo peer) async {

@@ -14,8 +14,12 @@ class TaskListMessage extends Serializable {
   @Uint8ListConverter()
   Uint8List signature;
 
-  TaskListMessage(this.taskListCrdtJson, this.peerID, this.signature,
-      {this.requestReply = false});
+  TaskListMessage(
+    this.taskListCrdtJson,
+    this.peerID,
+    this.signature, {
+    this.requestReply = false,
+  });
 
   factory TaskListMessage.fromJson(Map<String, dynamic> json) =>
       _$TaskListMessageFromJson(json);

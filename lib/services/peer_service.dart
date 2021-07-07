@@ -83,8 +83,11 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     var peerInfo = PeerInfo()
       ..id = introductionMessage.peerID
       ..name = introductionMessage.name
-      ..locations.add(PeerLocation(
-          'ws://${introductionMessage.ip}:${introductionMessage.port}'))
+      ..locations.add(
+        PeerLocation(
+          'ws://${introductionMessage.ip}:${introductionMessage.port}',
+        ),
+      )
       ..publicKeyPem = introductionMessage.publicKey;
 
     await _peerInfoService.upsert(peerInfo);
@@ -102,14 +105,18 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     var peerInfo = await _peerInfoService.getByID(introductionMessage.peerID);
     if (peerInfo == null) {
       l.warning(
-          'Unknown peerID in introduction message ${introductionMessage.peerID} - skipping');
+        'Unknown peerID in introduction message ${introductionMessage.peerID} - skipping',
+      );
 
       return;
     }
 
     // probably should have pendingPeerService and depending on verify delete or accept.
-    if (!keyHelper.rsaVerify(peerInfo.publicKeyPem, introductionMessage.peerID,
-        introductionMessage.signature)) {
+    if (!keyHelper.rsaVerify(
+      peerInfo.publicKeyPem,
+      introductionMessage.peerID,
+      introductionMessage.signature,
+    )) {
       l.warning('Error message is not from claimed peerID');
     } else {
       l.info('Received introduction reply message');
@@ -188,8 +195,11 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       requestReply: true,
     );
     await _peer.sendPacketToPeer(
-        peerInfo, await _identityService.privateKey, tasksPacket,
-        location: location);
+      peerInfo,
+      await _identityService.privateKey,
+      tasksPacket,
+      location: location,
+    );
   }
 
   Future<void> sendIntroductionMessageToPeer(

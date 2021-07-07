@@ -79,8 +79,12 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     T packet, {
     PeerLocation? location,
   }) async {
-    return sendToPeer(peerInfo, marshallPacket(packet), privateKey,
-        location: location);
+    return sendToPeer(
+      peerInfo,
+      marshallPacket(packet),
+      privateKey,
+      location: location,
+    );
   }
 
   Future<bool> sendToPeer(
@@ -193,6 +197,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
   ) {
     if (publicKey == null) {
       l.severe('missing public key for sending paket');
+
       return;
     }
     final payload = keyHelper.encrypt(publicKey, marshallPacket(packet));
@@ -221,7 +226,8 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
       payload = keyHelper.decrypt(privateKey, message);
     } on Exception catch (e) {
       l.severe(
-          'could not handle message - could not decrypt received message: $e');
+        'could not handle message - could not decrypt received message: $e',
+      );
 
       return;
     }

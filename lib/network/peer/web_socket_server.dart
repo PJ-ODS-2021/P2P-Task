@@ -18,7 +18,9 @@ class WebSocketServer with LogMixin {
   static Future<WebSocketServer> start(
     int port,
     Function(WebSocketClient, dynamic, RSAPrivateKey?)? Function(
-            WebSocketClient, RSAPrivateKey?)
+      WebSocketClient,
+      RSAPrivateKey?,
+    )
         createOnData,
     RSAPrivateKey? privateKey,
   ) async {

@@ -166,7 +166,9 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
         ),
       ],
       child: _buildPeerLocationEntry(
-          _listTileTitle(peerLocation), 'ID: ${peerInfo.id!}'),
+        _listTileTitle(peerLocation),
+        'ID: ${peerInfo.id!}',
+      ),
     );
   }
 
