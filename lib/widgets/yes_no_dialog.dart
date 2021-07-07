@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class YesNoDialog extends StatelessWidget {
+  // ignore: long-parameter-list
   static Future<bool?> show(
     BuildContext context, {
     String? title,

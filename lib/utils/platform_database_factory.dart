@@ -25,6 +25,7 @@ class PlatformDatabaseFactory extends DatabaseFactory {
   bool get hasStorage => !_inMemory;
 
   @override
+  // ignore: long-parameter-list
   Future<Database> openDatabase(
     String path, {
     int? version,
