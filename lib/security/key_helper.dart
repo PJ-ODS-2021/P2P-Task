@@ -60,19 +60,6 @@ class KeyHelper {
     );
   }
 
-  Uint8List decryptTEST(pc.RSAPrivateKey myPrivate, Uint8List cipherText) {
-    final decryptor = pc.OAEPEncoding(pc.RSAEngine())
-      ..init(
-        false,
-        pc.PrivateKeyParameter<pc.RSAPrivateKey>(myPrivate),
-      );
-
-    return _processInBlocks(
-      decryptor,
-      cipherText,
-    );
-  }
-
   Uint8List _processInBlocks(pc.AsymmetricBlockCipher engine, Uint8List input) {
     final numBlocks = input.length ~/ engine.inputBlockSize +
         ((input.length % engine.inputBlockSize != 0) ? 1 : 0);
@@ -120,7 +107,7 @@ class KeyHelper {
     return String.fromCharCodes(blocks);
   }
 
-  String rsaSign(pc.RSAPrivateKey privateKey, String dataToSign) {
+  Uint8List rsaSign(pc.RSAPrivateKey privateKey, String dataToSign) {
     final signer = pc.RSASigner(pc.SHA256Digest(), '0609608648016503040201');
 
     signer.init(true, pc.PrivateKeyParameter<pc.RSAPrivateKey>(privateKey));
@@ -129,16 +116,13 @@ class KeyHelper {
       utf8.encode(dataToSign),
     ));
 
-    return String.fromCharCodes(sig.bytes);
+    return sig.bytes;
   }
 
-  bool rsaVerify(String publicKeyPem, String signedData, String signature) {
-    //converting error String -> Uint8List
-    return true;
-
+  bool rsaVerify(String publicKeyPem, String signedData, Uint8List signature) {
     var publicKey = decodePublicKeyFromPem(publicKeyPem);
 
-    final sig = pc.RSASignature(Uint8List.fromList(signature.codeUnits));
+    final sig = pc.RSASignature(signature);
 
     final verifier = pc.RSASigner(pc.SHA256Digest(), '0609608648016503040201');
 
@@ -191,7 +175,6 @@ class KeyHelper {
 
       return key;
     } on FormatException catch (e) {
-      print("lets see $e");
       try {
         var key =
             encrypt_pem.RSAKeyParser().parse(publicKeyPem) as pc.RSAPublicKey;
@@ -199,7 +182,6 @@ class KeyHelper {
 
         return key;
       } on FormatException catch (e) {
-        print("oh man $e");
         return encrypt_pem.RSAKeyParser().parse(publicKeyPem)
             as pc.RSAPublicKey;
       }

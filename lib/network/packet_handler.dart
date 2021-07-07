@@ -14,10 +14,7 @@ class _TypeInfo {
 class PacketHandler<T> {
   static const version = '0.1.0';
 
-  void Function(
-    Packet,
-    T,
-  )? defaultCallback;
+  void Function(Packet, T)? defaultCallback;
   final Map<String, void Function(Packet, T)> _callbacks = {};
   final Map<Type, _TypeInfo> _typenames = {};
 

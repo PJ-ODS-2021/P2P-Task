@@ -1,5 +1,4 @@
 import 'package:p2p_task/models/peer_info.dart';
-import 'dart:convert';
 import 'package:p2p_task/network/messages/debug_message.dart';
 import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
@@ -128,9 +127,6 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       return;
     }
 
-    print("SIG:");
-    print(taskListMessage.peerID);
-
     if (!keyHelper.rsaVerify(
       peerInfo.publicKeyPem,
       taskListMessage.peerID,
@@ -149,8 +145,6 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       var taskListCrdtJson = await _taskListService.crdtToJson();
       var privateKey = await _identityService.privateKey;
       var peerID = await _identityService.peerId;
-
-      print(taskListCrdtJson);
 
       final message = TaskListMessage(
         taskListCrdtJson,
@@ -226,7 +220,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       ip,
       port,
       publicKeyPem,
-      signature: keyHelper.rsaSign(privateKey!, peerID),
+      keyHelper.rsaSign(privateKey!, peerID),
       requestReply: requestReply,
     );
   }

@@ -9,13 +9,19 @@ import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/utils/data_model_repository.dart';
 import '../utils/device_task_list.dart';
+import 'package:p2p_task/services/network_info_service.dart';
+import 'package:p2p_task/security/key_helper.dart';
 
 class Device {
   final DeviceTaskList taskList;
   final PeerInfoService peerInfoService;
   final PeerService peerService;
 
-  Device(this.taskList, this.peerInfoService, this.peerService);
+  Device(
+    this.taskList,
+    this.peerInfoService,
+    this.peerService,
+  );
 
   static Future<Device> create({String? name, int? port}) async {
     final taskList = await DeviceTaskList.create(name: name);
@@ -28,11 +34,13 @@ class Device {
       ),
       null,
     );
+
     final peerService = PeerService(
       WebSocketPeer(),
       taskList.taskListService,
       peerInfoService,
       taskList.identityService,
+      NetworkInfoService(),
       null,
     );
 
@@ -63,10 +71,14 @@ void main() {
       final taskList = TaskList(id: 'list1Id', title: 'list1');
       final task = Task(id: 'task1Id', title: 'Eat a hot dog');
 
+      var keyHelper = KeyHelper();
+      var keyPair = keyHelper.generateRSAkeyPair();
+
       await devices[0].taskList.taskListService.upsertTaskList(taskList);
       await devices[0].taskList.taskListService.upsertTask(taskList.id!, task);
       final device1Port = await devices[1].taskList.identityService.port;
       await devices[0].peerInfoService.upsert(PeerInfo()
+        ..publicKeyPem = keyHelper.encodePublicKeyToPem(keyPair.publicKey)
         ..locations.add(PeerLocation('ws://localhost:$device1Port')));
       await devices[0].peerService.syncWithAllKnownPeers();
 

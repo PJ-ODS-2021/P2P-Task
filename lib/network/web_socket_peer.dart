@@ -226,19 +226,14 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
       return;
     }
 
-    print(payload);
-
     try {
-      print("1");
       packet = Packet.fromJson(jsonDecode(payload));
-      print("2");
     } on FormatException catch (e) {
       l.severe('could not decode received json: $e');
 
       return;
     }
 
-    print("okii");
     invokeCallback(packet, source);
   }
 }

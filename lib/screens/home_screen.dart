@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
       await identityService.setPrivateKeyPem(privatekeyPem);
       await identityService.setPublicKeyPem(publicKeyPem);
     } else {
-      // print public key for copy
+      // print public key for manual adding
       // new line has to be replaced manually by \r\n
       // -----BEGIN RSA PUBLIC KEY-----
       // MIIFog...
