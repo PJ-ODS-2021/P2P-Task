@@ -267,9 +267,11 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
                 ];
               }
               final taskCrdt = entry.value.value as _TaskCrdtType;
-              final lastUpdated = taskCrdt.records.values
-                  .map((record) => record.clock.timestamp)
-                  .reduce(max);
+              final task = _decodeTask(taskCrdt, id: entry.key);
+              final valueClocks = taskCrdt.records.values
+                  .map((record) => record.clock)
+                  .toSet()
+                    ..removeWhere((clock) => clock <= entry.value.clock);
 
               return [
                 TaskActivity(
@@ -278,16 +280,16 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
                     entry.value.clock.timestamp,
                   ),
                   entry.key,
-                  _decodeTask(taskCrdt, id: entry.key),
+                  task,
                   taskListRecordEntry.key,
                   false,
                 ),
-                if (lastUpdated != entry.value.clock.timestamp)
+                for (final valueClock in valueClocks)
                   TaskActivity(
-                    entry.value.clock.node,
-                    DateTime.fromMillisecondsSinceEpoch(lastUpdated),
+                    valueClock.node,
+                    DateTime.fromMillisecondsSinceEpoch(valueClock.timestamp),
                     entry.key,
-                    _decodeTask(taskCrdt, id: entry.key),
+                    task,
                     taskListRecordEntry.key,
                     true,
                   ),

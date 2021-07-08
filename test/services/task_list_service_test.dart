@@ -82,12 +82,14 @@ void main() {
 
       final taskActivities =
           (await device.taskListService.taskActivities).toList();
+      final tasks = taskActivities.map((v) => v.task).toList();
       expect(
-        unorderedListEquality(
-          taskActivities.map((v) => v.task).toList(),
-          {task1, task2},
-        ),
+        unorderedListEquality(tasks, {task1, task2}),
         true,
+        reason: 'got ${tasks.map((e) => e?.toJson())}, expected ${{
+          task1,
+          task2,
+        }.map((e) => e.toJson())}',
       );
       taskActivities
           .forEach((taskRecord) => expect(taskRecord.taskListId, 'listId'));
@@ -108,23 +110,50 @@ void main() {
     });
 
     test('for updated tasks', () async {
-      final task1 = Task(title: 'Catch a cat falling from the sky');
+      final task =
+          Task(title: 'Catch a cat falling from the sky', description: '');
       await device.taskListService
           .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
-      await device.taskListService.upsertTask('listId', task1);
+      await device.taskListService.upsertTask('listId', task);
       await device.taskListService
-          .upsertTask('listId', task1..description = 'a new description');
+          .upsertTask('listId', task..description = 'a new description');
 
       final taskActivities =
           (await device.taskListService.taskActivities).toList();
       expect(taskActivities.length, 2);
       taskActivities.forEach((activity) {
-        expect(activity.task, task1);
+        expect(activity.task, task);
         expect(activity.taskListId, 'listId');
       });
       expect(
         taskActivities.where((activity) => activity.isRecursiveUpdate).length,
         1,
+      );
+    });
+
+    test('for multiple updates in one task', () async {
+      final task = Task(
+        title: 'Catch a cat falling from the sky',
+        description: '',
+        completed: false,
+      );
+      await device.taskListService
+          .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
+      await device.taskListService.upsertTask('listId', task);
+      await device.taskListService
+          .upsertTask('listId', task..description = 'a new description');
+      await device.taskListService.upsertTask('listId', task..completed = true);
+
+      final taskActivities =
+          (await device.taskListService.taskActivities).toList();
+      expect(taskActivities.length, 3);
+      taskActivities.forEach((activity) {
+        expect(activity.task, task);
+        expect(activity.taskListId, 'listId');
+      });
+      expect(
+        taskActivities.where((activity) => activity.isRecursiveUpdate).length,
+        2,
       );
     });
 
@@ -136,12 +165,14 @@ void main() {
 
       final listActivities =
           (await device.taskListService.taskListActivities).toList();
+      final lists = listActivities.map((v) => v.taskList).toList();
       expect(
-        unorderedListEquality(
-          listActivities.map((v) => v.taskList).toList(),
-          {list1, list2},
-        ),
+        unorderedListEquality(lists, {list1, list2}),
         true,
+        reason: 'got ${lists.map((e) => e?.toJson())}, expected ${{
+          list1,
+          list2,
+        }.map((e) => e.toJson())}',
       );
     });
 
