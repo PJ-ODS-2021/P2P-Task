@@ -32,7 +32,7 @@ void main() {
     taskListService =
         TaskListService(keyValueRepository, identityService, syncService);
     taskList = TaskList(
-      title: 'test',
+      title: 'Add-Task Button opens Task Creation Form',
     );
   });
   testWidgets('Add new task', (WidgetTester tester) async {
@@ -52,7 +52,8 @@ void main() {
     expect(find.byType(TaskFormScreen), findsOneWidget);
   });
 
-  testWidgets('Tap on task', (WidgetTester tester) async {
+  testWidgets('Tap on task sets uncompleted task as completed',
+      (WidgetTester tester) async {
     await tester.pumpWidget(Provider<ChangeCallbackNotifier<TaskListService>>(
       create: (c) {
         return ChangeCallbackNotifier<TaskListService>(taskListService);
@@ -65,7 +66,8 @@ void main() {
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
   });
 
-  testWidgets('Create task', (WidgetTester tester) async {
+  testWidgets('Can create a task with a title and a description',
+      (WidgetTester tester) async {
     final mockObserver = MockNavigatorObserver();
     await tester.pumpWidget(MaterialApp(
       home: TaskFormScreen(taskListID: '1'),
