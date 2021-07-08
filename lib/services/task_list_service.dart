@@ -138,6 +138,10 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     return (await allTasks).length;
   }
 
+  Future<int> countLists() async {
+    return (await taskLists).length;
+  }
+
   Future<void> _store(
     _TaskListCollectionCrdtType value, {
     required bool triggerSyncUpdate,
