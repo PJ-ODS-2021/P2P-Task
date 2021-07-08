@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/models/task_list.dart';
-import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/activity_record.dart';
 import 'package:uuid/uuid.dart';
 
 import '../utils/device_task_list.dart';
