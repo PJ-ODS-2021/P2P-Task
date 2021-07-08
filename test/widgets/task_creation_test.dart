@@ -60,10 +60,23 @@ void main() {
       },
       child: TaskListScreen(taskList),
     ));
-    expect(find.byType(ListTile), findsOneWidget);
-    await tester.tap(find.byType(ListTile));
+    final taskListTile = find.byType(ListTile);
+    expect(taskListTile, findsOneWidget);
+    expect(
+        find.descendant(
+          of: taskListTile,
+          matching: find.byIcon(Icons.check_circle_outlined),
+        ),
+        findsOneWidget);
+    await tester.tap(taskListTile);
     await tester.pump();
-    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+
+    expect(
+        find.descendant(
+          of: taskListTile,
+          matching: find.byIcon(Icons.check_circle),
+        ),
+        findsOneWidget);
   });
 
   testWidgets('Can create a task with a title and a description',
@@ -77,7 +90,7 @@ void main() {
     await tester.enterText(find.byKey(Key('description')), 'Description');
     expect(find.byType(ElevatedButton), findsOneWidget);
     await tester.tap(find.byType(ElevatedButton));
-    await tester.pump(Duration(seconds: 1));
+    await tester.pump();
     expect(find.text('Title'), findsOneWidget);
     expect(find.text('Description'), findsOneWidget);
     verify(mockObserver.didPop(
