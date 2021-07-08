@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/config/style_constants.dart';
-import 'package:p2p_task/models/activity_entry.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-
-import '../models/activity_entry.dart';
 
 class ActivityLogScreen extends StatelessWidget {
   @override
@@ -21,8 +18,7 @@ class ActivityLogScreen extends StatelessWidget {
 
     return FutureBuilder<List>(
       future: Future.wait([
-        taskListService.allActivities
-            .then((activities) => _transformActivities(activities).toList()),
+        taskListService.allActivities,
         identityService.peerId,
       ]),
       builder: (context, snapshot) {
@@ -39,8 +35,8 @@ class ActivityLogScreen extends StatelessWidget {
         }
         final data = snapshot.data!;
 
-        final activities = data[0] as List<ActivityEntry>;
-        activities.sort(_compareActivityEntry);
+        final activities = (data[0] as Iterable<ActivityRecord>).toList();
+        activities.sort(_compareActivityRecord);
 
         return _buildActivityEntries(context, activities, data[1]);
       },
@@ -49,7 +45,7 @@ class ActivityLogScreen extends StatelessWidget {
 
   Widget _buildActivityEntries(
     BuildContext context,
-    List<ActivityEntry> activities,
+    List<ActivityRecord> activities,
     String currentPeerId,
   ) {
     if (activities.isEmpty) {
@@ -79,7 +75,7 @@ class ActivityLogScreen extends StatelessWidget {
 
   Widget _buildActivityEntry(
     BuildContext context,
-    ActivityEntry activity,
+    ActivityRecord activity,
     String currentPeerId,
     int index,
   ) {
@@ -100,12 +96,12 @@ class ActivityLogScreen extends StatelessWidget {
                   children: [
                     _buildActivityIcon(activity, currentPeerId),
                     const SizedBox(width: 8.0),
-                    _buildActivityOrigin(activity, currentPeerId),
+                    _buildActivityOrigin(activity.peerId, currentPeerId),
                   ],
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: [_buildActivityTimestamp(activity)],
+                  children: [_buildActivityTimestamp(activity.timestamp)],
                 ),
               ],
             ),
@@ -116,7 +112,7 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActivityName(ActivityEntry activity) {
+  Widget _buildActivityName(ActivityRecord activity) {
     return Flexible(
       child: Text(
         _getActivityDescription(activity),
@@ -129,9 +125,9 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActivityTimestamp(ActivityEntry activity) {
+  Widget _buildActivityTimestamp(DateTime timestamp) {
     return Text(
-      DateFormat('dd.MM.yyyy HH:mm:ss').format(activity.timestamp),
+      DateFormat('dd.MM.yyyy HH:mm:ss').format(timestamp),
       style: TextStyle(
         color: Colors.black.withOpacity(0.6),
         fontSize: 14,
@@ -139,14 +135,14 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActivityIcon(ActivityEntry activity, String currentPeerId) {
-    return Icon(activity.peerID == currentPeerId
+  Widget _buildActivityIcon(ActivityRecord activity, String currentPeerId) {
+    return Icon(activity.peerId == currentPeerId
         ? Icons.arrow_upward
         : Icons.arrow_downward);
   }
 
   Widget _buildActivityOrigin(
-    ActivityEntry activity,
+    String peerId,
     String currentPeerId,
   ) {
     return Flexible(
@@ -156,12 +152,10 @@ class ActivityLogScreen extends StatelessWidget {
           style: TextStyle(color: Colors.black, fontSize: 18),
           children: [
             TextSpan(
-              text: activity.peerID == currentPeerId
-                  ? 'this device'
-                  : activity.peerID,
+              text: peerId == currentPeerId ? 'this device' : peerId,
               style: TextStyle(
                 color: Colors.black,
-                fontWeight: activity.peerID == currentPeerId
+                fontWeight: peerId == currentPeerId
                     ? FontWeight.normal
                     : FontWeight.bold,
                 fontSize: 18,
@@ -173,75 +167,45 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  Iterable<ActivityEntry> _transformActivities(
-    Iterable<ActivityRecord> activities,
-  ) {
-    return activities
-        .map((activity) => activity is TaskListActivity
-            ? _transformListActivity(activity)
-            : (activity is TaskActivity
-                ? _transformTaskActivity(activity)
-                : null))
-        .where((activity) => activity != null)
-        .map((activity) => activity!);
-  }
+  String _getActivityDescription(ActivityRecord activity) {
+    if (activity is TaskListActivity) {
+      return activity.isDeleted
+          ? 'Task list deleted'
+          : 'Task list created: "${activity.taskList!.title}"';
+    } else if (activity is TaskActivity) {
+      if (activity.isDeleted) return 'Task deleted';
 
-  ActivityEntry _transformListActivity(TaskListActivity activity) {
-    return ActivityEntry(
-      peerID: activity.peerId,
-      type: activity.taskList != null
-          ? ActivityType.Created
-          : ActivityType.Deleted,
-      timestamp: activity.timestamp,
-      name: activity.taskList != null ? activity.taskList!.title : '',
-      taskID: null,
-      taskListID: activity.id,
-    );
-  }
-
-  ActivityEntry _transformTaskActivity(TaskActivity activity) {
-    return ActivityEntry(
-      peerID: activity.peerId,
-      type: activity.isRecursiveUpdate
-          ? ActivityType.Updated
-          : (activity.task != null
-              ? ActivityType.Created
-              : ActivityType.Deleted),
-      timestamp: activity.timestamp,
-      name: activity.task != null ? activity.task!.title : '',
-      taskID: activity.id,
-      taskListID: activity.taskListId,
-    );
-  }
-
-  String _getActivityDescription(ActivityEntry activityEntry) {
-    final entity = activityEntry.isTaskActivity ? 'Task' : 'Task list';
-    final suffix =
-        activityEntry.name.isEmpty ? '' : ': "${activityEntry.name}"';
-    switch (activityEntry.type) {
-      case ActivityType.Created:
-        return '$entity created$suffix';
-      case ActivityType.Updated:
-        return '$entity updated$suffix';
-      case ActivityType.Deleted:
-        return '$entity deleted$suffix';
-      default:
-        return '$entity$suffix';
+      return activity.isRecursiveUpdate
+          ? 'Task updated: "${activity.task!.title}"'
+          : 'Task created: "${activity.task!.title}"';
     }
+
+    return 'Unknown activity in ${activity.id}';
   }
 
-  /// Compares timestamp (descending), isTaskActivity, taskListID, peerID, taskID
-  int _compareActivityEntry(ActivityEntry a, ActivityEntry b) {
+  int _compareActivityRecord(ActivityRecord a, ActivityRecord b) {
+    // show most recent first
     var cmp = b.timestamp.compareTo(a.timestamp);
     if (cmp != 0) return cmp;
-    if (a.isTaskActivity != b.isTaskActivity) {
-      return a.isTaskActivity ? -1 : 1;
-    }
-    cmp = a.taskListID!.compareTo(b.taskListID!);
-    if (cmp != 0) return cmp;
-    cmp = a.peerID.compareTo(b.peerID);
-    if (cmp != 0 || a.taskID == null) return cmp;
 
-    return a.taskID!.compareTo(b.taskID!);
+    // show certain types of activities first
+    final activityTypeRankingA = _getActivityTypeRanking(a);
+    final activityTypeRankingB = _getActivityTypeRanking(b);
+    cmp = activityTypeRankingA.compareTo(activityTypeRankingB);
+    if (cmp != 0) return cmp;
+
+    // sort by peer id
+    cmp = a.peerId.compareTo(b.peerId);
+    if (cmp != 0) return cmp;
+
+    // sort by id
+    return a.id.compareTo(b.id);
+  }
+
+  int _getActivityTypeRanking(ActivityRecord record) {
+    const activityTypes = [TaskActivity, TaskListActivity];
+    final ranking = activityTypes.indexOf(record.runtimeType);
+
+    return ranking != -1 ? ranking : activityTypes.length;
   }
 }
