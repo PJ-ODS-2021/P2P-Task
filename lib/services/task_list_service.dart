@@ -136,6 +136,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     await _syncService?.run(runOnSyncOnUpdate: true);
   }
 
+  /// This method can be quite slow because all tasks need to be loaded
   Future<int> count() async {
     return (await allTasks).length;
   }
@@ -232,14 +233,9 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
   Iterable<TaskListActivity> _decodeTaskListActivities(
     _TaskListCollectionCrdtType crdt,
   ) {
-    final taskLists = _decodeTaskListCollection(crdt, decodeTasks: false);
-
-    return taskLists.entries.map((entry) => TaskListActivity(
-          entry.value.clock.node,
-          DateTime.fromMillisecondsSinceEpoch(entry.value.clock.timestamp),
-          entry.key,
-          entry.value.value,
-        ));
+    return _decodeTaskListCollection(crdt, decodeTasks: false)
+        .entries
+        .map(_taskListActivityFromRecordEntry);
   }
 
   Iterable<TaskActivity> _decodeTaskActivities(
@@ -252,51 +248,78 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
               return entry.value.value is _TaskCrdtType ||
                   (entry.value.isDeleted &&
                       !TaskList.crdtMembers.contains(entry.key));
-            }).map((entry) {
-              if (entry.value.isDeleted) {
-                return [
-                  TaskActivity(
-                    entry.value.clock.node,
-                    DateTime.fromMillisecondsSinceEpoch(
-                      entry.value.clock.timestamp,
-                    ),
-                    entry.key,
-                    null,
-                    taskListRecordEntry.key,
-                    false,
-                  ),
-                ];
-              }
-              final taskCrdt = entry.value.value as _TaskCrdtType;
-              final task = _decodeTask(taskCrdt, id: entry.key);
-              final valueClocks = taskCrdt.records.values
-                  .map((record) => record.clock)
-                  .toSet()
-                    ..removeWhere((clock) => clock <= entry.value.clock);
-
-              return [
-                TaskActivity(
-                  entry.value.clock.node,
-                  DateTime.fromMillisecondsSinceEpoch(
-                    entry.value.clock.timestamp,
-                  ),
-                  entry.key,
-                  task,
-                  taskListRecordEntry.key,
-                  false,
-                ),
-                for (final valueClock in valueClocks)
-                  TaskActivity(
-                    valueClock.node,
-                    DateTime.fromMillisecondsSinceEpoch(valueClock.timestamp),
-                    entry.key,
-                    task,
-                    taskListRecordEntry.key,
-                    true,
-                  ),
-              ];
-            }))
+            }).map(
+              (entry) => _getTaskActivities(entry, taskListRecordEntry.key),
+            ))
         .expand((v) => v.expand((v) => v));
+  }
+
+  List<TaskActivity> _getTaskActivities(
+    MapEntry<String, Record<dynamic>> entry,
+    String taskListId,
+  ) {
+    if (entry.value.isDeleted) {
+      return [
+        _taskActivityFromRecordEntry(
+          entry,
+          taskListId: taskListId,
+        ),
+      ];
+    }
+
+    // decode task and get recursive updates more recent than the task node clock value
+    final taskCrdt = entry.value.value as _TaskCrdtType;
+    final task = _decodeTask(taskCrdt, id: entry.key);
+    final valueClocks = taskCrdt.records.values
+        .map((record) => record.clock)
+        .toSet()
+          ..removeWhere((clock) => clock <= entry.value.clock);
+
+    return [
+      _taskActivityFromRecordEntry(
+        entry,
+        taskListId: taskListId,
+        task: task,
+      ),
+      for (final valueClock in valueClocks)
+        TaskActivity(
+          valueClock.node,
+          DateTime.fromMillisecondsSinceEpoch(valueClock.timestamp),
+          entry.key,
+          task,
+          taskListId,
+          true,
+        ),
+    ];
+  }
+
+  TaskListActivity _taskListActivityFromRecordEntry(
+    MapEntry<String, Record<dynamic>> recordEntry,
+  ) {
+    return TaskListActivity(
+      recordEntry.value.clock.node,
+      DateTime.fromMillisecondsSinceEpoch(recordEntry.value.clock.timestamp),
+      recordEntry.key,
+      recordEntry.value.value,
+    );
+  }
+
+  TaskActivity _taskActivityFromRecordEntry(
+    MapEntry<String, Record<dynamic>> entry, {
+    required String taskListId,
+    Task? task,
+    bool isRecursiveUpdate = false,
+  }) {
+    return TaskActivity(
+      entry.value.clock.node,
+      DateTime.fromMillisecondsSinceEpoch(
+        entry.value.clock.timestamp,
+      ),
+      entry.key,
+      task,
+      taskListId,
+      isRecursiveUpdate,
+    );
   }
 
   Map<String, Record<TaskList>> _decodeTaskListCollection(
