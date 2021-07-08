@@ -1,4 +1,5 @@
 # P2P Task Manager
+
 ![CI](https://github.com/PJ-ODS-2021/P2P-Task/actions/workflows/main.yaml/badge.svg)
 [![codecov](https://codecov.io/gh/PJ-ODS-2021/P2P-Task/branch/main/graph/badge.svg?token=DZ54RNQEIF)](https://codecov.io/gh/PJ-ODS-2021/P2P-Task)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
