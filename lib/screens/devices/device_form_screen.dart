@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/viewmodels/device_list_viewmodel.dart';
-import 'package:p2p_task/security/key_helper.dart';
 import 'package:provider/provider.dart';
 
 class DeviceFormScreen extends StatefulWidget {
@@ -156,7 +155,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                   },
                   onFieldSubmitted: (value) {
                     if (value.isNotEmpty && _formKey.currentState!.validate()) {
-                      _onSubmit();
+                      _handleSubmit();
                     }
                     _portFocusNode.requestFocus();
                   },
@@ -171,7 +170,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                         onPressed: () {
                           _formKey.currentState?.save();
                           if (_formKey.currentState!.validate()) {
-                            _onSubmit();
+                            _handleSubmit();
                           }
                         },
                         child: Text(
@@ -204,19 +203,18 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
     );
   }
 
-  void _onSubmit() async {
+  void _handleSubmit() async {
     var location =
         PeerLocation('ws://${_ipController.text}:${_portController.text}');
 
-    final peerInfo = PeerInfo()
-      ..id = _idController.text
-      ..name = _nameController.text
-      ..publicKeyPem = _publicKeyController.text
-      ..locations.add(location);
+    final peerInfo = PeerInfo(
+      name: _nameController.text,
+      publicKeyPem: _publicKeyController.text,
+      locations: [location],
+    );
 
-    var viewmodel = Provider.of<DeviceListViewModel>(context, listen: false);
-    viewmodel.upsert(peerInfo);
-    viewmodel.sendIntroductionMessageToPeer(peerInfo, location);
+    var viewModel = Provider.of<DeviceListViewModel>(context, listen: false);
+    viewModel.addNewPeer(peerInfo);
 
     Navigator.of(context).pop();
   }

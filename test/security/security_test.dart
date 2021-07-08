@@ -42,8 +42,14 @@ void main() {
 
       var sig = keyHelper.rsaSign(keyPair.privateKey, 'peerID');
 
-      var introductionMessage = IntroductionMessage('peerID', 'name', 'ip',
-          58241, keyHelper.encodePublicKeyToPem(keyPair.publicKey), sig);
+      var introductionMessage = IntroductionMessage(
+        'peerID',
+        'name',
+        'ip',
+        58241,
+        keyHelper.encodePublicKeyToPem(keyPair.publicKey),
+        sig,
+      );
 
       final peer = WebSocketPeer();
 
@@ -63,9 +69,13 @@ void main() {
       var plainMessage = IntroductionMessage.fromJson(decryptedPacket.object);
 
       expect(
-          keyHelper.rsaVerify(
-              publicKeyPem, plainMessage.peerID, plainMessage.signature),
-          true);
+        keyHelper.rsaVerify(
+          publicKeyPem,
+          plainMessage.peerID,
+          plainMessage.signature,
+        ),
+        true,
+      );
       expect(plainMessage.peerID, introductionMessage.peerID);
       expect(plainMessage.publicKey, introductionMessage.publicKey);
       expect(plainMessage.name, introductionMessage.name);

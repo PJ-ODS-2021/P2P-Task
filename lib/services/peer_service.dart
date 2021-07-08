@@ -53,7 +53,9 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   }
 
   bool get isServerRunning => _peer.isServerRunning;
+
   String? get serverAddress => _peer.serverAddress;
+
   int? get serverPort => _peer.serverPort;
 
   void _debugMessageCallback(
@@ -80,15 +82,16 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     IntroductionMessage introductionMessage,
     WebSocketClient source,
   ) async {
-    var peerInfo = PeerInfo()
-      ..id = introductionMessage.peerID
-      ..name = introductionMessage.name
-      ..locations.add(
+    var peerInfo = PeerInfo(
+      id: introductionMessage.peerID,
+      name: introductionMessage.name,
+      publicKeyPem: introductionMessage.publicKey,
+      locations: [
         PeerLocation(
           'ws://${introductionMessage.ip}:${introductionMessage.port}',
         ),
-      )
-      ..publicKeyPem = introductionMessage.publicKey;
+      ],
+    );
 
     await _peerInfoService.upsert(peerInfo);
 

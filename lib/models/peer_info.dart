@@ -27,17 +27,35 @@ class PeerLocation {
 class PeerInfo implements DataModel {
   @override
   String? id;
-  String name = '';
-  List<PeerLocation> locations = [];
-  String publicKeyPem = '';
+  String name;
+  List<PeerLocation> locations;
+  String publicKeyPem;
 
-  PeerInfo();
+  PeerInfo({
+    String? id,
+    required this.name,
+    required this.publicKeyPem,
+    required this.locations,
+  })  : assert(locations.isNotEmpty),
+        id = id;
 
   factory PeerInfo.fromJson(Map<String, dynamic> json) =>
       _$PeerInfoFromJson(json);
 
   @override
   Map<String, dynamic> toJson() => _$PeerInfoToJson(this);
+
+  PeerInfo copyWith({
+    String? name,
+    List<PeerLocation>? locations,
+    String? publicKeyPem,
+  }) =>
+      PeerInfo(
+        id: id,
+        name: name ?? this.name,
+        publicKeyPem: publicKeyPem ?? this.publicKeyPem,
+        locations: locations ?? this.locations,
+      );
 
   @override
   String toString() {

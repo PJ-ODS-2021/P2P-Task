@@ -214,7 +214,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     Packet? packet;
 
     if (privateKey == null) {
-      l.warning('canot handle message - missing pirvatekey');
+      l.warning('Cannot handle message - missing private key.');
 
       return;
     }
@@ -222,11 +222,11 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     var payload = '';
 
     try {
-      l.info('decrypt message');
+      l.info('Decrypt message.');
       payload = keyHelper.decrypt(privateKey, message);
     } on Exception catch (e) {
       l.severe(
-        'could not handle message - could not decrypt received message: $e',
+        'Could not handle message - could not decrypt received message: $e.',
       );
 
       return;
@@ -240,6 +240,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
       return;
     }
 
+    l.info('Packet:\n${packet.toJson().toString()}');
     invokeCallback(packet, source);
   }
 }

@@ -46,6 +46,15 @@ class DeviceListViewModel with LogMixin {
     });
   }
 
+  void addNewPeer(PeerInfo peerInfo) async {
+    final storedPeerInfo = await _peerInfoService.upsert(peerInfo);
+    sendIntroductionMessageToPeer(
+      storedPeerInfo,
+      storedPeerInfo.locations.first,
+    );
+    loadDevices();
+  }
+
   void handleQrCodeRead(String qrContent) async {
     var values = qrContent.split(',');
     if (values.length < 5) {
@@ -56,14 +65,17 @@ class DeviceListViewModel with LogMixin {
       return;
     }
 
-    final peerInfo = PeerInfo()
-      ..id = values[0]
-      ..name = values[1]
-      ..locations.add(PeerLocation('ws://${values[2]}:${values[3]}'))
-      ..publicKeyPem = values[4];
-
-    await _peerService.sendIntroductionMessageToPeer(peerInfo);
-    await _peerInfoService.upsert(peerInfo);
+    final peerInfo = PeerInfo(
+      id: values[0],
+      name: values[1],
+      locations: [PeerLocation('ws://${values[2]}:${values[3]}')],
+      publicKeyPem: values[4],
+    );
+    final storedPeerInfo = await _peerInfoService.upsert(peerInfo);
+    sendIntroductionMessageToPeer(
+      storedPeerInfo,
+      storedPeerInfo.locations.first,
+    );
     loadDevices();
   }
 

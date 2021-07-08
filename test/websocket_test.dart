@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/network/messages/debug_message.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
+import 'package:p2p_task/security/key_helper.dart';
 
 import 'websocket_server_custom.dart';
 
@@ -29,9 +30,17 @@ void main() {
     const messageContent = 'hello from the server';
     var receivePort = ReceivePort();
 
+    final keyHelper = KeyHelper();
+    final keys = keyHelper.generateRSAkeyPair();
+    final publicKey = keyHelper.encodePublicKeyToPem(keys.publicKey);
     await Isolate.spawn(
       startServer,
-      ServerOptions(sendPort: receivePort.sendPort, echoDebugMessages: true),
+      ServerOptions(
+        sendPort: receivePort.sendPort,
+        echoDebugMessages: true,
+        privateKey: keys.privateKey,
+        publicKeyForDebugMessage: keys.publicKey,
+      ),
     );
     var serverPortCompleter = Completer<int>();
     receivePort
@@ -48,9 +57,15 @@ void main() {
       (msg, source) => serverDebugMessageCompleter.complete(msg.value),
     );
     final sendSucceeded = await client.sendPacketToPeer(
-      PeerInfo()..locations.add(PeerLocation('ws://localhost:$port')),
+      PeerInfo(
+        locations: [PeerLocation('ws://localhost:$port')],
+        name: '',
+        publicKeyPem: publicKey,
+      ),
+      keys.privateKey,
       DebugMessage(messageContent),
     );
+
     expect(sendSucceeded, true);
     final message = await serverDebugMessageCompleter.future
         .timeout(Duration(seconds: 5), onTimeout: () => null);
@@ -59,7 +74,6 @@ void main() {
       isNot(equals(null)),
       reason: 'server did not answer within 5s',
     );
-
     expect(message, equals(messageContent));
   });
 }

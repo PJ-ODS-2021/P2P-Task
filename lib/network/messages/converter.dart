@@ -7,6 +7,7 @@ class Uint8ListConverter implements JsonConverter<Uint8List, List<dynamic>> {
   @override
   Uint8List fromJson(List<dynamic> jsonDyn) {
     var json = jsonDyn.cast<int>();
+
     return Uint8List.fromList(
       json,
     );

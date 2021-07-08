@@ -129,7 +129,7 @@ class KeyHelper {
     verifier.init(
       false,
       pc.PublicKeyParameter<pc.RSAPublicKey>(publicKey),
-    );
+    ); // false=verify
 
     try {
       return verifier.verifySignature(
@@ -166,7 +166,7 @@ class KeyHelper {
           .parse(priavateKeyPem.replaceAll('\\r\\n', '\n')) as pc.RSAPrivateKey;
 
       return key;
-    } on FormatException catch (e) {
+    } on FormatException {
       return encrypt_pem.RSAKeyParser().parse(priavateKeyPem)
           as pc.RSAPrivateKey;
     }
@@ -179,6 +179,7 @@ class KeyHelper {
 
       return key;
     } on FormatException catch (e) {
+      print('lets see $e');
       try {
         var key =
             encrypt_pem.RSAKeyParser().parse(publicKeyPem) as pc.RSAPublicKey;
@@ -186,6 +187,8 @@ class KeyHelper {
 
         return key;
       } on FormatException catch (e) {
+        print('oh man $e');
+        
         return encrypt_pem.RSAKeyParser().parse(publicKeyPem)
             as pc.RSAPublicKey;
       }

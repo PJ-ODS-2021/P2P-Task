@@ -12,11 +12,10 @@ class IntroductionMessage extends Serializable {
   String ip;
   int port;
   String publicKey;
+  bool requestReply;
 
   @Uint8ListConverter()
   Uint8List signature;
-
-  bool requestReply;
 
   IntroductionMessage(
     this.peerID,

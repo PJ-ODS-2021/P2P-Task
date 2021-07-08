@@ -1,16 +1,21 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
+import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/utils/data_model_repository.dart';
 import '../utils/device_task_list.dart';
-import 'package:p2p_task/services/network_info_service.dart';
-import 'package:p2p_task/security/key_helper.dart';
+
+class FakeNetworkInfoService extends Fake implements NetworkInfoService {
+  @override
+  UnmodifiableListView<String> get ips => UnmodifiableListView(['127.0.0.1']);
+}
 
 class Device {
   final DeviceTaskList taskList;
@@ -23,7 +28,12 @@ class Device {
     this.peerService,
   );
 
-  static Future<Device> create({String? name, int? port}) async {
+  static Future<Device> create({
+    String? name,
+    int? port,
+    String? privateKey,
+    String? publicKey,
+  }) async {
     final taskList = await DeviceTaskList.create(name: name);
     if (port != null) await taskList.identityService.setPort(port);
     final peerInfoService = PeerInfoService(
@@ -40,11 +50,22 @@ class Device {
       taskList.taskListService,
       peerInfoService,
       taskList.identityService,
-      NetworkInfoService(),
+      FakeNetworkInfoService(),
       null,
     );
 
     return Device(taskList, peerInfoService, peerService);
+  }
+
+  Future<PeerInfo> generatePeerInfo() async {
+    return PeerInfo(
+      id: await taskList.identityService.peerId,
+      name: await taskList.identityService.name,
+      publicKeyPem: await taskList.identityService.publicKeyPem,
+      locations: [
+        PeerLocation('ws://localhost:${await taskList.identityService.port}'),
+      ],
+    );
   }
 
   Future<void> close() async {
@@ -59,11 +80,30 @@ void main() {
   setUp(() async {
     devices = [
       await Device.create(name: 'device1', port: 58240),
-      await Device.create(name: 'device2', port: 58241),
+      await Device.create(name: 'device2', port: 58242),
     ];
     await Future.wait(devices.map(
       (device) => device.peerService.startServer(),
     ));
+  });
+
+  group('Introduction message', () {
+    test('should add new peer info on the receiving device', () async {
+      final peerInfoDevice0 = await devices[0].generatePeerInfo();
+      final peerInfoDevice1 = await devices[1].generatePeerInfo();
+      final currentPeerInfo = await devices[1].peerInfoService.getByID(peerInfoDevice0.id!);
+      expect(currentPeerInfo, equals(null));
+
+      await devices[0].peerService.sendIntroductionMessageToPeer(
+            peerInfoDevice1,
+            location: peerInfoDevice1.locations.first,
+          );
+
+      final newPeerInfo = await devices[1].peerInfoService.getByID(peerInfoDevice0.id!);
+      expect(newPeerInfo, isNot(equals(null)));
+      expect(newPeerInfo!.name, equals(peerInfoDevice0.name));
+      expect(newPeerInfo.publicKeyPem, equals(peerInfoDevice0.publicKeyPem));
+    });
   });
 
   group('Synchronization', () {
@@ -71,15 +111,15 @@ void main() {
       final taskList = TaskList(id: 'list1Id', title: 'list1');
       final task = Task(id: 'task1Id', title: 'Eat a hot dog');
 
-      var keyHelper = KeyHelper();
-      var keyPair = keyHelper.generateRSAkeyPair();
+      await devices[1]
+          .peerInfoService
+          .upsert(await devices[0].generatePeerInfo());
 
       await devices[0].taskList.taskListService.upsertTaskList(taskList);
       await devices[0].taskList.taskListService.upsertTask(taskList.id!, task);
-      final device1Port = await devices[1].taskList.identityService.port;
-      await devices[0].peerInfoService.upsert(PeerInfo()
-        ..publicKeyPem = keyHelper.encodePublicKeyToPem(keyPair.publicKey)
-        ..locations.add(PeerLocation('ws://localhost:$device1Port')));
+      await devices[0]
+          .peerInfoService
+          .upsert(await devices[1].generatePeerInfo());
       await devices[0].peerService.syncWithAllKnownPeers();
 
       final device2TaskLists =

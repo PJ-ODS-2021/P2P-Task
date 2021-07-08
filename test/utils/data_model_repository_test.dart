@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-trailing-comma
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/utils/data_model_repository.dart';
@@ -14,7 +13,10 @@ void main() {
     await databaseFactoryMemory.deleteDatabase('');
     database = await databaseFactoryMemory.openDatabase('');
     dataModelRepository = DataModelRepository(
-        database, (json) => PeerInfo.fromJson(json), 'PeerInfo');
+      database,
+      (json) => PeerInfo.fromJson(json),
+      'PeerInfo',
+    );
   }
 
   setUp(() async {
@@ -22,57 +24,78 @@ void main() {
   });
 
   group('#upsert', () {
-    test('given an object without id, then a new object with id is created',
-        () async {
-      var list = await dataModelRepository.find();
-      expect(list.length, 0);
+    test(
+      'given an object without id, then a new object with id is created',
+      () async {
+        var list = await dataModelRepository.find();
+        expect(list.length, 0);
 
-      final peerInfoName = 'New Task';
-      final peerInfo = PeerInfo()..name = peerInfoName;
-      await dataModelRepository.upsert(peerInfo);
-      list = await dataModelRepository.find();
-      expect(list.length, 1);
-      expect(list.first.name, peerInfoName);
-      expect(list.first.id, isNotNull);
-    });
+        final peerInfoName = 'New Task';
+        final peerInfo = PeerInfo(
+          name: peerInfoName,
+          publicKeyPem: '',
+          locations: [PeerLocation('')],
+        );
+        await dataModelRepository.upsert(peerInfo);
+        list = await dataModelRepository.find();
+        expect(list.length, 1);
+        expect(list.first.name, peerInfoName);
+        expect(list.first.id, isNotNull);
+      },
+    );
 
     test(
-        'given an object with an id which already exists, then the object is updated',
-        () async {
-      final peerInfoId = Uuid().v4();
-      await dataModelRepository.upsert(PeerInfo()..id = peerInfoId);
-      var list = await dataModelRepository.find();
-      expect(list.length, 1);
-      expect(list.first.name, '');
-      expect(list.first.id, peerInfoId);
+      'given an object with an id which already exists, then the object is updated',
+      () async {
+        final peerInfoId = Uuid().v4();
+        await dataModelRepository.upsert(
+          PeerInfo(
+            id: peerInfoId,
+            name: '',
+            publicKeyPem: '',
+            locations: [PeerLocation('')],
+          ),
+        );
+        var list = await dataModelRepository.find();
+        expect(list.length, 1);
+        expect(list.first.name, '');
+        expect(list.first.id, peerInfoId);
 
-      final peerInfoName = 'New Task';
-      final peerInfo = PeerInfo()
-        ..id = peerInfoId
-        ..name = peerInfoName;
-      await dataModelRepository.upsert(peerInfo);
-      list = await dataModelRepository.find();
-      expect(list.length, 1);
-      expect(list.first.name, peerInfoName);
-      expect(list.first.id, peerInfoId);
-    });
+        final peerInfoName = 'New Task';
+        final peerInfo = PeerInfo(
+          id: peerInfoId,
+          name: peerInfoName,
+          publicKeyPem: '',
+          locations: [PeerLocation('')],
+        );
+        await dataModelRepository.upsert(peerInfo);
+        list = await dataModelRepository.find();
+        expect(list.length, 1);
+        expect(list.first.name, peerInfoName);
+        expect(list.first.id, peerInfoId);
+      },
+    );
 
     test(
-        'given an object with an id which does not exists yet, then the object is added',
-        () async {
-      var list = await dataModelRepository.find();
-      expect(list.length, 0);
+      'given an object with an id which does not exists yet, then the object is added',
+      () async {
+        var list = await dataModelRepository.find();
+        expect(list.length, 0);
 
-      final peerInfoId = Uuid().v4();
-      final peerInfoName = 'New Task';
-      final peerInfo = PeerInfo()
-        ..id = peerInfoId
-        ..name = peerInfoName;
-      await dataModelRepository.upsert(peerInfo);
-      list = await dataModelRepository.find();
-      expect(list.length, 1);
-      expect(list.first.name, peerInfoName);
-      expect(list.first.id, peerInfoId);
-    });
+        final peerInfoId = Uuid().v4();
+        final peerInfoName = 'New Task';
+        final peerInfo = PeerInfo(
+          id: peerInfoId,
+          name: peerInfoName,
+          publicKeyPem: '',
+          locations: [PeerLocation('')],
+        );
+        await dataModelRepository.upsert(peerInfo);
+        list = await dataModelRepository.find();
+        expect(list.length, 1);
+        expect(list.first.name, peerInfoName);
+        expect(list.first.id, peerInfoId);
+      },
+    );
   });
 }

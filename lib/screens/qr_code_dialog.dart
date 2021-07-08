@@ -104,7 +104,7 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
 
     return [
       if (!peerService.isServerRunning)
-        _makeWarningText(
+        _buildWarningText(
           context,
           'The server is not running',
         ),
@@ -117,7 +117,7 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
     IdentityService identityService,
   ) {
     return connectionInfo.ips.isEmpty
-        ? [_makeWarningText(context, 'Cannot detect connection info')]
+        ? [_buildWarningText(context, 'Cannot detect connection info')]
         : [
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Text('IP: '),
@@ -146,7 +146,7 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
           ];
   }
 
-  Widget _makeWarningText(BuildContext context, String message) {
+  Widget _buildWarningText(BuildContext context, String message) {
     return RichText(
       text: TextSpan(
         style: DefaultTextStyle.of(context).style,
@@ -194,6 +194,7 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
     return ips.isNotEmpty ? ips.first : null;
   }
 
+  // ignore: long-parameter-list
   String _makeQrContent(
     String name,
     String ip,

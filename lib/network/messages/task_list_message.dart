@@ -1,7 +1,8 @@
-import 'package:json_annotation/json_annotation.dart';
-import 'package:p2p_task/utils/serializable.dart';
 import 'dart:typed_data';
+
+import 'package:json_annotation/json_annotation.dart';
 import 'package:p2p_task/network/messages/converter.dart';
+import 'package:p2p_task/utils/serializable.dart';
 
 part 'task_list_message.g.dart';
 

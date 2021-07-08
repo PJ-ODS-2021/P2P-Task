@@ -1,6 +1,5 @@
 import 'package:p2p_task/network/messages/packet.dart';
 import 'package:p2p_task/utils/serializable.dart';
-import 'package:pointycastle/export.dart';
 
 typedef JsonDecodeFunction = Object? Function(Map<String, dynamic> json);
 

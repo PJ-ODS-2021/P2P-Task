@@ -30,7 +30,10 @@ Future<void> startServer(ServerOptions options) async {
 
     peer.registerCallback<DebugMessage>(
       (debugMessage, source) => peer.sendPacketTo(
-          source, debugMessage, options.publicKeyForDebugMessage),
+        source,
+        debugMessage,
+        options.publicKeyForDebugMessage,
+      ),
     );
   }
   await peer.startServer(options.port ?? 1234, options.privateKey);
