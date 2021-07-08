@@ -42,8 +42,8 @@ class NetworkInfoService with LogMixin, ChangeCallbackProvider {
 
   Future<String?> _detectSsid() async {
     logger.info('detecting ssid');
-    final isMobileDevice = Platform.isAndroid || Platform.isIOS;
-    if (kIsWeb || !isMobileDevice) return null;
+    if (kIsWeb) return null;
+    if (!Platform.isAndroid && !Platform.isIOS) return null;
 
     final networkInfo = NetworkInfo();
     if (Platform.isAndroid) {
