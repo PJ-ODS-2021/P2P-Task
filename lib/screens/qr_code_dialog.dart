@@ -5,6 +5,7 @@ import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:provider/provider.dart';
+import 'package:p2p_task/viewmodels/device_list_viewmodel.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class QrCodeDialog extends StatelessWidget with LogMixin {
@@ -62,7 +63,12 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
           },
         ),
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            var viewmodel =
+                Provider.of<DeviceListViewModel>(context, listen: false);
+            viewmodel.loadDevices();
+            Navigator.pop(context);
+          },
           child: Text('Close'),
         ),
       ],

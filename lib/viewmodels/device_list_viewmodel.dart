@@ -35,10 +35,10 @@ class DeviceListViewModel with LogMixin {
   );
 
   DeviceListViewModel(this._peerInfoService, this._peerService) {
-    _loadDevices();
+    loadDevices();
   }
 
-  void _loadDevices() {
+  void loadDevices() {
     _peerInfoService.devices.then((value) {
       peerInfos.value = peerInfos.value.withData(UnmodifiableListView(value));
     }).catchError((error) {
@@ -55,23 +55,26 @@ class DeviceListViewModel with LogMixin {
 
       return;
     }
+
     final peerInfo = PeerInfo()
       ..id = values[0]
       ..name = values[1]
       ..locations.add(PeerLocation('ws://${values[2]}:${values[3]}'))
       ..publicKeyPem = values[4];
+
+    await _peerService.sendIntroductionMessageToPeer(peerInfo);
     await _peerInfoService.upsert(peerInfo);
-    _loadDevices();
+    loadDevices();
   }
 
   void syncWithPeer(PeerInfo peer, {PeerLocation? location}) async {
     await _peerService.syncWithPeer(peer, location: location);
-    _loadDevices();
+    loadDevices();
   }
 
   void upsert(PeerInfo peer) async {
     await _peerInfoService.upsert(peer);
-    _loadDevices();
+    loadDevices();
   }
 
   void sendIntroductionMessageToPeer(
@@ -86,7 +89,7 @@ class DeviceListViewModel with LogMixin {
 
   void remove(PeerInfo peer) async {
     await _peerInfoService.remove(peer);
-    _loadDevices();
+    loadDevices();
   }
 
   bool get showQrScannerButton {

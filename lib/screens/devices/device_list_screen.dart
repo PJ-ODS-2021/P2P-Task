@@ -20,6 +20,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   @override
   Widget build(BuildContext context) {
     final viewModel = Provider.of<DeviceListViewModel>(context, listen: false);
+    viewModel.loadDevices();
 
     return Stack(
       alignment: const Alignment(0, 0.9),
