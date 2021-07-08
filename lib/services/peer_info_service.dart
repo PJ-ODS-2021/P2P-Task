@@ -11,6 +11,11 @@ class PeerInfoService with ChangeCallbackProvider {
 
   Future<List<PeerInfo>> get devices async => await _repository.find();
 
+  Future<Map<String, String>> get deviceNameMap async =>
+      Map.fromEntries((await devices)
+          .where((peerInfo) => peerInfo.id != null && peerInfo.name.isNotEmpty)
+          .map((peerInfo) => MapEntry(peerInfo.id!, peerInfo.name)));
+
   Future<void> upsert(PeerInfo peerInfo) async {
     await _repository.upsert(peerInfo);
     await _syncService?.run(runOnSyncAfterDeviceAdded: true);

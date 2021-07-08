@@ -3,6 +3,7 @@ import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/services/activity_record.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/identity_service.dart';
+import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -16,11 +17,15 @@ class ActivityLogScreen extends StatelessWidget {
     final identityService =
         Provider.of<ChangeCallbackNotifier<IdentityService>>(context)
             .callbackProvider;
+    final peerInfoService =
+        Provider.of<ChangeCallbackNotifier<PeerInfoService>>(context)
+            .callbackProvider;
 
     return FutureBuilder<List>(
       future: Future.wait([
         taskListService.allActivities,
         identityService.peerId,
+        peerInfoService.deviceNameMap,
       ]),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -34,12 +39,12 @@ class ActivityLogScreen extends StatelessWidget {
         if (!snapshot.hasData) {
           return Center(child: CircularProgressIndicator());
         }
-        final data = snapshot.data!;
 
+        final data = snapshot.data!;
         final activities = (data[0] as Iterable<ActivityRecord>).toList();
         activities.sort(_compareActivityRecord);
 
-        return _buildActivityEntries(context, activities, data[1]);
+        return _buildActivityEntries(context, activities, data[1], data[2]);
       },
     );
   }
@@ -48,6 +53,7 @@ class ActivityLogScreen extends StatelessWidget {
     BuildContext context,
     List<ActivityRecord> activities,
     String currentPeerId,
+    Map<String, String> deviceNameMap,
   ) {
     if (activities.isEmpty) {
       return Center(
@@ -69,15 +75,20 @@ class ActivityLogScreen extends StatelessWidget {
       itemBuilder: (BuildContext context, int index) {
         final activity = activities[index];
 
-        return _buildActivityEntry(context, activity, currentPeerId, index);
+        return _buildActivityEntry(
+          activity,
+          currentPeerId,
+          deviceNameMap,
+          index,
+        );
       },
     );
   }
 
   Widget _buildActivityEntry(
-    BuildContext context,
     ActivityRecord activity,
     String currentPeerId,
+    Map<String, String> deviceNameMap,
     int index,
   ) {
     return Column(
@@ -97,7 +108,11 @@ class ActivityLogScreen extends StatelessWidget {
                   children: [
                     _buildActivityIcon(activity, currentPeerId),
                     const SizedBox(width: 8.0),
-                    _buildActivityOrigin(activity.peerId, currentPeerId),
+                    _buildActivityOrigin(
+                      activity.peerId,
+                      currentPeerId,
+                      deviceNameMap,
+                    ),
                   ],
                 ),
                 Row(
@@ -145,6 +160,7 @@ class ActivityLogScreen extends StatelessWidget {
   Widget _buildActivityOrigin(
     String peerId,
     String currentPeerId,
+    Map<String, String> deviceNameMap,
   ) {
     return Flexible(
       child: RichText(
@@ -153,7 +169,7 @@ class ActivityLogScreen extends StatelessWidget {
           style: TextStyle(color: Colors.black, fontSize: 18),
           children: [
             TextSpan(
-              text: peerId == currentPeerId ? 'this device' : peerId,
+              text: _getPeerName(peerId, currentPeerId, deviceNameMap),
               style: TextStyle(
                 color: Colors.black,
                 fontWeight: peerId == currentPeerId
@@ -166,6 +182,16 @@ class ActivityLogScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getPeerName(
+    String peerId,
+    String currentPeerId,
+    Map<String, String> deviceNameMap,
+  ) {
+    return peerId == currentPeerId
+        ? 'this device'
+        : (deviceNameMap[peerId] ?? peerId);
   }
 
   String _getActivityDescription(ActivityRecord activity) {
