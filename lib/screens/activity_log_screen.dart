@@ -40,7 +40,7 @@ class ActivityLogScreen extends StatelessWidget {
         final data = snapshot.data!;
 
         final activities = data[0] as List<ActivityEntry>;
-        activities.sort(_activityEntryCompare);
+        activities.sort(_compareActivityEntry);
 
         return _buildActivityEntries(context, activities, data[1]);
       },
@@ -93,20 +93,20 @@ class ActivityLogScreen extends StatelessWidget {
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _makeActivityName(activity),
-                    _makeActivityDate(activity),
-                  ],
+                  children: [_buildActivityName(activity)],
                 ),
                 const SizedBox(height: 8.0),
                 Row(
                   children: [
-                    _makeActivityIcon(activity, currentPeerId),
+                    _buildActivityIcon(activity, currentPeerId),
                     const SizedBox(width: 8.0),
-                    _makeActivityDescription(activity, currentPeerId),
+                    _buildActivityOrigin(activity, currentPeerId),
                   ],
                 ),
-                const SizedBox(height: 8.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [_buildActivityTimestamp(activity)],
+                ),
               ],
             ),
           ),
@@ -116,18 +116,20 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  Widget _makeActivityName(ActivityEntry activity) {
-    return Text(
-      _getActivityDescriptionStr(activity),
-      style: TextStyle(
-        fontWeight: FontWeight.normal,
-        color: Colors.black,
-        fontSize: 18,
+  Widget _buildActivityName(ActivityEntry activity) {
+    return Flexible(
+      child: Text(
+        _getActivityDescription(activity),
+        style: TextStyle(
+          fontWeight: FontWeight.normal,
+          color: Colors.black,
+          fontSize: 18,
+        ),
       ),
     );
   }
 
-  Widget _makeActivityDate(ActivityEntry activity) {
+  Widget _buildActivityTimestamp(ActivityEntry activity) {
     return Text(
       DateFormat('dd.MM.yyyy HH:mm:ss').format(activity.timestamp),
       style: TextStyle(
@@ -137,34 +139,36 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  Widget _makeActivityIcon(ActivityEntry activity, String currentPeerId) {
+  Widget _buildActivityIcon(ActivityEntry activity, String currentPeerId) {
     return Icon(activity.peerID == currentPeerId
         ? Icons.arrow_upward
         : Icons.arrow_downward);
   }
 
-  Widget _makeActivityDescription(
+  Widget _buildActivityOrigin(
     ActivityEntry activity,
     String currentPeerId,
   ) {
-    return RichText(
-      text: TextSpan(
-        text: 'On ',
-        style: TextStyle(color: Colors.black, fontSize: 18),
-        children: [
-          TextSpan(
-            text: activity.peerID == currentPeerId
-                ? 'this device'
-                : activity.peerID,
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: activity.peerID == currentPeerId
-                  ? FontWeight.normal
-                  : FontWeight.bold,
-              fontSize: 18,
+    return Flexible(
+      child: RichText(
+        text: TextSpan(
+          text: 'On ',
+          style: TextStyle(color: Colors.black, fontSize: 18),
+          children: [
+            TextSpan(
+              text: activity.peerID == currentPeerId
+                  ? 'this device'
+                  : activity.peerID,
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: activity.peerID == currentPeerId
+                    ? FontWeight.normal
+                    : FontWeight.bold,
+                fontSize: 18,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -210,9 +214,10 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  String _getActivityDescriptionStr(ActivityEntry activityEntry) {
+  String _getActivityDescription(ActivityEntry activityEntry) {
     final entity = activityEntry.isTaskActivity ? 'Task' : 'Task list';
-    final suffix = activityEntry.name.isEmpty ? '' : ': ${activityEntry.name}';
+    final suffix =
+        activityEntry.name.isEmpty ? '' : ': "${activityEntry.name}"';
     switch (activityEntry.type) {
       case ActivityType.Created:
         return '$entity created$suffix';
@@ -226,7 +231,7 @@ class ActivityLogScreen extends StatelessWidget {
   }
 
   /// Compares timestamp (descending), isTaskActivity, taskListID, peerID, taskID
-  int _activityEntryCompare(ActivityEntry a, ActivityEntry b) {
+  int _compareActivityEntry(ActivityEntry a, ActivityEntry b) {
     var cmp = b.timestamp.compareTo(a.timestamp);
     if (cmp != 0) return cmp;
     if (a.isTaskActivity != b.isTaskActivity) {
