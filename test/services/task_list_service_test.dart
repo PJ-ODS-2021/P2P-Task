@@ -187,6 +187,48 @@ void main() {
       expect(listActivities.first.isDeleted, true);
     });
 
+    test('for updated task lists', () async {
+      final list = TaskList(id: 'listId', title: 'list');
+      await device.taskListService.upsertTaskList(list);
+      await device.taskListService.upsertTaskList(list..title = 'a new title');
+
+      final listActivities =
+          (await device.taskListService.taskListActivities).toList();
+      expect(listActivities.length, 2);
+      listActivities.forEach((activity) {
+        expect(activity.taskList, list);
+        expect(activity.id, 'listId');
+      });
+      expect(
+        listActivities.where((activity) => activity.isPropertyUpdate).length,
+        1,
+      );
+    });
+
+    test('for multiple updates in one task list', () async {
+      final list = TaskList(
+        id: 'listId',
+        title: 'list',
+        sortBy: SortOption.Title,
+      );
+      await device.taskListService.upsertTaskList(list);
+      await device.taskListService.upsertTaskList(list..title = 'a new title');
+      await device.taskListService
+          .upsertTaskList(list..sortBy = SortOption.DueDate);
+
+      final listActivities =
+          (await device.taskListService.taskListActivities).toList();
+      expect(listActivities.length, 3);
+      listActivities.forEach((activity) {
+        expect(activity.taskList, list);
+        expect(activity.id, 'listId');
+      });
+      expect(
+        listActivities.where((activity) => activity.isPropertyUpdate).length,
+        2,
+      );
+    });
+
     test('of all types', () async {
       final list = TaskList(id: 'listId', title: 'list');
       final task = Task(title: 'task');

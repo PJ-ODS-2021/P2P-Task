@@ -233,9 +233,43 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
   Iterable<TaskListActivity> _decodeTaskListActivities(
     _TaskListCollectionCrdtType crdt,
   ) {
-    return _decodeTaskListCollection(crdt, decodeTasks: false)
-        .entries
-        .map(_taskListActivityFromRecordEntry);
+    return crdt.records.entries.map((taskRecordEntry) {
+      final taskList = taskRecordEntry.value.isDeleted
+          ? null
+          : _decodeTaskList(
+              taskRecordEntry.value.value!,
+              id: taskRecordEntry.key,
+              decodeTasks: false,
+            );
+      final propertyUpdateClocks = taskRecordEntry.value.value?.records.entries
+          .where((taskRecordEntry) =>
+              !taskRecordEntry.value.isDeleted &&
+              !(taskRecordEntry.value.value is _TaskCrdtType))
+          .map((taskRecordEntry) => taskRecordEntry.value.clock)
+          .toSet()
+            ?..removeWhere((clock) => clock <= taskRecordEntry.value.clock);
+
+      return [
+        TaskListActivity(
+          taskRecordEntry.value.clock.node,
+          DateTime.fromMillisecondsSinceEpoch(
+            taskRecordEntry.value.clock.timestamp,
+          ),
+          taskRecordEntry.key,
+          taskList,
+          false,
+        ),
+        if (propertyUpdateClocks != null)
+          for (final clockValue in propertyUpdateClocks)
+            TaskListActivity(
+              clockValue.node,
+              DateTime.fromMillisecondsSinceEpoch(clockValue.timestamp),
+              taskRecordEntry.key,
+              taskList,
+              true,
+            ),
+      ];
+    }).expand((v) => v);
   }
 
   Iterable<TaskActivity> _decodeTaskActivities(
@@ -291,17 +325,6 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
           true,
         ),
     ];
-  }
-
-  TaskListActivity _taskListActivityFromRecordEntry(
-    MapEntry<String, Record<dynamic>> recordEntry,
-  ) {
-    return TaskListActivity(
-      recordEntry.value.clock.node,
-      DateTime.fromMillisecondsSinceEpoch(recordEntry.value.clock.timestamp),
-      recordEntry.key,
-      recordEntry.value.value,
-    );
   }
 
   TaskActivity _taskActivityFromRecordEntry(

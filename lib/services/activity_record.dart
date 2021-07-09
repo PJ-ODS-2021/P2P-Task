@@ -15,11 +15,17 @@ class TaskListActivity extends ActivityRecord {
   /// The elements in the task list will always be empty
   final TaskList? taskList;
 
+  /// False if this activity describes a change to the top-level task list node.
+  /// True if this activity describes a change to a property of the task list (e.g. title).
+  /// Does not indicate if a task in a task list has been created/update/deleted.
+  final bool isPropertyUpdate;
+
   const TaskListActivity(
     String peerId,
     DateTime timestamp,
     String id,
     this.taskList,
+    this.isPropertyUpdate,
   ) : super(peerId, timestamp, id);
 
   bool get isDeleted => taskList == null;
@@ -28,13 +34,18 @@ class TaskListActivity extends ActivityRecord {
   String get description {
     if (isDeleted) return 'Task List deleted';
 
-    return 'Task List created: "${taskList!.title}"';
+    return isPropertyUpdate
+        ? 'Task List updated: "${taskList!.title}"'
+        : 'Task List created: "${taskList!.title}"';
   }
 }
 
 class TaskActivity extends ActivityRecord {
   final Task? task;
   final String taskListId;
+
+  /// False if this activity describes a change to the top-level task node.
+  /// True if this activity describes a change to a sub-node in the task (e.g. title, description).
   final bool isRecursiveUpdate;
 
   const TaskActivity(

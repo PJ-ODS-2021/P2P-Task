@@ -94,6 +94,9 @@ class ActivityEntryWidget extends StatelessWidget {
       if (activity.isDeleted) {
         return Icon(Icons.delete, semanticLabel: 'Deleted Task List');
       }
+      if (activity.isPropertyUpdate) {
+        return Icon(Icons.refresh, semanticLabel: 'Updated Task List');
+      }
 
       return Icon(Icons.add, semanticLabel: 'New Task List');
     }
