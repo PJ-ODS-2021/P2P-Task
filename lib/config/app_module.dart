@@ -9,7 +9,7 @@ import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
-import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/task_list/task_list_service.dart';
 import 'package:p2p_task/utils/data_model_repository.dart';
 import 'package:p2p_task/utils/platform_database_factory.dart';
 import 'package:p2p_task/utils/shared_preferences_keys.dart';

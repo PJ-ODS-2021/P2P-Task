@@ -1,5 +1,5 @@
 import 'package:p2p_task/services/identity_service.dart';
-import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/task_list/task_list_service.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:sembast/sembast.dart';
 import 'package:sembast/sembast_memory.dart';
