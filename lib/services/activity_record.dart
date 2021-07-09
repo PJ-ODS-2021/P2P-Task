@@ -8,7 +8,7 @@ abstract class ActivityRecord {
 
   const ActivityRecord(this.peerId, this.timestamp, this.id);
 
-  String get description => 'Activity $id';
+  String get description;
 }
 
 class TaskListActivity extends ActivityRecord {
