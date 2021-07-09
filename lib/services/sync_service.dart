@@ -110,7 +110,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
   }
 
   void _runJob() {
-    l.info('Syncing job started...');
+    logger.info('Syncing job started...');
     _job!();
   }
 }

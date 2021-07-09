@@ -45,7 +45,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
         .then((_) async => await syncService.run(runOnSyncOnStart: true));
     if (sharedPreferences.getBool(SharedPreferencesKeys.activateServer.value) ==
         true) {
-      startServer().then((_) => l.info('Started server after app start.'));
+      startServer().then((_) => logger.info('Started server after app start.'));
     }
   }
 
@@ -59,14 +59,14 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     DebugMessage debugMessage,
     WebSocketClient source,
   ) {
-    l.info('Received debug message: ${debugMessage.value}');
+    logger.info('Received debug message: ${debugMessage.value}');
   }
 
   Future<void> _taskListMessageCallback(
     TaskListMessage taskListMessage,
     WebSocketClient source,
   ) async {
-    l.info('Received TaskListMessage');
+    logger.info('Received TaskListMessage');
     await _taskListService.mergeCrdtJson(taskListMessage.taskListCrdtJson);
     if (taskListMessage.requestReply) {
       final taskListCrdtJson = await _taskListService.crdtToJson();
@@ -74,7 +74,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
 
       // TODO: propagate new task list through the network using other connected and known peers (if updated)
     } else {
-      l.info('Server received TaskListMessage');
+      logger.info('Server received TaskListMessage');
     }
   }
 
@@ -106,7 +106,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<void> syncWithAllKnownPeers() async {
-    l.info('syncing task list with all known peers');
+    logger.info('syncing task list with all known peers');
     final tasksPacket = TaskListMessage(
       await _taskListService.crdtToJson(),
       requestReply: true,
