@@ -25,15 +25,18 @@ void main() {
         .upsertTaskList(TaskList(id: 'id2', title: 'list2'));
     await devices[1].taskListService.upsertTask('id2', task2);
 
-    expect(await devices[0].taskListService.allTasks, [task1]);
-    expect(
-      (await devices[0].taskListService.getTaskListById('id1'))?.elements,
-      [task1],
-    );
-    expect(await devices[1].taskListService.allTasks, [task2]);
-    expect(
-      (await devices[1].taskListService.getTaskListById('id2'))?.elements,
-      [task2],
-    );
+    final device1TaskLists =
+        (await devices[0].taskListService.getTaskLists()).toList();
+    expect(device1TaskLists.length, 1);
+    expect(device1TaskLists.first.id, 'id1');
+    expect(device1TaskLists.first.title, 'list1');
+    expect(device1TaskLists.first.elements, [task1]);
+
+    final device2TaskLists =
+        (await devices[1].taskListService.getTaskLists()).toList();
+    expect(device2TaskLists.length, 1);
+    expect(device2TaskLists.first.id, 'id2');
+    expect(device2TaskLists.first.title, 'list2');
+    expect(device2TaskLists.first.elements, [task2]);
   });
 }

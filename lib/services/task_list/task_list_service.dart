@@ -29,39 +29,23 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     this._syncService,
   );
 
-  Future<Iterable<TaskListActivity>> get taskListActivities async =>
-      CrdtTaskListHelper.decodeTaskListActivities(
-        await _readAndDecodeTaskListCollectionCrdt(),
-      );
-
-  Future<Iterable<TaskActivity>> get taskActivities async =>
-      CrdtTaskHelper.decodeTaskActivities(
-        await _readAndDecodeTaskListCollectionCrdt(),
-      );
-
-  Future<Iterable<ActivityRecord>> get allActivities async =>
+  Future<Iterable<ActivityRecord>> get activities async =>
       _readAndDecodeTaskListCollectionCrdt().then((crdt) => [
             CrdtTaskListHelper.decodeTaskListActivities(crdt),
             CrdtTaskHelper.decodeTaskActivities(crdt),
           ].expand((v) => v));
 
-  Future<Iterable<Task>> get allTasks async =>
-      (await taskLists).map((taskList) => taskList.elements).expand((e) => e);
+  Future<Iterable<TaskList>> getTaskLists({bool decodeTasks = true}) async =>
+      (await _getTaskListRecordMap(decodeTasks))
+          .values
+          .where((record) => !record.isDeleted)
+          .map((record) => record.value!);
 
-  Future<Iterable<TaskList>> get taskLists async => (await _taskListRecords)
-      .where((record) => !record.isDeleted)
-      .map((record) => record.value!);
-
-  Future<TaskList?> getTaskListById(String taskListId) async =>
-      (await _taskListRecordMap)[taskListId]?.value;
-
-  Future<Iterable<Record<TaskList>>> get _taskListRecords async =>
-      (await _taskListRecordMap).values;
-
-  Future<Map<String, Record<TaskList>>> get _taskListRecordMap async =>
-      CrdtTaskListHelper.decodeTaskLists(
-        await _readAndDecodeTaskListCollectionCrdt(),
-      );
+  Future<TaskList?> getTaskListById(
+    String taskListId, {
+    bool decodeTasks = true,
+  }) async =>
+      (await _getTaskListRecordMap(decodeTasks))[taskListId]?.value;
 
   /// Returns false if the task list does not exist
   Future<bool> upsertTask(String taskListId, Task task) async {
@@ -133,15 +117,10 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     await _store(update, triggerSyncUpdate: true);
   }
 
-  Future<void> delete() async {
+  Future<void> purge() async {
     await _keyValueRepository.purge(key: _crdtTaskListKey);
     invokeChangeCallback();
     await _syncService?.run(runOnSyncOnUpdate: true);
-  }
-
-  /// This method can be quite slow because all tasks need to be loaded
-  Future<int> count() async {
-    return (await allTasks).length;
   }
 
   Future<void> mergeCrdtJson(String otherJson) async {
@@ -156,17 +135,25 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<String> crdtToJson() async =>
-      _readTaskListCollectionCrdtStringFromDatabase().then((v) => v ?? '');
+      _readTaskListCollectionCrdtSourceFromDatabase().then((v) => v ?? '');
 
   Future<_TaskListCollectionCrdtType>
       _readAndDecodeTaskListCollectionCrdt() async =>
           CrdtTaskListHelper.decodeTaskListsCrdt(
-            await _readTaskListCollectionCrdtStringFromDatabase(),
+            await _readTaskListCollectionCrdtSourceFromDatabase(),
             peerId: await _identityService.peerId,
             logger: logger,
           )!;
 
-  Future<String?> _readTaskListCollectionCrdtStringFromDatabase() async =>
+  Future<Map<String, Record<TaskList>>> _getTaskListRecordMap(
+    bool decodeTasks,
+  ) async =>
+      CrdtTaskListHelper.decodeTaskLists(
+        await _readAndDecodeTaskListCollectionCrdt(),
+        decodeTasks: decodeTasks,
+      );
+
+  Future<String?> _readTaskListCollectionCrdtSourceFromDatabase() async =>
       await _keyValueRepository.get<String>(_crdtTaskListKey);
 
   Future<void> _store(

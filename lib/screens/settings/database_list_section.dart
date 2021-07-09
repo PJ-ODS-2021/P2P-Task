@@ -21,7 +21,9 @@ class DatabaseSection extends StatelessWidget {
 
     return FutureBuilder<int>(
       initialData: -1,
-      future: taskListService.count(),
+      future: taskListService
+          .getTaskLists(decodeTasks: false)
+          .then((lists) => lists.length),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
@@ -47,7 +49,7 @@ class DatabaseSection extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () async {
-                          await taskListService.delete();
+                          await taskListService.purge();
                           Navigator.pop(context);
                         },
                         child: Text('Yes'),

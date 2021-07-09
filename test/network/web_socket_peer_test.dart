@@ -71,7 +71,7 @@ void main() {
       await devices[0].peerService.syncWithAllKnownPeers();
 
       final device2TaskLists =
-          (await devices[1].taskList.taskListService.taskLists).toList();
+          (await devices[1].taskList.taskListService.getTaskLists()).toList();
       expect(device2TaskLists.length, 1);
       expect(device2TaskLists.first.title, taskList.title);
       expect(device2TaskLists.first.elements, [task]);

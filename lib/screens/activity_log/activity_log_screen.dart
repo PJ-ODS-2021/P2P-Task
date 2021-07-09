@@ -24,7 +24,7 @@ class ActivityLogScreen extends StatelessWidget {
 
     return FutureBuilder<List>(
       future: Future.wait([
-        taskListService.allActivities,
+        taskListService.activities,
         identityService.peerId,
         peerInfoService.deviceNameMap,
       ]),

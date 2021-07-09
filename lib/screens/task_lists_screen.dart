@@ -18,7 +18,8 @@ class TaskListsScreen extends StatelessWidget {
 
     final futureBuilder = FutureBuilder<List<TaskList>>(
       initialData: [],
-      future: taskService.taskLists
+      future: taskService
+          .getTaskLists(decodeTasks: false)
           .then((v) => v.toList()..sort((a, b) => a.title.compareTo(b.title))),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
