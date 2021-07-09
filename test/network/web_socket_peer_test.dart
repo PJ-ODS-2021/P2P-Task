@@ -8,7 +8,13 @@ import 'package:p2p_task/network/web_socket_peer.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/utils/data_model_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/device_task_list.dart';
+
+class FakeSharedPreferences extends Fake implements SharedPreferences {
+  @override
+  bool? getBool(String key) => false;
+}
 
 class Device {
   final DeviceTaskList taskList;
@@ -34,6 +40,7 @@ class Device {
       peerInfoService,
       taskList.identityService,
       null,
+      FakeSharedPreferences(),
     );
 
     return Device(taskList, peerInfoService, peerService);

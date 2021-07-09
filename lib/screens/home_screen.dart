@@ -43,6 +43,10 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     });
+    Provider.of<ChangeCallbackNotifier<PeerService>>(
+      context,
+      listen: false,
+    );
   }
 
   @override

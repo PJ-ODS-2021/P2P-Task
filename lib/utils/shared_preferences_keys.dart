@@ -1,6 +1,7 @@
 enum SharedPreferencesKeys {
   databasePath,
   inMemory,
+  activateServer,
 }
 
 extension Value on SharedPreferencesKeys {

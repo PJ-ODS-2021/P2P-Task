@@ -2,28 +2,28 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:p2p_task/screens/setup/config_screen.dart';
+import 'package:p2p_task/screens/setup/setup_screen.dart';
 import 'package:p2p_task/screens/setup/dependencies_provider.dart';
 import 'package:p2p_task/utils/shared_preferences_keys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class DatabaseConfigScreen extends StatefulWidget {
+class DatabaseSetupScreen extends StatefulWidget {
   final Directory directory;
 
-  DatabaseConfigScreen(this.directory);
+  DatabaseSetupScreen(this.directory);
 
   @override
-  State<StatefulWidget> createState() => _DatabaseConfigScreenState();
+  State<StatefulWidget> createState() => _DatabaseSetupScreenState();
 }
 
-class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
+class _DatabaseSetupScreenState extends State<DatabaseSetupScreen> {
   final _formKey = GlobalKey<FormState>();
   late final _databasePathController = TextEditingController();
   var _inMemoryRadioGroupValue = false;
 
   @override
   Widget build(BuildContext context) {
-    return ConfigScreen(
+    return SetupScreen(
       title: 'Setup Database',
       onSubmit: _handleSubmit,
       child: Form(

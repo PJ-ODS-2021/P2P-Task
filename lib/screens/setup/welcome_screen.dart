@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:p2p_task/screens/setup/config_screen.dart';
+import 'package:p2p_task/screens/setup/server_setup_screen.dart';
+import 'package:p2p_task/screens/setup/setup_screen.dart';
 import 'package:p2p_task/screens/setup/device_setup_screen.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/identity_service.dart';
@@ -13,7 +15,7 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConfigScreen(
+    return SetupScreen(
       title: 'Welcome to the P2P Task Manager App 👋',
       onSubmit: () => _handleSubmit(context),
       child: Form(
@@ -62,7 +64,7 @@ class WelcomeScreen extends StatelessWidget {
       await Navigator.pushReplacement(
         context,
         FadeRoute(
-          (_) => DeviceSetupScreen(),
+          (_) => kIsWeb ? DeviceSetupScreen() : ServerSetupScreen(),
         ),
       );
     }

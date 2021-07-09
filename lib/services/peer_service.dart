@@ -9,21 +9,24 @@ import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
+import 'package:p2p_task/utils/shared_preferences_keys.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PeerService with LogMixin, ChangeCallbackProvider {
   final WebSocketPeer _peer;
   final TaskListService _taskListService;
   final PeerInfoService _peerInfoService;
   final IdentityService _identityService;
-  final SyncService? _syncService;
+  final SharedPreferences _sharedPreferences;
 
   PeerService(
     this._peer,
     this._taskListService,
     this._peerInfoService,
     this._identityService,
-    this._syncService,
-  ) {
+    SyncService? syncService,
+    SharedPreferences sharedPreferences,
+  ) : _sharedPreferences = sharedPreferences {
     _peer.clear();
 
     _peer.registerTypename<DebugMessage>(
@@ -37,12 +40,19 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     _peer.registerCallback<DebugMessage>(_debugMessageCallback);
     _peer.registerCallback<TaskListMessage>(_taskListMessageCallback);
 
-    _syncService?.startJob(syncWithAllKnownPeers);
-    _syncService?.run(runOnSyncOnStart: true);
+    syncService
+        ?.startJob(syncWithAllKnownPeers)
+        .then((_) async => await syncService.run(runOnSyncOnStart: true));
+    if (sharedPreferences.getBool(SharedPreferencesKeys.activateServer.value) ==
+        true) {
+      startServer().then((_) => l.info('Started server after app start.'));
+    }
   }
 
   bool get isServerRunning => _peer.isServerRunning;
+
   String? get serverAddress => _peer.serverAddress;
+
   int? get serverPort => _peer.serverPort;
 
   void _debugMessageCallback(
@@ -71,11 +81,19 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   Future<void> startServer() async {
     final port = await _identityService.port;
     await _peer.startServer(port);
+    await _sharedPreferences.setBool(
+      SharedPreferencesKeys.activateServer.value,
+      true,
+    );
     invokeChangeCallback();
   }
 
   Future<void> stopServer() async {
     await _peer.stopServer();
+    await _sharedPreferences.setBool(
+      SharedPreferencesKeys.activateServer.value,
+      false,
+    );
     invokeChangeCallback();
   }
 
