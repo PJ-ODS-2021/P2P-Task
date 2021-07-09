@@ -6,6 +6,7 @@ import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/screens/task_list_screen.dart';
 import 'package:p2p_task/screens/task_list_form_screen.dart';
 import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/widgets/pull_to_sync_widget.dart';
 import 'package:provider/provider.dart';
 
 class TaskListsScreen extends StatelessWidget {
@@ -64,28 +65,33 @@ class TaskListsScreen extends StatelessWidget {
     List<TaskList> tasks,
   ) {
     if (tasks.isEmpty) {
-      return Center(
-        child: Column(
+      final oneQuarterScreenHeight = MediaQuery.of(context).size.height / 4;
+
+      return PullToSyncWidget(
+        child: ListView(
           children: [
-            Spacer(),
-            Text('🔥 Start getting productive.', style: heroFont),
-            Text('Click the plus button below to add a list.'),
-            Spacer(flex: 2),
+            SizedBox(height: oneQuarterScreenHeight),
+            Center(
+              child: Text('🔥 Start getting productive.', style: heroFont),
+            ),
+            Center(child: Text('Click the plus button below to add a list.')),
           ],
         ),
       );
     }
 
-    return ListView.builder(
-      itemCount: tasks.length,
-      itemBuilder: (context, index) {
-        return _buildSlidableTaskRow(
-          context,
-          taskService,
-          tasks[index],
-          index,
-        );
-      },
+    return PullToSyncWidget(
+      child: ListView.builder(
+        itemCount: tasks.length,
+        itemBuilder: (context, index) {
+          return _buildSlidableTaskRow(
+            context,
+            taskService,
+            tasks[index],
+            index,
+          );
+        },
+      ),
     );
   }
 
