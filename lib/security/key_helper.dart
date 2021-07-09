@@ -179,7 +179,6 @@ class KeyHelper {
 
       return key;
     } on FormatException catch (e) {
-      print('lets see $e');
       try {
         var key =
             encrypt_pem.RSAKeyParser().parse(publicKeyPem) as pc.RSAPublicKey;
@@ -187,8 +186,6 @@ class KeyHelper {
 
         return key;
       } on FormatException catch (e) {
-        print('oh man $e');
-        
         return encrypt_pem.RSAKeyParser().parse(publicKeyPem)
             as pc.RSAPublicKey;
       }
