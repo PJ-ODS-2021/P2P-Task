@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:p2p_task/screens/settings/about_list_section.dart';
 import 'package:p2p_task/screens/settings/database_list_section.dart';
 import 'package:p2p_task/screens/settings/identity_list_section.dart';
 import 'package:p2p_task/screens/settings/network_list_section.dart';
@@ -26,6 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         IdentityListSection(),
         NetworkListSection(),
         DatabaseSection(),
+        AboutListSection(),
         SizedBox(
           height: 36,
         ),

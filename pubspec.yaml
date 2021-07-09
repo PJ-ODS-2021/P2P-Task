@@ -12,6 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
 
+  package_info_plus: ^1.0.3
   network_info_plus: ^1.0.1
   device_info_plus: ^1.0.1
   provider: ^5.0.0
