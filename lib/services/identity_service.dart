@@ -52,7 +52,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
     try {
       return KeyHelper().decodePublicKeyFromPem(await publicKeyPem);
     } on Exception catch (error) {
-      l.severe('could not parse privateKey $error');
+      logger.severe('could not parse privateKey $error');
     }
   }
 
@@ -74,7 +74,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
     try {
       return KeyHelper().decodePrivateKeyFromPem(await privateKeyPem);
     } on Exception catch (error) {
-      l.severe('could not parse privateKey $error');
+      logger.severe('could not parse privateKey $error');
     }
   }
 
