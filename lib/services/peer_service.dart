@@ -69,18 +69,19 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     DebugMessage debugMessage,
     WebSocketClient source,
   ) {
-    l.info('Received debug message: ${debugMessage.value}');
+    logger.info('Received debug message: ${debugMessage.value}');
   }
 
   Future<void> _deletePeerMessageCallback(
     DeletePeerMessage deletePeerMessage,
     WebSocketClient source,
   ) async {
-    l.info('Received delete peer message from ${deletePeerMessage.peerID}');
+    logger
+        .info('Received delete peer message from ${deletePeerMessage.peerID}');
 
     var peerInfo = await _peerInfoService.getByID(deletePeerMessage.peerID);
     if (peerInfo == null) {
-      l.warning('Unknown peerID - skipping');
+      logger.warning('Unknown peerID - skipping');
 
       return;
     }
@@ -90,7 +91,8 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       deletePeerMessage.peerID,
       deletePeerMessage.signature,
     )) {
-      l.warning('Cannot verify signaure of delete peer message - skipping');
+      logger
+          .warning('Cannot verify signaure of delete peer message - skipping');
 
       return;
     }
@@ -104,7 +106,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     IntroductionMessage introductionMessage,
     WebSocketClient source,
   ) async {
-    l.info('Received introduction message');
+    logger.info('Received introduction message');
 
     if (introductionMessage.requestReply) {
       _handleIntroductionMessage(introductionMessage, source);
@@ -142,7 +144,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   ) async {
     var peerInfo = await _peerInfoService.getByID(introductionMessage.peerID);
     if (peerInfo == null) {
-      l.warning(
+      logger.warning(
         'Unknown peerID in introduction message ${introductionMessage.peerID} - skipping',
       );
 
@@ -155,9 +157,9 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       introductionMessage.peerID,
       introductionMessage.signature,
     )) {
-      l.warning('Error message is not from claimed peerID');
+      logger.warning('Error message is not from claimed peerID');
     } else {
-      l.info('Received introduction reply message');
+      logger.info('Received introduction reply message');
     }
   }
 
@@ -167,7 +169,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   ) async {
     var peerInfo = await _peerInfoService.getByID(taskListMessage.peerID);
     if (peerInfo == null) {
-      l.warning('Unknown peerID ${taskListMessage.peerID} - skipping');
+      logger.warning('Unknown peerID ${taskListMessage.peerID} - skipping');
 
       return;
     }
@@ -177,12 +179,12 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       taskListMessage.peerID,
       taskListMessage.signature,
     )) {
-      l.warning('Signature cannot be verified - skipping');
+      logger.warning('Signature cannot be verified - skipping');
 
       return;
     }
 
-    l.info('Received TaskListMessage from ${peerInfo.id}');
+    logger.info('Received TaskListMessage from ${peerInfo.id}');
 
     await _taskListService.mergeCrdtJson(taskListMessage.taskListCrdtJson);
 
@@ -205,7 +207,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
 
       // TODO: propagate new task list through the network using other connected and known peers (if updated)
     } else {
-      l.info('Server received TaskListMessage');
+      logger.info('Server received TaskListMessage');
     }
   }
 
@@ -290,7 +292,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     var privateKey = await _identityService.privateKey;
     var peerID = await _identityService.peerId;
 
-    l.info('syncing task list with all known peers');
+    logger.info('syncing task list with all known peers');
     final tasksPacket = TaskListMessage(
       message,
       peerID,

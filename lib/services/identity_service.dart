@@ -23,9 +23,9 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
     if (peerId != null) {
       return peerId;
     }
-    l.info('No peer id, creating one...');
+    logger.info('No peer id, creating one...');
     peerId = await _repository.put(peerIdKey, Uuid().v4());
-    l.info('Peer id "$peerId" created and stored.');
+    logger.info('Peer id "$peerId" created and stored.');
     invokeChangeCallback();
 
     return peerId!;

@@ -21,25 +21,25 @@ class WebSocketServer with LogMixin {
       WebSocketClient,
       RSAPrivateKey?,
     )
-        createOnData,
+        createOnDataCallback,
     RSAPrivateKey? privateKey,
   ) async {
     final server = WebSocketServer._empty();
-    server.l.info('Starting server on port $port...');
+    server.logger.info('Starting server on port $port...');
     server._server = await serve(
       webSocketHandler((WebSocketChannel channel) {
         server._connectedClients.add(channel);
         final channelClient = WebSocketClient.fromChannel(channel);
-        final onData = createOnData(channelClient, privateKey);
-        if (onData != null) {
-          channel.stream
-              .listen((data) => onData(channelClient, data, privateKey));
+        final onDataCallback = createOnDataCallback(channelClient, privateKey);
+        if (onDataCallback != null) {
+          channel.stream.listen(
+              (data) => onDataCallback(channelClient, data, privateKey));
         }
       }),
       InternetAddress.anyIPv4,
       port,
     );
-    server.l.info('Listening on ${server.address}:${server.port}');
+    server.logger.info('Listening on ${server.address}:${server.port}');
 
     return server;
   }
@@ -58,7 +58,7 @@ class WebSocketServer with LogMixin {
   }
 
   Future<void> close() async {
-    l.info('stopping server');
+    logger.info('stopping server');
     await _server.close(); // stop listening
     await Future.wait([
       for (final client in _connectedClients) client.sink.close(),
@@ -66,6 +66,6 @@ class WebSocketServer with LogMixin {
     await _server.close(
       force: true,
     ); // close every connection that is somehow still open
-    l.info('successfully stopped server');
+    logger.info('successfully stopped server');
   }
 }
