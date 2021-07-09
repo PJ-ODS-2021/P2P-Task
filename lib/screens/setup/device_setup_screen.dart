@@ -9,7 +9,7 @@ import 'package:p2p_task/viewmodels/device_list_viewmodel.dart';
 import 'package:p2p_task/widgets/fade_route_builder.dart';
 import 'package:provider/provider.dart';
 
-class SyncConfigScreen extends StatelessWidget {
+class DeviceSetupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = Provider.of<DeviceListViewModel>(context);
@@ -34,10 +34,15 @@ class SyncConfigScreen extends StatelessWidget {
                       return peerInfo.locations.map((location) {
                         return ListTile(
                           title: Text(
-                            peerInfo.id?.substring(0, 24).padRight(27, '.') ??
-                                peerInfo.name,
+                            peerInfo.id ?? peerInfo.name,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: Text(location.uriStr),
+                          trailing: IconButton(
+                            icon: Icon(Icons.close_rounded),
+                            color: Colors.redAccent,
+                            onPressed: () => viewModel.remove(peerInfo),
+                          ),
                         );
                       });
                     })
@@ -47,34 +52,56 @@ class SyncConfigScreen extends StatelessWidget {
             },
           ),
           Center(
-            child: TextButton.icon(
-              icon: Icon(Icons.add),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      QrScannerScreen(onQRCodeRead: viewModel.handleQrCodeRead),
+            child: Column(
+              children: [
+                if (viewModel.showQrScannerButton) ...[
+                  TextButton.icon(
+                    icon: Icon(Icons.qr_code_scanner_rounded),
+                    onPressed: () => _showQRScannerScreen(context, viewModel),
+                    label: Text('Scan QR code'),
+                  ),
+                  Text('or'),
+                ],
+                TextButton.icon(
+                  icon: Icon(Icons.add_rounded),
+                  onPressed: () => _showDeviceFormScreen(context),
+                  label: Text('Manually add device'),
                 ),
-              ),
-              onLongPress: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => DeviceFormScreen(),
-                ),
-              ),
-              label: Text('Add device'),
+              ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: Text(
-              'If you want to synchronize data from another device, '
-              'you can scan the devices QR Code now. (You may always '
-              'do this at a later time.)',
+              'If you want to synchronize data from another device, you can '
+              '${viewModel.showQrScannerButton ? 'scan the devices QR Code' : 'manually add a device'} '
+              'now. (You may always do this at a later time.)',
               style: TextStyle(fontSize: 12, color: Colors.black54),
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _navigateTo(BuildContext context, Widget Function() screenBuilder) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => screenBuilder(),
+    ));
+  }
+
+  void _showQRScannerScreen(
+    BuildContext context,
+    DeviceListViewModel viewModel,
+  ) {
+    _navigateTo(
+      context,
+      () => QrScannerScreen(onQRCodeRead: viewModel.handleQrCodeRead),
+    );
+  }
+
+  void _showDeviceFormScreen(BuildContext context) {
+    _navigateTo(context, () => DeviceFormScreen());
   }
 
   void _handleSubmit(BuildContext context) async {
