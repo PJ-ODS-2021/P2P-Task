@@ -7,6 +7,8 @@ abstract class ActivityRecord {
   final String id;
 
   const ActivityRecord(this.peerId, this.timestamp, this.id);
+
+  String get description => 'Activity $id';
 }
 
 class TaskListActivity extends ActivityRecord {
@@ -21,6 +23,13 @@ class TaskListActivity extends ActivityRecord {
   ) : super(peerId, timestamp, id);
 
   bool get isDeleted => taskList == null;
+
+  @override
+  String get description {
+    if (isDeleted) return 'Task List deleted';
+
+    return 'Task List created: "${taskList!.title}"';
+  }
 }
 
 class TaskActivity extends ActivityRecord {
@@ -38,4 +47,13 @@ class TaskActivity extends ActivityRecord {
   ) : super(peerId, timestamp, id);
 
   bool get isDeleted => task == null;
+
+  @override
+  String get description {
+    if (isDeleted) return 'Task deleted';
+
+    return isRecursiveUpdate
+        ? 'Task updated: "${task!.title}"'
+        : 'Task created: "${task!.title}"';
+  }
 }

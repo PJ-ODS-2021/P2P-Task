@@ -56,17 +56,7 @@ class ActivityLogScreen extends StatelessWidget {
     Map<String, String> deviceNameMap,
   ) {
     if (activities.isEmpty) {
-      return Center(
-        child: Column(
-          children: [
-            Spacer(),
-            Text('⚡️ No activities yet.', style: heroFont),
-            Text('Changes to your Tasks will be shown here.'),
-            Text('Create a new Task or pair a device to see some activities.'),
-            Spacer(flex: 2),
-          ],
-        ),
-      );
+      return _buildPlaceholder();
     }
 
     return ListView.builder(
@@ -75,7 +65,7 @@ class ActivityLogScreen extends StatelessWidget {
       itemBuilder: (BuildContext context, int index) {
         final activity = activities[index];
 
-        return _buildActivityEntry(
+        return ActivityEntryWidget(
           activity,
           currentPeerId,
           deviceNameMap,
@@ -85,129 +75,24 @@ class ActivityLogScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActivityEntry(
-    ActivityRecord activity,
-    String currentPeerId,
-    Map<String, String> deviceNameMap,
-    int index,
-  ) {
-    return Column(
-      children: [
-        Container(
-          color: index.isEven ? Colors.white : Colors.white60,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [_buildActivityName(activity)],
-                ),
-                const SizedBox(height: 8.0),
-                Row(
-                  children: [
-                    _buildActivityIcon(activity, currentPeerId),
-                    const SizedBox(width: 8.0),
-                    _buildActivityOrigin(
-                      activity.peerId,
-                      currentPeerId,
-                      deviceNameMap,
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [_buildActivityTimestamp(activity.timestamp)],
-                ),
-              ],
-            ),
+  Widget _buildPlaceholder() {
+    return Center(
+      child: Column(
+        children: [
+          Spacer(),
+          Text('⚡️ No activities yet.', style: heroFont),
+          Text(
+            'Changes to your Tasks will be shown here.',
+            textAlign: TextAlign.center,
           ),
-        ),
-        Container(height: 0.5, color: Colors.grey),
-      ],
-    );
-  }
-
-  Widget _buildActivityName(ActivityRecord activity) {
-    return Flexible(
-      child: Text(
-        _getActivityDescription(activity),
-        style: TextStyle(
-          fontWeight: FontWeight.normal,
-          color: Colors.black,
-          fontSize: 18,
-        ),
+          Text(
+            'Create a new Task or pair a device to see some activities.',
+            textAlign: TextAlign.center,
+          ),
+          Spacer(flex: 2),
+        ],
       ),
     );
-  }
-
-  Widget _buildActivityTimestamp(DateTime timestamp) {
-    return Text(
-      DateFormat('dd.MM.yyyy HH:mm:ss').format(timestamp),
-      style: TextStyle(
-        color: Colors.black.withOpacity(0.6),
-        fontSize: 14,
-      ),
-    );
-  }
-
-  Widget _buildActivityIcon(ActivityRecord activity, String currentPeerId) {
-    return Icon(activity.peerId == currentPeerId
-        ? Icons.arrow_upward
-        : Icons.arrow_downward);
-  }
-
-  Widget _buildActivityOrigin(
-    String peerId,
-    String currentPeerId,
-    Map<String, String> deviceNameMap,
-  ) {
-    return Flexible(
-      child: RichText(
-        text: TextSpan(
-          text: 'On ',
-          style: TextStyle(color: Colors.black, fontSize: 18),
-          children: [
-            TextSpan(
-              text: _getPeerName(peerId, currentPeerId, deviceNameMap),
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: peerId == currentPeerId
-                    ? FontWeight.normal
-                    : FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _getPeerName(
-    String peerId,
-    String currentPeerId,
-    Map<String, String> deviceNameMap,
-  ) {
-    return peerId == currentPeerId
-        ? 'this device'
-        : (deviceNameMap[peerId] ?? peerId);
-  }
-
-  String _getActivityDescription(ActivityRecord activity) {
-    if (activity is TaskListActivity) {
-      return activity.isDeleted
-          ? 'Task list deleted'
-          : 'Task list created: "${activity.taskList!.title}"';
-    } else if (activity is TaskActivity) {
-      if (activity.isDeleted) return 'Task deleted';
-
-      return activity.isRecursiveUpdate
-          ? 'Task updated: "${activity.task!.title}"'
-          : 'Task created: "${activity.task!.title}"';
-    }
-
-    return 'Unknown activity in ${activity.id}';
   }
 
   int _compareActivityRecord(ActivityRecord a, ActivityRecord b) {
@@ -234,5 +119,136 @@ class ActivityLogScreen extends StatelessWidget {
     final ranking = activityTypes.indexOf(record.runtimeType);
 
     return ranking != -1 ? ranking : activityTypes.length;
+  }
+}
+
+class ActivityEntryWidget extends StatelessWidget {
+  const ActivityEntryWidget(
+    this.activity,
+    this.currentPeerId,
+    this.deviceNameMap,
+    this.index,
+  );
+
+  final ActivityRecord activity;
+  final String currentPeerId;
+  final Map<String, String> deviceNameMap;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return _buildActivityColumn(context);
+  }
+
+  Widget _buildActivityColumn(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          color: index.isEven ? Colors.white : Colors.white60,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildActivityOrigin(),
+                  ],
+                ),
+                const SizedBox(height: 8.0),
+                Row(
+                  children: [
+                    _buildActivityIcon(activity),
+                    const SizedBox(width: 8.0),
+                    _buildActivityName(),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [_buildActivityTimestamp()],
+                ),
+              ],
+            ),
+          ),
+        ),
+        Container(height: 0.5, color: Colors.grey),
+      ],
+    );
+  }
+
+  Widget _buildActivityName() {
+    return Flexible(
+      child: Text(
+        activity.description,
+        style: TextStyle(
+          fontWeight: FontWeight.normal,
+          color: Colors.black,
+          fontSize: 18,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActivityTimestamp() {
+    return Text(
+      DateFormat('dd.MM.yyyy HH:mm:ss').format(activity.timestamp),
+      style: TextStyle(
+        color: Colors.black.withOpacity(0.6),
+        fontSize: 14,
+      ),
+    );
+  }
+
+  Icon _buildActivityIcon(ActivityRecord activity) {
+    if (activity is TaskActivity) {
+      if (activity.isDeleted) {
+        return Icon(Icons.delete, semanticLabel: 'Deleted Task');
+      }
+      if (activity.isRecursiveUpdate) {
+        return Icon(Icons.refresh, semanticLabel: 'Updated Task');
+      }
+
+      return Icon(Icons.add, semanticLabel: 'New Task');
+    }
+    if (activity is TaskListActivity) {
+      if (activity.isDeleted) {
+        return Icon(Icons.delete, semanticLabel: 'Deleted Task List');
+      }
+
+      return Icon(Icons.add, semanticLabel: 'New Task List');
+    }
+
+    return Icon(Icons.help, semanticLabel: 'Unspecified Activity');
+  }
+
+  Widget _buildActivityOrigin() {
+    return Flexible(
+      child: RichText(
+        text: TextSpan(
+          text: 'On ',
+          style: TextStyle(color: Colors.black.withOpacity(0.6), fontSize: 18),
+          children: [
+            TextSpan(
+              text: _getPeerName(),
+              style: TextStyle(
+                color: Colors.black.withOpacity(0.6),
+                fontWeight: activity.peerId == currentPeerId
+                    ? FontWeight.normal
+                    : FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getPeerName() {
+    final peerId = activity.peerId;
+
+    return peerId == currentPeerId
+        ? 'this device'
+        : (deviceNameMap[peerId] ?? peerId);
   }
 }
