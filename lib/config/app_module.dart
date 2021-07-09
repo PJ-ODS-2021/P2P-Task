@@ -96,7 +96,7 @@ class AppModule {
       isSingleton: true,
     );
     injector.map<SyncService>(
-          (i) => SyncService(
+      (i) => SyncService(
         i.get<KeyValueRepository>(key: StoreRefNames.settings.value),
       ),
       isSingleton: true,
