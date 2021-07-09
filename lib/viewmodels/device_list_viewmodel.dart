@@ -47,7 +47,7 @@ class DeviceListViewModel with LogMixin {
   }
 
   void addNewPeer(PeerInfo peerInfo) async {
-    final storedPeerInfo = await _peerInfoService.upsert(peerInfo);
+    await _peerInfoService.upsert(peerInfo);
     sendIntroductionMessageToPeer(
       peerInfo,
       peerInfo.locations.first,
@@ -72,7 +72,7 @@ class DeviceListViewModel with LogMixin {
       locations: [PeerLocation('ws://${values[2]}:${values[3]}')],
       publicKeyPem: values[4],
     );
-    final storedPeerInfo = await _peerInfoService.upsert(peerInfo);
+    await _peerInfoService.upsert(peerInfo);
     sendIntroductionMessageToPeer(
       peerInfo,
       peerInfo.locations.first,
