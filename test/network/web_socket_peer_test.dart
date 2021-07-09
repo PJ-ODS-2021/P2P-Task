@@ -91,7 +91,8 @@ void main() {
     test('should add new peer info on the receiving device', () async {
       final peerInfoDevice0 = await devices[0].generatePeerInfo();
       final peerInfoDevice1 = await devices[1].generatePeerInfo();
-      final currentPeerInfo = await devices[1].peerInfoService.getByID(peerInfoDevice0.id!);
+      final currentPeerInfo =
+          await devices[1].peerInfoService.getByID(peerInfoDevice0.id!);
       expect(currentPeerInfo, equals(null));
 
       await devices[0].peerService.sendIntroductionMessageToPeer(
@@ -99,7 +100,8 @@ void main() {
             location: peerInfoDevice1.locations.first,
           );
 
-      final newPeerInfo = await devices[1].peerInfoService.getByID(peerInfoDevice0.id!);
+      final newPeerInfo =
+          await devices[1].peerInfoService.getByID(peerInfoDevice0.id!);
       expect(newPeerInfo, isNot(equals(null)));
       expect(newPeerInfo!.name, equals(peerInfoDevice0.name));
       expect(newPeerInfo.publicKeyPem, equals(peerInfoDevice0.publicKeyPem));
