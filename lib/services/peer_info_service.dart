@@ -24,12 +24,10 @@ class PeerInfoService with ChangeCallbackProvider {
     return activeDevices;
   }
 
-  Future<PeerInfo> upsert(PeerInfo peerInfo) async {
-    final storedPeerInfo = await _repository.upsert(peerInfo);
+  Future<void> upsert(PeerInfo peerInfo) async {
+    await _repository.upsert(peerInfo);
     await _syncService?.run(runOnSyncAfterDeviceAdded: true);
     invokeChangeCallback();
-
-    return storedPeerInfo;
   }
 
   Future<PeerInfo?> getByID(String id) async {

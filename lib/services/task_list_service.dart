@@ -10,6 +10,8 @@ import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:uuid/uuid.dart';
 
+import 'activity_record.dart';
+
 typedef _TaskCrdtType = MapCrdtNode<String, dynamic>;
 typedef _TaskListCrdtType = MapCrdtNode<String, dynamic>;
 typedef _TaskListCollectionCrdtType = MapCrdtRoot<String, _TaskListCrdtType>;
@@ -27,17 +29,17 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     this._syncService,
   );
 
-  Future<Iterable<TaskRecord>> get allTaskRecords async =>
-      _decodeTasks(await _readAndDecodeTaskListCollectionCrdt()).map(
-        (recordAndListId) => TaskRecord(
-          recordAndListId.taskRecord.value,
-          recordAndListId.taskRecord.clock.node,
-          DateTime.fromMillisecondsSinceEpoch(
-            recordAndListId.taskRecord.clock.timestamp,
-          ),
-          recordAndListId.taskListId,
-        ),
-      );
+  Future<Iterable<TaskListActivity>> get taskListActivities async =>
+      _decodeTaskListActivities(await _readAndDecodeTaskListCollectionCrdt());
+
+  Future<Iterable<TaskActivity>> get taskActivities async =>
+      _decodeTaskActivities(await _readAndDecodeTaskListCollectionCrdt());
+
+  Future<Iterable<ActivityRecord>> get allActivities async =>
+      _readAndDecodeTaskListCollectionCrdt().then((crdt) => [
+            _decodeTaskListActivities(crdt),
+            _decodeTaskActivities(crdt),
+          ].expand((v) => v));
 
   Future<Iterable<Task>> get allTasks async =>
       (await taskLists).map((taskList) => taskList.elements).expand((e) => e);
@@ -134,6 +136,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     await _syncService?.run(runOnSyncOnUpdate: true);
   }
 
+  /// This method can be quite slow because all tasks need to be loaded
   Future<int> count() async {
     return (await allTasks).length;
   }
@@ -231,7 +234,49 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     );
   }
 
-  Iterable<_TaskRecordAndListId> _decodeTasks(
+  Iterable<TaskListActivity> _decodeTaskListActivities(
+    _TaskListCollectionCrdtType crdt,
+  ) {
+    return crdt.records.entries.map((taskRecordEntry) {
+      final taskList = taskRecordEntry.value.isDeleted
+          ? null
+          : _decodeTaskList(
+              taskRecordEntry.value.value!,
+              id: taskRecordEntry.key,
+              decodeTasks: false,
+            );
+      final propertyUpdateClocks = taskRecordEntry.value.value?.records.entries
+          .where((taskRecordEntry) =>
+              !taskRecordEntry.value.isDeleted &&
+              !(taskRecordEntry.value.value is _TaskCrdtType))
+          .map((taskRecordEntry) => taskRecordEntry.value.clock)
+          .toSet()
+            ?..removeWhere((clock) => clock <= taskRecordEntry.value.clock);
+
+      return [
+        TaskListActivity(
+          taskRecordEntry.value.clock.node,
+          DateTime.fromMillisecondsSinceEpoch(
+            taskRecordEntry.value.clock.timestamp,
+          ),
+          taskRecordEntry.key,
+          taskList,
+          false,
+        ),
+        if (propertyUpdateClocks != null)
+          for (final clockValue in propertyUpdateClocks)
+            TaskListActivity(
+              clockValue.node,
+              DateTime.fromMillisecondsSinceEpoch(clockValue.timestamp),
+              taskRecordEntry.key,
+              taskList,
+              true,
+            ),
+      ];
+    }).expand((v) => v);
+  }
+
+  Iterable<TaskActivity> _decodeTaskActivities(
     _TaskListCollectionCrdtType crdt,
   ) {
     return crdt.records.entries
@@ -241,37 +286,99 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
               return entry.value.value is _TaskCrdtType ||
                   (entry.value.isDeleted &&
                       !TaskList.crdtMembers.contains(entry.key));
-            }).map((entry) => _TaskRecordAndListId(
-                  Record(
-                    clock: entry.value.clock,
-                    value: entry.value.isDeleted
-                        ? null
-                        : _decodeTask(entry.value.value, id: entry.key),
-                  ),
-                  taskListRecordEntry.key,
-                )))
-        .expand((v) => v);
+            }).map(
+              (entry) => _getTaskActivities(entry, taskListRecordEntry.key),
+            ))
+        .expand((v) => v.expand((v) => v));
+  }
+
+  List<TaskActivity> _getTaskActivities(
+    MapEntry<String, Record<dynamic>> entry,
+    String taskListId,
+  ) {
+    if (entry.value.isDeleted) {
+      return [
+        _taskActivityFromRecordEntry(
+          entry,
+          taskListId: taskListId,
+        ),
+      ];
+    }
+
+    // decode task and get recursive updates more recent than the task node clock value
+    final taskCrdt = entry.value.value as _TaskCrdtType;
+    final task = _decodeTask(taskCrdt, id: entry.key);
+    final valueClocks = taskCrdt.records.values
+        .map((record) => record.clock)
+        .toSet()
+          ..removeWhere((clock) => clock <= entry.value.clock);
+
+    return [
+      _taskActivityFromRecordEntry(
+        entry,
+        taskListId: taskListId,
+        task: task,
+      ),
+      for (final valueClock in valueClocks)
+        TaskActivity(
+          valueClock.node,
+          DateTime.fromMillisecondsSinceEpoch(valueClock.timestamp),
+          entry.key,
+          task,
+          taskListId,
+          true,
+        ),
+    ];
+  }
+
+  TaskActivity _taskActivityFromRecordEntry(
+    MapEntry<String, Record<dynamic>> entry, {
+    required String taskListId,
+    Task? task,
+    bool isRecursiveUpdate = false,
+  }) {
+    return TaskActivity(
+      entry.value.clock.node,
+      DateTime.fromMillisecondsSinceEpoch(
+        entry.value.clock.timestamp,
+      ),
+      entry.key,
+      task,
+      taskListId,
+      isRecursiveUpdate,
+    );
   }
 
   Map<String, Record<TaskList>> _decodeTaskListCollection(
-    _TaskListCollectionCrdtType crdt,
-  ) {
+    _TaskListCollectionCrdtType crdt, {
+    bool decodeTasks = true,
+  }) {
     return crdt.records.map((key, record) => MapEntry(
           key,
           Record<TaskList>(
             clock: record.clock,
             value: record.isDeleted
                 ? null
-                : _decodeTaskList(record.value!, id: key),
+                : _decodeTaskList(
+                    record.value!,
+                    id: key,
+                    decodeTasks: decodeTasks,
+                  ),
           ),
         ));
   }
 
-  TaskList _decodeTaskList(_TaskListCrdtType crdt, {String? id}) {
-    final tasks = crdt.records.entries
-        .where((entry) =>
-            !entry.value.isDeleted && entry.value.value is _TaskCrdtType)
-        .map((entry) => _decodeTask(entry.value.value, id: entry.key));
+  TaskList _decodeTaskList(
+    _TaskListCrdtType crdt, {
+    String? id,
+    bool decodeTasks = true,
+  }) {
+    final tasks = decodeTasks
+        ? crdt.records.entries
+            .where((entry) =>
+                !entry.value.isDeleted && entry.value.value is _TaskCrdtType)
+            .map((entry) => _decodeTask(entry.value.value, id: entry.key))
+        : null;
 
     return TaskList.fromJson({
       'id': id,
@@ -279,7 +386,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     }..addAll(Map.fromEntries(
         TaskList.crdtMembers.map((e) => MapEntry(e, crdt.get(e))),
       )))
-      ..elements.addAll(tasks);
+      ..elements.addAll(tasks ?? []);
   }
 
   Task _decodeTask(_TaskCrdtType crdt, {String? id}) {
@@ -353,22 +460,4 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
 
     return taskCrdt;
   }
-}
-
-class _TaskRecordAndListId {
-  Record<Task> taskRecord;
-  String taskListId;
-
-  _TaskRecordAndListId(this.taskRecord, this.taskListId);
-}
-
-class TaskRecord {
-  final Task? task;
-  final String peerId;
-  final DateTime timestamp;
-  final String taskListId;
-
-  const TaskRecord(this.task, this.peerId, this.timestamp, this.taskListId);
-
-  bool get isDeleted => task == null;
 }
