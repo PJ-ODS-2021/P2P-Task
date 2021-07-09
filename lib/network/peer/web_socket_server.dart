@@ -32,8 +32,11 @@ class WebSocketServer with LogMixin {
         final channelClient = WebSocketClient.fromChannel(channel);
         final onDataCallback = createOnDataCallback(channelClient, privateKey);
         if (onDataCallback != null) {
-          channel.stream.listen(
-              (data) => onDataCallback(channelClient, data, privateKey));
+          channel.stream.listen((data) => onDataCallback(
+                channelClient,
+                data,
+                privateKey,
+              ));
         }
       }),
       InternetAddress.anyIPv4,

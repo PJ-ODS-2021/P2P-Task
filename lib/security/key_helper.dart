@@ -178,14 +178,14 @@ class KeyHelper {
           .parse(publicKeyPem.replaceAll('\\r\\n', '\n')) as pc.RSAPublicKey;
 
       return key;
-    } on FormatException catch (e) {
+    } on FormatException {
       try {
         var key =
             encrypt_pem.RSAKeyParser().parse(publicKeyPem) as pc.RSAPublicKey;
         ;
 
         return key;
-      } on FormatException catch (e) {
+      } on FormatException {
         return encrypt_pem.RSAKeyParser().parse(publicKeyPem)
             as pc.RSAPublicKey;
       }

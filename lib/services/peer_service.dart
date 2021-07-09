@@ -1,5 +1,4 @@
 import 'package:p2p_task/models/peer_info.dart';
-import 'dart:typed_data';
 import 'package:p2p_task/network/messages/debug_message.dart';
 import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
@@ -260,7 +259,6 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     var privateKey = await _identityService.privateKey;
     var peerID = await _identityService.peerId;
 
-    print("SEND NOW");
     await _peer.sendPacketToPeer(
       peerInfo,
       await _identityService.privateKey,
