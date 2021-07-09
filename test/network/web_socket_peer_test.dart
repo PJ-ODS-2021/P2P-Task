@@ -106,6 +106,31 @@ void main() {
     });
   });
 
+  group('Delete peer message', () {
+    test('should delete peer info on the receiving device', () async {
+      final sendingDevice = devices[0];
+      final receivingDevice = devices[1];
+
+      await receivingDevice.peerInfoService
+          .upsert(await devices[0].generatePeerInfo());
+
+      expect(
+        await receivingDevice.peerInfoService
+            .getByID((await sendingDevice.generatePeerInfo()).id!),
+        isNot(equals(null)),
+      );
+
+      await sendingDevice.peerService.sendDeletePeerMessageToPeer(
+          await receivingDevice.generatePeerInfo());
+
+      expect(
+        await receivingDevice.peerInfoService
+            .getByID((await sendingDevice.generatePeerInfo()).id!),
+        equals(null),
+      );
+    });
+  });
+
   group('Synchronization', () {
     test('should sync tasks with connecting client', () async {
       final taskList = TaskList(id: 'list1Id', title: 'list1');

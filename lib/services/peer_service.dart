@@ -1,8 +1,10 @@
 import 'package:p2p_task/models/peer_info.dart';
+import 'dart:typed_data';
 import 'package:p2p_task/network/messages/debug_message.dart';
 import 'package:p2p_task/network/messages/task_list_message.dart';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
 import 'package:p2p_task/network/messages/introduction_message.dart';
+import 'package:p2p_task/network/messages/delete_peer_message.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
 import 'package:p2p_task/services/change_callback_provider.dart';
 import 'package:p2p_task/services/identity_service.dart';
@@ -44,9 +46,14 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       'IntroductionMessage',
       (json) => IntroductionMessage.fromJson(json),
     );
+    _peer.registerTypename<DeletePeerMessage>(
+      'DeletePeerMessage',
+      (json) => DeletePeerMessage.fromJson(json),
+    );
     _peer.registerCallback<DebugMessage>(_debugMessageCallback);
     _peer.registerCallback<TaskListMessage>(_taskListMessageCallback);
     _peer.registerCallback<IntroductionMessage>(_introductionMessageCallback);
+    _peer.registerCallback<DeletePeerMessage>(_deletePeerMessageCallback);
 
     _syncService?.startJob(syncWithAllKnownPeers);
     _syncService?.run(runOnSyncOnStart: true);
@@ -63,6 +70,34 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     WebSocketClient source,
   ) {
     l.info('Received debug message: ${debugMessage.value}');
+  }
+
+  Future<void> _deletePeerMessageCallback(
+    DeletePeerMessage deletePeerMessage,
+    WebSocketClient source,
+  ) async {
+    l.info('Received delete peer message from ${deletePeerMessage.peerID}');
+
+    var peerInfo = await _peerInfoService.getByID(deletePeerMessage.peerID);
+    if (peerInfo == null) {
+      l.warning('Unknown peerID - skipping');
+
+      return;
+    }
+
+    if (!keyHelper.rsaVerify(
+      peerInfo.publicKeyPem,
+      deletePeerMessage.peerID,
+      deletePeerMessage.signature,
+    )) {
+      l.warning('Cannot verify signaure of delete peer message - skipping');
+
+      return;
+    }
+
+    await _peerInfoService.remove(peerInfo);
+
+    return;
   }
 
   Future<void> _introductionMessageCallback(
@@ -216,6 +251,18 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       await _identityService.privateKey,
       message,
       location: location,
+    );
+  }
+
+  Future<void> sendDeletePeerMessageToPeer(PeerInfo peerInfo) async {
+    var privateKey = await _identityService.privateKey;
+    var peerID = await _identityService.peerId;
+
+    print("SEND NOW");
+    await _peer.sendPacketToPeer(
+      peerInfo,
+      await _identityService.privateKey,
+      DeletePeerMessage(peerID, keyHelper.rsaSign(privateKey!, peerID)),
     );
   }
 

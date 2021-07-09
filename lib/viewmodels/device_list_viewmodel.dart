@@ -100,6 +100,7 @@ class DeviceListViewModel with LogMixin {
   }
 
   void remove(PeerInfo peer) async {
+    await _peerService.sendDeletePeerMessageToPeer(peer);
     await _peerInfoService.remove(peer);
     loadDevices();
   }
