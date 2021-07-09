@@ -18,7 +18,9 @@ import 'package:p2p_task/utils/store_ref_names.dart';
 import 'package:sembast/sembast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Helper class to initialize all services and dependencies
 class AppModule {
+  // ignore: long-method
   Future<void> initialize(Injector injector) async {
     injector.dispose();
     injector = Injector();

@@ -31,7 +31,7 @@ dependencies:
   collection: ^1.15.0
   flutter_simple_dependency_injection: ^2.0.0
   shared_preferences: ^2.0.6
-  flutter_form_builder: ^6.0.1
+  pull_to_refresh: ^2.0.0
 
   lww_crdt:
     path: lww_crdt

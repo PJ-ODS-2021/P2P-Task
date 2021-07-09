@@ -20,12 +20,12 @@ class NetworkInfoService with LogMixin, ChangeCallbackProvider {
   UnmodifiableListView<String> get ips => UnmodifiableListView(_ips);
 
   Future<String?> get ssid {
-    l.info('request for getting ssid');
+    logger.info('request for getting ssid');
     if (_ssidCompleter != null && !_ssidCompleter!.isCompleted) {
-      l.warning('waiting for previous ssid request to finish');
+      logger.warning('waiting for previous ssid request to finish');
 
       return _ssidCompleter!.future.then((value) {
-        l.info('completer finished with ssid: "$value"');
+        logger.info('completer finished with ssid: "$value"');
 
         return value;
       });
@@ -33,7 +33,7 @@ class NetworkInfoService with LogMixin, ChangeCallbackProvider {
     _ssidCompleter = Completer();
 
     return _detectSsid().then((value) {
-      l.info('detected ssid: "$value"');
+      logger.info('detected ssid: "$value"');
       _ssidCompleter?.complete(value);
 
       return value;
@@ -41,9 +41,9 @@ class NetworkInfoService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<String?> _detectSsid() async {
-    l.info('detecting ssid');
-    final isMobileDevice = () => Platform.isAndroid || Platform.isIOS;
-    if (kIsWeb || !isMobileDevice()) return null;
+    logger.info('detecting ssid');
+    if (kIsWeb) return null;
+    if (!Platform.isAndroid && !Platform.isIOS) return null;
 
     final networkInfo = NetworkInfo();
     if (Platform.isAndroid) {
@@ -81,7 +81,7 @@ class NetworkInfoService with LogMixin, ChangeCallbackProvider {
         _ips.add(wifiIp);
       }
     } on PlatformException catch (e) {
-      l.severe(e.toString());
+      logger.severe(e.toString());
     }
     invokeChangeCallback();
   }
