@@ -170,9 +170,13 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
     return [
       if (connectionInfo.selectedIp != null)
         Center(
-          child: SizedBox(
+          child: Container(
             width: displaySize,
             height: displaySize,
+            constraints: BoxConstraints(
+              maxWidth: 350.0,
+              maxHeight: 350.0,
+            ),
             child: QrImage(
               data: _makeQrContent(
                 connectionInfo.deviceName,

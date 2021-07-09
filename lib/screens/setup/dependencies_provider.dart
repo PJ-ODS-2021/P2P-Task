@@ -50,6 +50,7 @@ class _DependenciesProviderState extends State<DependenciesProvider> {
     );
   }
 
+  // ignore: long-method
   Widget _buildProviders(BuildContext context, Widget child) {
     return MultiProvider(
       providers: [

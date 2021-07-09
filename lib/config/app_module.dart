@@ -19,6 +19,7 @@ import 'package:sembast/sembast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppModule {
+  // ignore: long-method
   Future<void> initialize(Injector injector) async {
     injector.dispose();
     injector = Injector();
