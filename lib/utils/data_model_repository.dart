@@ -20,25 +20,25 @@ class DataModelRepository<T extends DataModel> with LogMixin {
         _store = StoreRef(typeName);
 
   Future<T?> get(String id) async {
-    l.info('Get entry with type "${_store.name}" and id "$id"');
+    logger.info('Get entry with type "${_store.name}" and id "$id"');
     final entry = await _store.record(id).get(_dbClient);
     if (entry == null) return null;
-    l.info(entry);
+    logger.info(entry);
 
     return _converter(entry);
   }
 
   Future<List<T>> find({Finder? finder}) async {
-    l.info('Get entries with type "${_store.name}"');
+    logger.info('Get entries with type "${_store.name}"');
     final entries =
         (await _store.find(_dbClient, finder: finder)).map((e) => e.value);
-    l.info(entries);
+    logger.info(entries);
 
     return entries.map((e) => _converter(e)).toList();
   }
 
   Future<void> upsert(T object) async {
-    l.info('Upsert entry with type "${_store.name}"');
+    logger.info('Upsert entry with type "${_store.name}"');
     final hasId = object.id != null;
     if (!hasId) object.id = Uuid().v4();
     final record = _store.record(object.id!);
@@ -48,29 +48,29 @@ class DataModelRepository<T extends DataModel> with LogMixin {
     } else {
       await record.add(_db, object.toJson());
     }
-    l.info(object.toJson());
+    logger.info(object.toJson());
   }
 
   Future remove(String id) async {
-    l.info('Remove entry with type "${_store.name}" and id "$id"');
+    logger.info('Remove entry with type "${_store.name}" and id "$id"');
     if (await _store.record(id).exists(_dbClient)) {
       await _store.record(id).delete(_dbClient);
     }
-    l.info('Removed entry with type "${_store.name}" and id "$id"');
+    logger.info('Removed entry with type "${_store.name}" and id "$id"');
   }
 
   Future<int> count({Filter? filter}) async {
     return await _store.count(_dbClient, filter: filter);
   }
 
-  Future runTxn(Function() func) async {
+  Future runTransaction(Function() func) async {
     await _db.transaction((transaction) {
       _transaction = transaction;
       try {
         func();
       } catch (error, stackTrace) {
         _transaction = null;
-        l.severe(
+        logger.severe(
           'Error occurred while running a transaction.',
           error,
           stackTrace,

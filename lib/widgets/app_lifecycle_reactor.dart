@@ -40,19 +40,19 @@ class _AppLifecycleReactorState extends State<AppLifecycleReactor>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.resumed:
-        l.info('App resumed.');
+        logger.info('App resumed.');
         if (widget.onResume != null) widget.onResume!();
         break;
       case AppLifecycleState.inactive:
-        l.info('App inactive.');
+        logger.info('App inactive.');
         if (widget.onInactive != null) widget.onInactive!();
         break;
       case AppLifecycleState.paused:
-        l.info('App paused.');
+        logger.info('App paused.');
         if (widget.onPaused != null) widget.onPaused!();
         break;
       case AppLifecycleState.detached:
-        l.info('App detached.');
+        logger.info('App detached.');
         if (widget.onDetached != null) widget.onDetached!();
         break;
     }

@@ -38,9 +38,8 @@ class Task {
 
   @override
   bool operator ==(Object other) {
-    if (!(other is Task)) return false;
-
-    return other.id == id &&
+    return other is Task &&
+        other.id == id &&
         other.title == title &&
         other.completed == completed &&
         other.description == description &&

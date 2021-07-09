@@ -49,7 +49,7 @@ class DeviceListViewModel with LogMixin {
   void handleQrCodeRead(String qrContent) async {
     var values = qrContent.split(',');
     if (values.length < 3) {
-      l.warning(
+      logger.warning(
         'ignoring invalid qr content "$qrContent": less than 3 components',
       );
 

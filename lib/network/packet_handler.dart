@@ -25,10 +25,10 @@ class PacketHandler<T> {
 
   void invokeCallback(Packet packet, T source) {
     var callback = _callbacks[packet.typename];
-    if (callback == null) {
-      if (defaultCallback != null) defaultCallback!(packet, source);
-    } else {
+    if (callback != null) {
       callback(packet, source);
+    } else if (defaultCallback != null) {
+      defaultCallback!(packet, source);
     }
   }
 

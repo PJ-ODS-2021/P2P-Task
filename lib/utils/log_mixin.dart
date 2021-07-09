@@ -12,7 +12,7 @@ mixin LogMixin {
 
   String get _className => runtimeType.toString();
 
-  late final Logger l = _loggers[_className] ?? createLogger();
+  late final Logger logger = _loggers[_className] ?? createLogger();
 
   static bool get _useColoredDebugPrint =>
       !kReleaseMode &&

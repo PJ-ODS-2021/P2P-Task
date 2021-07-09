@@ -18,7 +18,7 @@ class KeyValueRepository with LogMixin {
 
   /// [value] must have a type that is supported by sembast
   Future<dynamic> put(String key, dynamic value) async {
-    l.info('Put setting with key "$key" and value "$value"');
+    logger.info('Put setting with key "$key" and value "$value"');
 
     return await _store.record(key).put(_db, value);
   }
