@@ -33,6 +33,7 @@ void main() {
         final peerInfoName = 'New Task';
         final peerInfo = PeerInfo(
           name: peerInfoName,
+          status: Status.active,
           publicKeyPem: '',
           locations: [PeerLocation('')],
         );
@@ -52,6 +53,7 @@ void main() {
           PeerInfo(
             id: peerInfoId,
             name: '',
+            status: Status.active,
             publicKeyPem: '',
             locations: [PeerLocation('')],
           ),
@@ -65,6 +67,7 @@ void main() {
         final peerInfo = PeerInfo(
           id: peerInfoId,
           name: peerInfoName,
+          status: Status.active,
           publicKeyPem: '',
           locations: [PeerLocation('')],
         );
@@ -87,6 +90,7 @@ void main() {
         final peerInfo = PeerInfo(
           id: peerInfoId,
           name: peerInfoName,
+          status: Status.active,
           publicKeyPem: '',
           locations: [PeerLocation('')],
         );
