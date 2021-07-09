@@ -209,7 +209,9 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
 
     final peerInfo = PeerInfo(
       name: _nameController.text,
+      status: Status.created,
       publicKeyPem: _publicKeyController.text,
+      id: _idController.text,
       locations: [location],
     );
 

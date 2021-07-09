@@ -61,6 +61,7 @@ class Device {
     return PeerInfo(
       id: await taskList.identityService.peerId,
       name: await taskList.identityService.name,
+      status: Status.active,
       publicKeyPem: await taskList.identityService.publicKeyPem,
       locations: [
         PeerLocation('ws://localhost:${await taskList.identityService.port}'),

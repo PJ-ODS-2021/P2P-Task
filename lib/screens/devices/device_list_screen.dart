@@ -124,7 +124,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     return Column(
       children: devices.map((peerInfo) {
         return ListSection(
-          title: peerInfo.name.isNotEmpty ? peerInfo.name : peerInfo.id,
+          title: _getDeviceName(peerInfo),
           children: peerInfo.locations.map((peerLocation) {
             return _buildSlidablePeerRow(
               peerInfo,
@@ -137,6 +137,13 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     );
   }
 
+  String _getDeviceName(PeerInfo peerInfo) {
+    var status = peerInfo.status.toString().replaceAll('Status.', '');
+    var name = peerInfo.name.isNotEmpty ? peerInfo.name : peerInfo.id;
+
+    return '$name - $status';
+  }
+
   Widget _buildSlidablePeerRow(
     PeerInfo peerInfo,
     PeerLocation peerLocation,
@@ -146,19 +153,22 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       actionPane: SlidableDrawerActionPane(),
       actionExtentRatio: 0.20,
       secondaryActions: <Widget>[
-        IconSlideAction(
-          caption: 'Sync',
-          color: Colors.grey.shade400,
-          icon: Icons.sync,
-          onTap: () => viewModel.syncWithPeer(peerInfo, location: peerLocation),
-        ),
-        IconSlideAction(
-          caption: 'Introduction',
-          color: Colors.yellow.shade200,
-          icon: Icons.settings_ethernet,
-          onTap: () =>
-              viewModel.sendIntroductionMessageToPeer(peerInfo, peerLocation),
-        ),
+        if (peerInfo.status == Status.active)
+          IconSlideAction(
+            caption: 'Sync',
+            color: Colors.grey.shade400,
+            icon: Icons.sync,
+            onTap: () =>
+                viewModel.syncWithPeer(peerInfo, location: peerLocation),
+          ),
+        if (peerInfo.status == Status.created)
+          IconSlideAction(
+            caption: 'Connect',
+            color: Colors.yellow.shade200,
+            icon: Icons.settings_ethernet,
+            onTap: () =>
+                viewModel.sendIntroductionMessageToPeer(peerInfo, peerLocation),
+          ),
         IconSlideAction(
           caption: 'Delete',
           color: Colors.red.shade400,

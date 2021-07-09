@@ -60,6 +60,7 @@ void main() {
       PeerInfo(
         locations: [PeerLocation('ws://localhost:$port')],
         name: '',
+        status: Status.active,
         publicKeyPem: publicKey,
       ),
       keys.privateKey,

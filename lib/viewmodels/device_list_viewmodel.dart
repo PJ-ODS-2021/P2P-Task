@@ -68,6 +68,7 @@ class DeviceListViewModel with LogMixin {
     final peerInfo = PeerInfo(
       id: values[0],
       name: values[1],
+      status: Status.created,
       locations: [PeerLocation('ws://${values[2]}:${values[3]}')],
       publicKeyPem: values[4],
     );
@@ -100,7 +101,12 @@ class DeviceListViewModel with LogMixin {
   }
 
   void remove(PeerInfo peer) async {
-    await _peerService.sendDeletePeerMessageToPeer(peer);
+    try {
+      await _peerService.sendDeletePeerMessageToPeer(peer);
+    } on FormatException catch (e) {
+      logger.warning('could not send delete peer message - $e');
+    }
+
     await _peerInfoService.remove(peer);
     loadDevices();
   }

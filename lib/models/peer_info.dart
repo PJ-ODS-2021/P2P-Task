@@ -23,17 +23,21 @@ class PeerLocation {
   }
 }
 
+enum Status { created, active }
+
 @JsonSerializable(explicitToJson: true)
 class PeerInfo implements DataModel {
   @override
   String? id;
   String name;
+  Status status;
   List<PeerLocation> locations;
   String publicKeyPem;
 
   PeerInfo({
     String? id,
     required this.name,
+    required this.status,
     required this.publicKeyPem,
     required this.locations,
   })  : assert(locations.isNotEmpty),
@@ -49,10 +53,12 @@ class PeerInfo implements DataModel {
     String? name,
     List<PeerLocation>? locations,
     String? publicKeyPem,
+    Status? status,
   }) =>
       PeerInfo(
         id: id,
         name: name ?? this.name,
+        status: status ?? this.status,
         publicKeyPem: publicKeyPem ?? this.publicKeyPem,
         locations: locations ?? this.locations,
       );
@@ -67,6 +73,7 @@ class PeerInfo implements DataModel {
     };
     addProperty('id', id);
     addProperty('name', name);
+    addProperty('status', status.toString());
     addProperty('public_key_pem', publicKeyPem);
 
     return '[${locations.join(',')}]' +

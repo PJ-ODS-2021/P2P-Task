@@ -105,8 +105,6 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     IntroductionMessage introductionMessage,
     WebSocketClient source,
   ) async {
-    logger.info('Received introduction message');
-
     if (introductionMessage.requestReply) {
       _handleIntroductionMessage(introductionMessage, source);
     } else {
@@ -118,9 +116,12 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     IntroductionMessage introductionMessage,
     WebSocketClient source,
   ) async {
+    logger.info('Received introduction message');
+
     var peerInfo = PeerInfo(
       id: introductionMessage.peerID,
       name: introductionMessage.name,
+      status: Status.active,
       publicKeyPem: introductionMessage.publicKey,
       locations: [
         PeerLocation(
@@ -141,6 +142,8 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   void _handleIntroductionReplyMessage(
     IntroductionMessage introductionMessage,
   ) async {
+    logger.info('Received introduction reply message');
+
     var peerInfo = await _peerInfoService.getByID(introductionMessage.peerID);
     if (peerInfo == null) {
       logger.warning(
@@ -150,7 +153,6 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       return;
     }
 
-    // probably should have pendingPeerService and depending on verify delete or accept.
     if (!keyHelper.rsaVerify(
       peerInfo.publicKeyPem,
       introductionMessage.peerID,
@@ -158,7 +160,8 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     )) {
       logger.warning('Error message is not from claimed peerID');
     } else {
-      logger.info('Received introduction reply message');
+      logger.info('Update peer ${peerInfo.status} to active');
+      await _peerInfoService.upsert(peerInfo..status = Status.active);
     }
   }
 
@@ -184,6 +187,12 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     }
 
     logger.info('Received TaskListMessage from ${peerInfo.id}');
+
+    if (peerInfo.status != Status.active) {
+      logger.warning('Peer is not active - skipping');
+
+      return;
+    }
 
     await _taskListService.mergeCrdtJson(taskListMessage.taskListCrdtJson);
 
@@ -297,7 +306,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       keyHelper.rsaSign(privateKey!, peerID),
       requestReply: true,
     );
-    final peers = await _peerInfoService.devices;
+    final peers = await _peerInfoService.activeDevices;
     await _peer.sendPacketToAllPeers(
       tasksPacket,
       peers,
