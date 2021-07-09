@@ -123,7 +123,8 @@ void main() {
       );
 
       await sendingDevice.peerService.sendDeletePeerMessageToPeer(
-          await receivingDevice.generatePeerInfo());
+        await receivingDevice.generatePeerInfo(),
+      );
 
       expect(
         await receivingDevice.peerInfoService

@@ -66,7 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await peerService.stopServer();
       await databaseService.deleteStore(StoreRefNames.settings.value);
       await syncService.setInterval(await syncService.interval);
-      await identityService.setName(name!);
+      await identityService.setName(name);
       // Used to force a rebuild of the entire settings screen.
       // Otherwise, we would need to invoke the callback notifier
       // of every service that a child widget is dependent on.
