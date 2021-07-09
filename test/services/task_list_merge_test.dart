@@ -45,7 +45,10 @@ void main() {
     );
     expect(
       unorderedListEquality(
-        (await devices[0].taskListService.getTasksFromList('id')).toList(),
+        (await devices[0].taskListService.getTaskListById('id'))
+                ?.elements
+                .toList() ??
+            [],
         {task1, task2},
       ),
       true,

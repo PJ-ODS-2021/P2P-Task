@@ -51,10 +51,6 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
   Future<TaskList?> getTaskListById(String taskListId) async =>
       (await _taskListRecordMap)[taskListId]?.value;
 
-  Future<Iterable<Task>> getTasksFromList(String taskListId) async =>
-      getTaskListById(taskListId)
-          .then((taskList) => taskList != null ? taskList.elements : []);
-
   Future<Iterable<Record<TaskList>>> get _taskListRecords async =>
       (await _taskListRecordMap).values;
 

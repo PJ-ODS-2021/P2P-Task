@@ -30,12 +30,10 @@ void main() {
       (await devices[0].taskListService.getTaskListById('id1'))?.elements,
       [task1],
     );
-    expect(await devices[0].taskListService.getTasksFromList('id1'), [task1]);
     expect(await devices[1].taskListService.allTasks, [task2]);
     expect(
       (await devices[1].taskListService.getTaskListById('id2'))?.elements,
       [task2],
     );
-    expect(await devices[1].taskListService.getTasksFromList('id2'), [task2]);
   });
 }
