@@ -54,13 +54,14 @@ class DeviceSetupScreen extends StatelessWidget {
           Center(
             child: Column(
               children: [
-                if (viewModel.showQrScannerButton)
+                if (viewModel.showQrScannerButton) ...[
                   TextButton.icon(
                     icon: Icon(Icons.qr_code_scanner_rounded),
                     onPressed: () => _showQRScannerScreen(context, viewModel),
                     label: Text('Scan QR code'),
                   ),
-                if (viewModel.showQrScannerButton) Text('or'),
+                  Text('or'),
+                ],
                 TextButton.icon(
                   icon: Icon(Icons.add_rounded),
                   onPressed: () => _showDeviceFormScreen(context),
