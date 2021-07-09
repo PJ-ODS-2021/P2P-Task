@@ -90,7 +90,9 @@ class DeviceSetupScreen extends StatelessWidget {
   }
 
   void _showQRScannerScreen(
-      BuildContext context, DeviceListViewModel viewModel) {
+    BuildContext context,
+    DeviceListViewModel viewModel,
+  ) {
     _navigateTo(
       context,
       () => QrScannerScreen(onQRCodeRead: viewModel.handleQrCodeRead),
