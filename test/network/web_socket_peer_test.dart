@@ -12,8 +12,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/device_task_list.dart';
 
 class FakeSharedPreferences extends Fake implements SharedPreferences {
+  bool value = false;
+
   @override
-  bool? getBool(String key) => false;
+  bool? getBool(String key) => value;
+
+  @override
+  Future<bool> setBool(String key, bool value) async => this.value = value;
 }
 
 class Device {
