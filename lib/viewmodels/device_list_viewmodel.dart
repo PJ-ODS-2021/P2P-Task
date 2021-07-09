@@ -49,8 +49,8 @@ class DeviceListViewModel with LogMixin {
   void addNewPeer(PeerInfo peerInfo) async {
     final storedPeerInfo = await _peerInfoService.upsert(peerInfo);
     sendIntroductionMessageToPeer(
-      storedPeerInfo,
-      storedPeerInfo.locations.first,
+      peerInfo,
+      peerInfo.locations.first,
     );
     loadDevices();
   }
@@ -74,8 +74,8 @@ class DeviceListViewModel with LogMixin {
     );
     final storedPeerInfo = await _peerInfoService.upsert(peerInfo);
     sendIntroductionMessageToPeer(
-      storedPeerInfo,
-      storedPeerInfo.locations.first,
+      peerInfo,
+      peerInfo.locations.first,
     );
     loadDevices();
   }
