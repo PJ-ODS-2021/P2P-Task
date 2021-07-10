@@ -105,10 +105,10 @@ class DeviceListViewModel with LogMixin {
       await _peerService.sendDeletePeerMessageToPeer(peer);
     } on FormatException catch (e) {
       logger.warning('could not send delete peer message - $e');
+    } finally {
+      await _peerInfoService.remove(peer);
+      loadDevices();
     }
-
-    await _peerInfoService.remove(peer);
-    loadDevices();
   }
 
   bool get showQrScannerButton {
