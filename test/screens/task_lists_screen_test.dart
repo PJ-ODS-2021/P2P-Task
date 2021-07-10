@@ -21,6 +21,7 @@ void main() {
   late TaskListService taskListService;
   late SyncService syncService;
   late TaskList taskList;
+  late Widget app;
 
   setUp(() async {
     database = await databaseFactoryMemory.openDatabase('');
@@ -34,6 +35,19 @@ void main() {
       syncService,
     );
     taskList = TaskList(title: 'Test List');
+    app = MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) =>
+              ChangeCallbackNotifier<TaskListService>(taskListService),
+        ),
+      ],
+      child: MaterialApp(
+        home: Scaffold(
+          body: TaskListsScreen(),
+        ),
+      ),
+    );
   });
 
   tearDown(() async {
@@ -42,20 +56,40 @@ void main() {
 
   group('TaskListsScreen without lists', () {
     testWidgets('asks user to add a list', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MultiProvider(
-            providers: [
-              ChangeNotifierProvider(
-                  create: (_) =>
-                      ChangeCallbackNotifier<TaskListService>(taskListService)),
-            ],
-            child: MaterialApp(
-              home: TaskListsScreen(),
-            )),
-      );
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
+
       final callToActionFinder =
-          find.text('Click the plus button below to add a list.');
+      find.text('Click the plus button below to add a list.');
       expect(callToActionFinder, findsOneWidget);
+    });
+  });
+
+  group('TaskListsScreen with lists', () {
+    testWidgets('should have a visible list on screen when one added', (WidgetTester tester) async {
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
+
+      var listTileFinder = find.byType(ListTile);
+      expect(listTileFinder, findsNothing);
+      var listTitleFinder = find.descendant(
+        of: listTileFinder, matching: find.text('Test List'),);
+      expect(listTitleFinder, findsNothing);
+
+      await tester.runAsync(() async {
+        final lists = await taskListService.taskLists;
+        expect(lists, isEmpty);
+        await taskListService.upsertTaskList(taskList);
+      });
+
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
+
+      listTileFinder = find.byType(ListTile);
+      expect(listTileFinder, findsOneWidget);
+      listTitleFinder = find.descendant(
+        of: listTileFinder, matching: find.text('Test List'),);
+      expect(listTitleFinder, findsOneWidget);
     });
   });
 }
