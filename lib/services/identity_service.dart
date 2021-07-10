@@ -24,7 +24,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
       return peerId;
     }
     logger.info('No peer id, creating one...');
-    peerId = await _repository.put(peerIdKey, Uuid().v4(), true);
+    peerId = await _repository.put(peerIdKey, Uuid().v4());
     logger.info('Peer id "$peerId" created and stored.');
     invokeChangeCallback();
 
@@ -35,7 +35,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
       (await _repository.get<String>(peerNameKey)) ?? '';
 
   Future setName(String name) async {
-    final updatedName = await _repository.put(peerNameKey, name, true);
+    final updatedName = await _repository.put(peerNameKey, name);
     invokeChangeCallback();
 
     return updatedName;
@@ -59,8 +59,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<String> setPublicKeyPem(String publicKey) async {
-    final updatedPublicKey =
-        await _repository.put(publicKeyKey, publicKey, true);
+    final updatedPublicKey = await _repository.put(publicKeyKey, publicKey);
     invokeChangeCallback();
 
     return updatedPublicKey;
@@ -85,7 +84,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
 
   Future<String> setPrivateKeyPem(String privateKey) async {
     final updatedPrivateKey =
-        await _repository.put(privateKeyKey, privateKey, false);
+        await _repository.put(privateKeyKey, privateKey, displayValue: false);
     invokeChangeCallback();
 
     return updatedPrivateKey;
@@ -94,7 +93,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
   Future<String?> get ip async => await _repository.get<String>(peerIpKey);
 
   Future setIp(String ip) async {
-    final updatedIp = await _repository.put(peerIpKey, ip, true);
+    final updatedIp = await _repository.put(peerIpKey, ip);
     invokeChangeCallback();
 
     return updatedIp;
@@ -107,7 +106,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
     if (port < 49152 || port > 65535) {
       throw UnsupportedError('Port needs to be in range of 49152 to 65535.');
     }
-    final updatedPort = await _repository.put(peerPortKey, port, true);
+    final updatedPort = await _repository.put(peerPortKey, port);
     invokeChangeCallback();
 
     return updatedPort;

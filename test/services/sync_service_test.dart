@@ -37,8 +37,7 @@ void main() {
         .thenAnswer((_) => Future.value(1));
     when(keyValueRepository.get<bool>(SyncService.syncOnStartKey))
         .thenAnswer((_) => Future.value(false));
-    when(keyValueRepository.put(any, any, true))
-        .thenAnswer((_) => Future.value(0));
+    when(keyValueRepository.put(any, any)).thenAnswer((_) => Future.value(0));
     var ran = false;
 
     fakeAsync((async) {
@@ -58,8 +57,7 @@ void main() {
         .thenAnswer((_) => Future.value(1));
     when(keyValueRepository.get<bool>(SyncService.syncOnStartKey))
         .thenAnswer((_) => Future.value(false));
-    when(keyValueRepository.put(any, any, true))
-        .thenAnswer((_) => Future.value(5));
+    when(keyValueRepository.put(any, any)).thenAnswer((_) => Future.value(5));
     var ran = false;
 
     fakeAsync((async) {
