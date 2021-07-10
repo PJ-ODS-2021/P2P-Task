@@ -8,7 +8,7 @@ void main() {
     final db = await databaseFactoryMemory.openDatabase('');
     final repo = KeyValueRepository(db, StoreRef(''));
 
-    await repo.put('key', 'value');
+    await repo.put('key', 'value', true);
     final value = await repo.get<String>('key');
 
     expect(value, equals('value'));
@@ -17,9 +17,9 @@ void main() {
   test('should purge all entries', () async {
     final db = await databaseFactoryMemory.openDatabase('');
     final repo = KeyValueRepository(db, StoreRef(''));
-    await repo.put('key1', 'value1');
+    await repo.put('key1', 'value1', true);
     var value1 = await repo.get<String>('key1');
-    await repo.put('key2', 'value2');
+    await repo.put('key2', 'value2', true);
     var value2 = await repo.get<String>('key2');
     expect(value1, 'value1');
     expect(value2, 'value2');

@@ -18,7 +18,6 @@ class IdentityListSection extends StatelessWidget {
       content: Text(toCopy),
       actions: [
         TextButton(
-          child: Text('Copy'),
           onPressed: () {
             Clipboard.setData(ClipboardData(text: toCopy)).then((result) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -27,10 +26,11 @@ class IdentityListSection extends StatelessWidget {
               Navigator.pop(context);
             });
           },
+          child: Text('Copy'),
         ),
         TextButton(
-          child: Text('Close'),
           onPressed: () => Navigator.pop(context),
+          child: Text('Close'),
         ),
       ],
     );
