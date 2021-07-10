@@ -17,11 +17,11 @@ class KeyValueRepository with LogMixin {
   }
 
   /// [value] must have a type that is supported by sembast
-  Future<dynamic> put(String key, dynamic value) async {
-    if (key == 'privateKeyKey') {
-      logger.info('Put setting with key "$key"');
-    } else {
+  Future<dynamic> put(String key, dynamic value, bool displayValue) async {
+    if (displayValue) {
       logger.info('Put setting with key "$key" and value "$value"');
+    } else {
+      logger.info('Put setting with key "$key"');
     }
 
     return await _store.record(key).put(_db, value);

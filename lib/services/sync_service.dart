@@ -27,7 +27,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
 
   Future<void> setInterval(int interval) async {
     final updatedInterval =
-        await _settingsRepository.put(syncIntervalKey, interval);
+        await _settingsRepository.put(syncIntervalKey, interval, true);
     await _updateSyncTimer(updatedInterval);
     invokeChangeCallback();
 
@@ -40,7 +40,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
 
   Future<void> setSyncOnStart(bool syncOnStart) async {
     final updatedValue =
-        await _settingsRepository.put(syncOnStartKey, syncOnStart);
+        await _settingsRepository.put(syncOnStartKey, syncOnStart, true);
     invokeChangeCallback();
 
     return updatedValue;
@@ -52,7 +52,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
 
   Future<void> setSyncOnUpdate(bool syncOnUpdate) async {
     final updatedValue =
-        await _settingsRepository.put(syncOnUpdateKey, syncOnUpdate);
+        await _settingsRepository.put(syncOnUpdateKey, syncOnUpdate, true);
     invokeChangeCallback();
 
     return updatedValue;
@@ -66,6 +66,7 @@ class SyncService with LogMixin, ChangeCallbackProvider {
     final updatedValue = await _settingsRepository.put(
       syncAfterDeviceAddedKey,
       syncAfterDeviceAdded,
+      true,
     );
     invokeChangeCallback();
 

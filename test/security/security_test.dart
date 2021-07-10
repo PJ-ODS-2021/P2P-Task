@@ -14,7 +14,7 @@ void main() {
   group('#security', () {
     test('encryption with keys', () {
       var encrypted = keyHelper.encrypt(keyPair.publicKey, message);
-      expect(message != encrypted, true);
+      expect(message, isNot(encrypted));
       var plain = keyHelper.decrypt(keyPair.privateKey, encrypted);
 
       expect(message, equals(plain));
@@ -25,7 +25,7 @@ void main() {
       var privateKeyPem = keyHelper.encodePrivateKeyToPem(keyPair.privateKey);
 
       var encrypted = keyHelper.encryptWithPublicKeyPem(publicKeyPem, message);
-      expect(message != encrypted, true);
+      expect(message, isNot(encrypted));
       var plain = keyHelper.decryptWithPrivateKeyPem(privateKeyPem, encrypted);
 
       expect(message, equals(plain));

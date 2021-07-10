@@ -152,6 +152,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
           valueEncode: (task) => task is _TaskCrdtType ? task.toJson() : task,
         ),
       )),
+      true,
     );
     invokeChangeCallback();
     logger.info('notifying task list change');
