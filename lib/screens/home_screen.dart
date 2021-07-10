@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     _handleEncryptionKeys(identityService);
     identityService.name.then((value) {
-      if (value == '') {
+      if (value.isEmpty) {
         Navigator.pushReplacement(
           context,
           FadeRoute(
@@ -56,14 +56,6 @@ class _HomeScreenState extends State<HomeScreen> {
       var publicKeyPem = keyHelper.encodePublicKeyToPem(pair.publicKey);
       await identityService.setPrivateKeyPem(privatekeyPem);
       await identityService.setPublicKeyPem(publicKeyPem);
-    } else {
-      // print public key for manual adding
-      // new line has to be replaced manually by \r\n
-      // -----BEGIN RSA PUBLIC KEY-----
-      // MIIFog...
-      // -----END RSA PUBLIC KEY-----
-      // => -----BEGIN RSA PUBLIC KEY-----\r\nMIIFog...\r\n-----BEGIN RSA PUBLIC KEY-----
-      print(await identityService.publicKeyPem);
     }
   }
 

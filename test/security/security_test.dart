@@ -17,7 +17,7 @@ void main() {
       expect(message != encrypted, true);
       var plain = keyHelper.decrypt(keyPair.privateKey, encrypted);
 
-      expect(message == plain, true);
+      expect(message, equals(plain));
     });
 
     test('encryption with pem files', () {
@@ -28,7 +28,7 @@ void main() {
       expect(message != encrypted, true);
       var plain = keyHelper.decryptWithPrivateKeyPem(privateKeyPem, encrypted);
 
-      expect(message == plain, true);
+      expect(message, equals(plain));
     });
 
     test('sign and verify message', () {
@@ -43,12 +43,12 @@ void main() {
       var sig = keyHelper.rsaSign(keyPair.privateKey, 'peerID');
 
       var introductionMessage = IntroductionMessage(
-        'peerID',
-        'name',
-        'ip',
-        58241,
-        keyHelper.encodePublicKeyToPem(keyPair.publicKey),
-        sig,
+        peerID: 'peerID',
+        name: 'name',
+        ip: 'ip',
+        port: 58241,
+        publicKeyPem: keyHelper.encodePublicKeyToPem(keyPair.publicKey),
+        signature: sig,
       );
 
       final peer = WebSocketPeer();
@@ -77,7 +77,7 @@ void main() {
         true,
       );
       expect(plainMessage.peerID, introductionMessage.peerID);
-      expect(plainMessage.publicKey, introductionMessage.publicKey);
+      expect(plainMessage.publicKeyPem, introductionMessage.publicKeyPem);
       expect(plainMessage.name, introductionMessage.name);
     });
   });

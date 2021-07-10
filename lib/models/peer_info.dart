@@ -23,6 +23,9 @@ class PeerLocation {
   }
 }
 
+// Status created indicates that the key exchange has started, but not finished yet
+// it might has failed becasue the sever was off.
+// when it was successfull it tunres to active.
 enum Status { created, active }
 
 @JsonSerializable(explicitToJson: true)

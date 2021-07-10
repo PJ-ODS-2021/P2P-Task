@@ -9,7 +9,7 @@ class ServerOptions {
   final int? port;
   final bool echoDebugMessages;
   final RSAPublicKey? publicKeyForDebugMessage;
-  final RSAPrivateKey? privateKey;
+  final RSAPrivateKey privateKey;
 
   const ServerOptions({
     required this.sendPort,

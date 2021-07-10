@@ -72,7 +72,7 @@ void main() {
         .timeout(Duration(seconds: 5), onTimeout: () => null);
     expect(
       message,
-      isNot(equals(null)),
+      isNot(null),
       reason: 'server did not answer within 5s',
     );
     expect(message, equals(messageContent));

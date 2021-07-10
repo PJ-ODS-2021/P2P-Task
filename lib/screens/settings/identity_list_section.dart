@@ -4,9 +4,38 @@ import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/widgets/list_section.dart';
 import 'package:p2p_task/widgets/update_single_value_dialog.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class IdentityListSection extends StatelessWidget {
+  AlertDialog _showCopyOption(
+    String title,
+    String toCopy,
+    BuildContext context,
+  ) {
+    return AlertDialog(
+      title: Text(title),
+      content: Text(toCopy),
+      actions: [
+        TextButton(
+          child: Text('Copy'),
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: toCopy)).then((result) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('Copied to Clipboard'),
+              ));
+              Navigator.pop(context);
+            });
+          },
+        ),
+        TextButton(
+          child: Text('Close'),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final identityService =
@@ -33,6 +62,13 @@ class IdentityListSection extends StatelessWidget {
               leading: Icon(Icons.perm_identity),
               title: Text('Identifier'),
               subtitle: Text(peerId),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) =>
+                      _showCopyOption('Identifier', peerId, context),
+                );
+              },
             );
           },
         ),
@@ -91,13 +127,19 @@ class IdentityListSection extends StatelessWidget {
                 title: Text('Error'),
               );
             }
-            final publicKey = snapshot.data!;
+            final _publicKey = snapshot.data!;
 
             return ListTile(
               tileColor: Colors.white,
               leading: Icon(Icons.vpn_key),
               title: Text('Public key'),
-              subtitle: Text(publicKey),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) =>
+                      _showCopyOption('Public key', _publicKey, context),
+                );
+              },
             );
           },
         ),

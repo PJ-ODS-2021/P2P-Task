@@ -31,28 +31,18 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
   /// Calling this function while it is already running could lead to an error.
   Future<void> startServer(
     int port,
-    RSAPrivateKey? privateKey,
+    RSAPrivateKey privateKey,
   ) async {
     logger.info('Starting initialization of Peer...');
     await _server?.close();
     _server = await WebSocketServer.start(
       port,
-      (client, privateKey) {
+      (client) {
         logger.info('a client connected to the server');
 
-        return _onData;
+        return (client, data) => _handleMessage(client, data, privateKey);
       },
-      privateKey,
     );
-  }
-
-  void _onData(
-    WebSocketClient client,
-    dynamic data,
-    RSAPrivateKey? privateKey,
-  ) {
-    logger.info('Received message from connected peer');
-    _handleMessage(client, data, privateKey);
   }
 
   Future<void> sendPacketToAllPeers<T extends Serializable>(
@@ -169,9 +159,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     return await completer.future;
   }
 
-  WebSocketClient? tryWebSocketClientConnect(
-    Uri uri,
-  ) {
+  WebSocketClient? tryWebSocketClientConnect(Uri uri) {
     try {
       return WebSocketClient.connect(uri);
     } on WebSocketChannelException catch (error, stackTrace) {

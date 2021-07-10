@@ -32,9 +32,7 @@ class PacketHandler<T> {
     }
   }
 
-  void registerCallback<E>(
-    Function(E, T source) callback,
-  ) {
+  void registerCallback<E>(Function(E, T source) callback) {
     final typeInfo = _getTypeInfo(E);
     assert(!_callbacks.containsKey(typeInfo.typename),
         'a callback for this typename already exists');

@@ -45,14 +45,16 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
       await _repository.get<String>(publicKeyKey) ?? '';
 
   Future<RSAPublicKey?> get publicKey async {
-    if (await publicKeyPem == '') {
+    final _publicKeyPem = await publicKeyPem;
+
+    if (_publicKeyPem == '') {
       return null;
     }
 
     try {
-      return KeyHelper().decodePublicKeyFromPem(await publicKeyPem);
+      return KeyHelper().decodePublicKeyFromPem(_publicKeyPem);
     } on Exception catch (error) {
-      logger.severe('could not parse privateKey $error');
+      logger.severe('could not parse publicKeyPem $error');
     }
   }
 
@@ -67,12 +69,14 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
       await _repository.get<String>(privateKeyKey) ?? '';
 
   Future<RSAPrivateKey?> get privateKey async {
-    if (await privateKeyPem == '') {
+    final _privateKeyPem = await privateKeyPem;
+
+    if (_privateKeyPem == '') {
       return null;
     }
 
     try {
-      return KeyHelper().decodePrivateKeyFromPem(await privateKeyPem);
+      return KeyHelper().decodePrivateKeyFromPem(_privateKeyPem);
     } on Exception catch (error) {
       logger.severe('could not parse privateKey $error');
     }

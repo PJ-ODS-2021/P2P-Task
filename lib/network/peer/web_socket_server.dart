@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:p2p_task/network/peer/web_socket_client.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:shelf/shelf_io.dart';
-import 'package:pointycastle/export.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -17,12 +16,8 @@ class WebSocketServer with LogMixin {
 
   static Future<WebSocketServer> start(
     int port,
-    Function(WebSocketClient, dynamic, RSAPrivateKey?)? Function(
-      WebSocketClient,
-      RSAPrivateKey?,
-    )
+    Function(WebSocketClient, dynamic)? Function(WebSocketClient)
         createOnDataCallback,
-    RSAPrivateKey? privateKey,
   ) async {
     final server = WebSocketServer._empty();
     server.logger.info('Starting server on port $port...');
@@ -30,13 +25,9 @@ class WebSocketServer with LogMixin {
       webSocketHandler((WebSocketChannel channel) {
         server._connectedClients.add(channel);
         final channelClient = WebSocketClient.fromChannel(channel);
-        final onDataCallback = createOnDataCallback(channelClient, privateKey);
+        final onDataCallback = createOnDataCallback(channelClient);
         if (onDataCallback != null) {
-          channel.stream.listen((data) => onDataCallback(
-                channelClient,
-                data,
-                privateKey,
-              ));
+          channel.stream.listen((data) => onDataCallback(channelClient, data));
         }
       }),
       InternetAddress.anyIPv4,

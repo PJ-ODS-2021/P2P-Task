@@ -21,7 +21,7 @@ class DatabaseSection extends StatelessWidget {
 
     return FutureBuilder<int>(
       initialData: -1,
-      future: taskListService.countLists(),
+      future: taskListService.count(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(

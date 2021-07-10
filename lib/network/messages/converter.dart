@@ -5,16 +5,9 @@ class Uint8ListConverter implements JsonConverter<Uint8List, List<dynamic>> {
   const Uint8ListConverter();
 
   @override
-  Uint8List fromJson(List<dynamic> jsonDyn) {
-    var json = jsonDyn.cast<int>();
-
-    return Uint8List.fromList(
-      json,
-    );
-  }
+  Uint8List fromJson(List<dynamic> jsonDyn) =>
+      Uint8List.fromList(jsonDyn.cast<int>());
 
   @override
-  List<int> toJson(Uint8List object) {
-    return object.toList();
-  }
+  List<int> toJson(Uint8List object) => object.toList();
 }

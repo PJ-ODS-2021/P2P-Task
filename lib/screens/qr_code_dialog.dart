@@ -36,12 +36,12 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
             final storedIp = snapshot.data![1] as String?;
             final ips = networkInfoService.ips;
             final connectionInfo = _ConnectionInfo(
-              _selectIp(ips, storedIp),
-              ips,
-              snapshot.data![2] as int,
-              snapshot.data![0] as String,
-              snapshot.data![3] as String,
-              snapshot.data![4] as String,
+              selectedIp: _selectIp(ips, storedIp),
+              ips: ips,
+              port: snapshot.data![2] as int,
+              deviceName: snapshot.data![0] as String,
+              peerID: snapshot.data![3] as String,
+              publicKeyPem: snapshot.data![4] as String,
             );
             if (connectionInfo.selectedIp != null &&
                 connectionInfo.selectedIp != storedIp) {
@@ -182,7 +182,7 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
                 connectionInfo.deviceName,
                 connectionInfo.selectedIp!,
                 connectionInfo.port,
-                connectionInfo.publicKey,
+                connectionInfo.publicKeyPem,
                 connectionInfo.peerID,
               ),
               version: QrVersions.auto,
@@ -226,14 +226,14 @@ class _ConnectionInfo {
   final int port;
   final String deviceName;
   final String peerID;
-  final String publicKey;
+  final String publicKeyPem;
 
-  const _ConnectionInfo(
-    this.selectedIp,
-    this.ips,
-    this.port,
-    this.deviceName,
-    this.peerID,
-    this.publicKey,
-  );
+  const _ConnectionInfo({
+    required this.selectedIp,
+    required this.ips,
+    required this.port,
+    required this.deviceName,
+    required this.peerID,
+    required this.publicKeyPem,
+  });
 }

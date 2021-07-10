@@ -122,7 +122,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       id: introductionMessage.peerID,
       name: introductionMessage.name,
       status: Status.active,
-      publicKeyPem: introductionMessage.publicKey,
+      publicKeyPem: introductionMessage.publicKeyPem,
       locations: [
         PeerLocation(
           'ws://${introductionMessage.ip}:${introductionMessage.port}',
@@ -222,7 +222,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   Future<void> startServer() async {
     final port = await _identityService.port;
     final privateKey = await _identityService.privateKey;
-    await _peer.startServer(port, privateKey);
+    await _peer.startServer(port, privateKey!);
     invokeChangeCallback();
   }
 
@@ -284,12 +284,12 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     var privateKey = await _identityService.privateKey;
 
     return IntroductionMessage(
-      peerID,
-      name,
-      ip,
-      port,
-      publicKeyPem,
-      keyHelper.rsaSign(privateKey!, peerID),
+      peerID: peerID,
+      name: name,
+      ip: ip,
+      port: port,
+      publicKeyPem: publicKeyPem,
+      signature: keyHelper.rsaSign(privateKey!, peerID),
       requestReply: requestReply,
     );
   }

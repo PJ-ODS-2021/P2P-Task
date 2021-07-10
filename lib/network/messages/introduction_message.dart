@@ -11,19 +11,19 @@ class IntroductionMessage extends Serializable {
   String name;
   String ip;
   int port;
-  String publicKey;
+  String publicKeyPem;
   bool requestReply;
 
   @Uint8ListConverter()
   Uint8List signature;
 
-  IntroductionMessage(
-    this.peerID,
-    this.name,
-    this.ip,
-    this.port,
-    this.publicKey,
-    this.signature, {
+  IntroductionMessage({
+    required this.peerID,
+    required this.name,
+    required this.ip,
+    required this.port,
+    required this.publicKeyPem,
+    required this.signature,
     this.requestReply = false,
   });
 

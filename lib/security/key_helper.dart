@@ -6,6 +6,8 @@ import 'package:asn1lib/asn1lib.dart';
 import 'package:encrypt/encrypt.dart' as encrypt_pem;
 
 class KeyHelper {
+  final algorithmIdentifier = '0609608648016503040201';
+
   pc.AsymmetricKeyPair<pc.RSAPublicKey, pc.RSAPrivateKey> generateRSAkeyPair({
     int bitLength = 2048,
   }) {
@@ -97,7 +99,7 @@ class KeyHelper {
         pc.PublicKeyParameter<pc.RSAPublicKey>(myPublic),
       );
 
-    var blocks = _processInBlocks(
+    final blocks = _processInBlocks(
       encryptor,
       Uint8List.fromList(
         utf8.encode(dataToEncrypt),
@@ -108,7 +110,7 @@ class KeyHelper {
   }
 
   Uint8List rsaSign(pc.RSAPrivateKey privateKey, String dataToSign) {
-    final signer = pc.RSASigner(pc.SHA256Digest(), '0609608648016503040201');
+    final signer = pc.RSASigner(pc.SHA256Digest(), algorithmIdentifier);
 
     signer.init(true, pc.PrivateKeyParameter<pc.RSAPrivateKey>(privateKey));
 
@@ -120,16 +122,16 @@ class KeyHelper {
   }
 
   bool rsaVerify(String publicKeyPem, String signedData, Uint8List signature) {
-    var publicKey = decodePublicKeyFromPem(publicKeyPem);
+    final publicKey = decodePublicKeyFromPem(publicKeyPem);
 
     final sig = pc.RSASignature(signature);
 
-    final verifier = pc.RSASigner(pc.SHA256Digest(), '0609608648016503040201');
+    final verifier = pc.RSASigner(pc.SHA256Digest(), algorithmIdentifier);
 
     verifier.init(
       false,
       pc.PublicKeyParameter<pc.RSAPublicKey>(publicKey),
-    ); // false=verify
+    );
 
     try {
       return verifier.verifySignature(
@@ -162,8 +164,8 @@ class KeyHelper {
 
   pc.RSAPrivateKey decodePrivateKeyFromPem(String priavateKeyPem) {
     try {
-      var key = encrypt_pem.RSAKeyParser()
-          .parse(priavateKeyPem.replaceAll('\\r\\n', '\n')) as pc.RSAPrivateKey;
+      final key = encrypt_pem.RSAKeyParser().parse(_sanitizePem(priavateKeyPem))
+          as pc.RSAPrivateKey;
 
       return key;
     } on FormatException {
@@ -172,15 +174,19 @@ class KeyHelper {
     }
   }
 
+  String _sanitizePem(String pem) {
+    return pem.replaceAll('\\r\\n', '\n');
+  }
+
   pc.RSAPublicKey decodePublicKeyFromPem(String publicKeyPem) {
     try {
-      var key = encrypt_pem.RSAKeyParser()
-          .parse(publicKeyPem.replaceAll('\\r\\n', '\n')) as pc.RSAPublicKey;
+      final key = encrypt_pem.RSAKeyParser().parse(_sanitizePem(publicKeyPem))
+          as pc.RSAPublicKey;
 
       return key;
     } on FormatException {
       try {
-        var key =
+        final key =
             encrypt_pem.RSAKeyParser().parse(publicKeyPem) as pc.RSAPublicKey;
         ;
 
@@ -192,20 +198,14 @@ class KeyHelper {
     }
   }
 
-  String encryptWithPublicKeyPem(String publicKeyPem, String message) {
-    var publicKey = decodePublicKeyFromPem(publicKeyPem);
+  String encryptWithPublicKeyPem(String publicKeyPem, String message) =>
+      encrypt(decodePublicKeyFromPem(publicKeyPem), message);
 
-    return encrypt(publicKey, message);
-  }
-
-  String decryptWithPrivateKeyPem(String privateKeyPem, String message) {
-    var privateKey = decodePrivateKeyFromPem(privateKeyPem);
-
-    return decrypt(privateKey, message);
-  }
+  String decryptWithPrivateKeyPem(String privateKeyPem, String message) =>
+      decrypt(decodePrivateKeyFromPem(privateKeyPem), message);
 
   String encodePublicKeyToPem(pc.RSAPublicKey publicKey) {
-    var topLevel = ASN1Sequence();
+    final topLevel = ASN1Sequence();
 
     topLevel.add(
       ASN1Integer(publicKey.modulus!),
@@ -214,26 +214,30 @@ class KeyHelper {
       ASN1Integer(publicKey.exponent!),
     );
 
-    var dataBase64 = base64.encode(topLevel.encodedBytes);
+    final dataBase64 = base64.encode(topLevel.encodedBytes);
 
-    return '-----BEGIN RSA PUBLIC KEY-----\r\n$dataBase64\r\n-----END RSA PUBLIC KEY-----';
+    return _wrapKey(dataBase64, 'PUBLIC');
+  }
+
+  String _wrapKey(String data, String type) {
+    return '-----BEGIN RSA $type KEY-----\r\n$data\r\n-----END RSA $type KEY-----';
   }
 
   String encodePrivateKeyToPem(pc.RSAPrivateKey privateKey) {
-    var topLevel = ASN1Sequence();
+    final topLevel = ASN1Sequence();
 
-    var version = ASN1Integer(BigInt.from(0));
-    var modulus = ASN1Integer(privateKey.n!);
-    var publicExponent = ASN1Integer(privateKey.exponent!);
-    var privateExponent = ASN1Integer(privateKey.privateExponent!);
-    var p = ASN1Integer(privateKey.p!);
-    var q = ASN1Integer(privateKey.q!);
-    var dP = privateKey.privateExponent! % (privateKey.p! - BigInt.from(1));
-    var exp1 = ASN1Integer(dP);
-    var dQ = privateKey.privateExponent! % (privateKey.q! - BigInt.from(1));
-    var exp2 = ASN1Integer(dQ);
-    var iQ = privateKey.q!.modInverse(privateKey.p!);
-    var co = ASN1Integer(iQ);
+    final version = ASN1Integer(BigInt.from(0));
+    final modulus = ASN1Integer(privateKey.n!);
+    final publicExponent = ASN1Integer(privateKey.exponent!);
+    final privateExponent = ASN1Integer(privateKey.privateExponent!);
+    final p = ASN1Integer(privateKey.p!);
+    final q = ASN1Integer(privateKey.q!);
+    final dP = privateKey.privateExponent! % (privateKey.p! - BigInt.from(1));
+    final exp1 = ASN1Integer(dP);
+    final dQ = privateKey.privateExponent! % (privateKey.q! - BigInt.from(1));
+    final exp2 = ASN1Integer(dQ);
+    final iQ = privateKey.q!.modInverse(privateKey.p!);
+    final co = ASN1Integer(iQ);
 
     topLevel.add(version);
     topLevel.add(modulus);
@@ -245,8 +249,8 @@ class KeyHelper {
     topLevel.add(exp2);
     topLevel.add(co);
 
-    var dataBase64 = base64.encode(topLevel.encodedBytes);
+    final dataBase64 = base64.encode(topLevel.encodedBytes);
 
-    return '-----BEGIN RSA PRIVATE KEY-----\r\n$dataBase64\r\n-----END RSA PRIVATE KEY-----';
+    return _wrapKey(dataBase64, 'PRIVATE');
   }
 }

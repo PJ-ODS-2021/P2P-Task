@@ -88,6 +88,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                 ),
                 TextFormField(
                   focusNode: _publicKeyFocusNode,
+                  maxLines: null,
                   decoration: InputDecoration(
                     hintText: 'Public Key',
                     filled: true,
