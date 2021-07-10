@@ -91,7 +91,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       deletePeerMessage.signature,
     )) {
       logger
-          .warning('Cannot verify signaure of delete peer message - skipping');
+          .warning('Cannot verify signature of delete peer message - skipping');
 
       return;
     }

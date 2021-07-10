@@ -46,10 +46,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
 
   Future<RSAPublicKey?> get publicKey async {
     final _publicKeyPem = await publicKeyPem;
-
-    if (_publicKeyPem == '') {
-      return null;
-    }
+    if (_publicKeyPem.isEmpty) return null;
 
     try {
       return KeyHelper().decodePublicKeyFromPem(_publicKeyPem);
@@ -70,10 +67,7 @@ class IdentityService with LogMixin, ChangeCallbackProvider {
 
   Future<RSAPrivateKey?> get privateKey async {
     final _privateKeyPem = await privateKeyPem;
-
-    if (_privateKeyPem == '') {
-      return null;
-    }
+    if (_privateKeyPem.isEmpty) return null;
 
     try {
       return KeyHelper().decodePrivateKeyFromPem(_privateKeyPem);

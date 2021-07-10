@@ -49,9 +49,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _handleEncryptionKeys(IdentityService identityService) async {
-    if (await identityService.publicKeyPem == '') {
+    if ((await identityService.publicKeyPem).isEmpty) {
       var keyHelper = KeyHelper();
-      var pair = keyHelper.generateRSAkeyPair();
+      var pair = keyHelper.generateRSAKeyPair();
       var privatekeyPem = keyHelper.encodePrivateKeyToPem(pair.privateKey);
       var publicKeyPem = keyHelper.encodePublicKeyToPem(pair.publicKey);
       await identityService.setPrivateKeyPem(privatekeyPem);

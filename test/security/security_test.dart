@@ -8,7 +8,7 @@ import 'package:p2p_task/network/web_socket_peer.dart';
 
 void main() {
   var keyHelper = KeyHelper();
-  var keyPair = keyHelper.generateRSAkeyPair();
+  var keyPair = keyHelper.generateRSAKeyPair();
   var message = 'Really private stuff';
 
   group('#security', () {
@@ -16,8 +16,7 @@ void main() {
       var encrypted = keyHelper.encrypt(keyPair.publicKey, message);
       expect(message, isNot(encrypted));
       var plain = keyHelper.decrypt(keyPair.privateKey, encrypted);
-
-      expect(message, equals(plain));
+      expect(message, plain);
     });
 
     test('encryption with pem files', () {
@@ -27,22 +26,19 @@ void main() {
       var encrypted = keyHelper.encryptWithPublicKeyPem(publicKeyPem, message);
       expect(message, isNot(encrypted));
       var plain = keyHelper.decryptWithPrivateKeyPem(privateKeyPem, encrypted);
-
-      expect(message, equals(plain));
+      expect(message, plain);
     });
 
     test('sign and verify message', () {
-      var publicKeyPem = keyHelper.encodePublicKeyToPem(keyPair.publicKey);
-      var signature = keyHelper.rsaSign(keyPair.privateKey, message);
+      final publicKeyPem = keyHelper.encodePublicKeyToPem(keyPair.publicKey);
+      final signature = keyHelper.rsaSign(keyPair.privateKey, message);
       expect(keyHelper.rsaVerify(publicKeyPem, message, signature), true);
     });
 
-    test('check signature of decrpyted message', () {
-      var publicKeyPem = keyHelper.encodePublicKeyToPem(keyPair.publicKey);
-
-      var sig = keyHelper.rsaSign(keyPair.privateKey, 'peerID');
-
-      var introductionMessage = IntroductionMessage(
+    test('check signature of decrypted message', () {
+      final publicKeyPem = keyHelper.encodePublicKeyToPem(keyPair.publicKey);
+      final sig = keyHelper.rsaSign(keyPair.privateKey, 'peerID');
+      final introductionMessage = IntroductionMessage(
         peerID: 'peerID',
         name: 'name',
         ip: 'ip',
@@ -52,21 +48,17 @@ void main() {
       );
 
       final peer = WebSocketPeer();
-
       peer.registerTypename<IntroductionMessage>(
         'IntroductionMessage',
         (json) => IntroductionMessage.fromJson(json),
       );
 
-      var packet = peer.marshallPacket(introductionMessage);
-      var encrypted = keyHelper.encryptWithPublicKeyPem(publicKeyPem, packet);
-
-      expect(encrypted != packet, true);
-
-      var decrypted = keyHelper.decrypt(keyPair.privateKey, encrypted);
-      var decryptedPacket = Packet.fromJson(jsonDecode(decrypted));
-
-      var plainMessage = IntroductionMessage.fromJson(decryptedPacket.object);
+      final packet = peer.marshallPacket(introductionMessage);
+      final encrypted = keyHelper.encryptWithPublicKeyPem(publicKeyPem, packet);
+      expect(encrypted, isNot(packet));
+      final decrypted = keyHelper.decrypt(keyPair.privateKey, encrypted);
+      final decryptedPacket = Packet.fromJson(jsonDecode(decrypted));
+      final plainMessage = IntroductionMessage.fromJson(decryptedPacket.object);
 
       expect(
         keyHelper.rsaVerify(

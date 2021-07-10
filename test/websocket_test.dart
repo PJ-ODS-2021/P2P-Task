@@ -23,7 +23,7 @@ void main() {
     await webSocket.close();
     final value = await completer.future;
 
-    expect(value, equals('Hello, world!'));
+    expect(value, 'Hello, world!');
   });
 
   test('connects to a custom-made WebSocketPeer', () async {
@@ -31,7 +31,7 @@ void main() {
     var receivePort = ReceivePort();
 
     final keyHelper = KeyHelper();
-    final keys = keyHelper.generateRSAkeyPair();
+    final keys = keyHelper.generateRSAKeyPair();
     final publicKey = keyHelper.encodePublicKeyToPem(keys.publicKey);
     await Isolate.spawn(
       startServer,

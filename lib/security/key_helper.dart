@@ -1,20 +1,20 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:pointycastle/export.dart' as pc;
 import 'package:asn1lib/asn1lib.dart';
 import 'package:encrypt/encrypt.dart' as encrypt_pem;
 
-class KeyHelper {
-  final algorithmIdentifier = '0609608648016503040201';
+class KeyHelper with LogMixin {
+  static const _algorithmIdentifier = '0609608648016503040201';
 
-  pc.AsymmetricKeyPair<pc.RSAPublicKey, pc.RSAPrivateKey> generateRSAkeyPair({
+  pc.AsymmetricKeyPair<pc.RSAPublicKey, pc.RSAPrivateKey> generateRSAKeyPair({
     int bitLength = 2048,
   }) {
     // higher value of bitLength will lower the performance
 
     final keyGen = pc.KeyGenerator('RSA');
-
     keyGen.init(
       pc.ParametersWithRandom(
         pc.RSAKeyGeneratorParameters(BigInt.parse('65537'), bitLength, 64),
@@ -22,7 +22,12 @@ class KeyHelper {
       ),
     );
 
+    logger.info('Generating key pair');
+    final start = DateTime.now();
     final pair = keyGen.generateKeyPair();
+    final end = DateTime.now();
+    logger.info('Generating key pair (took ${end.difference(start)})');
+
     final myPublic = pair.publicKey as pc.RSAPublicKey;
     final myPrivate = pair.privateKey as pc.RSAPrivateKey;
 
@@ -110,7 +115,7 @@ class KeyHelper {
   }
 
   Uint8List rsaSign(pc.RSAPrivateKey privateKey, String dataToSign) {
-    final signer = pc.RSASigner(pc.SHA256Digest(), algorithmIdentifier);
+    final signer = pc.RSASigner(pc.SHA256Digest(), _algorithmIdentifier);
 
     signer.init(true, pc.PrivateKeyParameter<pc.RSAPrivateKey>(privateKey));
 
@@ -126,7 +131,7 @@ class KeyHelper {
 
     final sig = pc.RSASignature(signature);
 
-    final verifier = pc.RSASigner(pc.SHA256Digest(), algorithmIdentifier);
+    final verifier = pc.RSASigner(pc.SHA256Digest(), _algorithmIdentifier);
 
     verifier.init(
       false,
@@ -162,14 +167,14 @@ class KeyHelper {
     return secureRandom;
   }
 
-  pc.RSAPrivateKey decodePrivateKeyFromPem(String priavateKeyPem) {
+  pc.RSAPrivateKey decodePrivateKeyFromPem(String privateKeyPem) {
     try {
-      final key = encrypt_pem.RSAKeyParser().parse(_sanitizePem(priavateKeyPem))
+      final key = encrypt_pem.RSAKeyParser().parse(_sanitizePem(privateKeyPem))
           as pc.RSAPrivateKey;
 
       return key;
     } on FormatException {
-      return encrypt_pem.RSAKeyParser().parse(priavateKeyPem)
+      return encrypt_pem.RSAKeyParser().parse(privateKeyPem)
           as pc.RSAPrivateKey;
     }
   }

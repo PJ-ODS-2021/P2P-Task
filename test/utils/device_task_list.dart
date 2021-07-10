@@ -42,7 +42,7 @@ class DeviceTaskList {
 
   static Future<void> _createKeys(IdentityService identityService) async {
     final keyHelper = KeyHelper();
-    final keys = keyHelper.generateRSAkeyPair();
+    final keys = keyHelper.generateRSAKeyPair();
     final privateKey = keyHelper.encodePrivateKeyToPem(keys.privateKey);
     final publicKey = keyHelper.encodePublicKeyToPem(keys.publicKey);
     await identityService.setPrivateKeyPem(privateKey);
