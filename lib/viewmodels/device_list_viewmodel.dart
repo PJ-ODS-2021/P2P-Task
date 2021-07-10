@@ -36,6 +36,7 @@ class DeviceListViewModel with LogMixin {
 
   DeviceListViewModel(this._peerInfoService, this._peerService) {
     loadDevices();
+    _peerInfoService.addChangeCallback(loadDevices);
   }
 
   void loadDevices() {
@@ -126,6 +127,7 @@ class DeviceListViewModel with LogMixin {
   }
 
   void dispose() {
+    _peerInfoService.removeChangeCallback(loadDevices);
     peerInfos.dispose();
   }
 }
