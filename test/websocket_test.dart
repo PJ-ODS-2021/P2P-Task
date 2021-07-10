@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/network/messages/debug_message.dart';
 import 'package:p2p_task/network/web_socket_peer.dart';
+import 'package:p2p_task/security/key_helper.dart';
 
 import 'websocket_server_custom.dart';
 
@@ -22,16 +23,24 @@ void main() {
     await webSocket.close();
     final value = await completer.future;
 
-    expect(value, equals('Hello, world!'));
+    expect(value, 'Hello, world!');
   });
 
   test('connects to a custom-made WebSocketPeer', () async {
     const messageContent = 'hello from the server';
     var receivePort = ReceivePort();
 
+    final keyHelper = KeyHelper();
+    final keys = keyHelper.generateRSAKeyPair();
+    final publicKey = keyHelper.encodePublicKeyToPem(keys.publicKey);
     await Isolate.spawn(
       startServer,
-      ServerOptions(sendPort: receivePort.sendPort, echoDebugMessages: true),
+      ServerOptions(
+        sendPort: receivePort.sendPort,
+        echoDebugMessages: true,
+        privateKey: keys.privateKey,
+        publicKeyForDebugMessage: keys.publicKey,
+      ),
     );
     var serverPortCompleter = Completer<int>();
     receivePort
@@ -48,18 +57,24 @@ void main() {
       (msg, source) => serverDebugMessageCompleter.complete(msg.value),
     );
     final sendSucceeded = await client.sendPacketToPeer(
-      PeerInfo()..locations.add(PeerLocation('ws://localhost:$port')),
+      PeerInfo(
+        locations: [PeerLocation('ws://localhost:$port')],
+        name: '',
+        status: Status.active,
+        publicKeyPem: publicKey,
+      ),
+      keys.privateKey,
       DebugMessage(messageContent),
     );
+
     expect(sendSucceeded, true);
     final message = await serverDebugMessageCompleter.future
         .timeout(Duration(seconds: 5), onTimeout: () => null);
     expect(
       message,
-      isNot(equals(null)),
+      isNot(null),
       reason: 'server did not answer within 5s',
     );
-
     expect(message, equals(messageContent));
   });
 }

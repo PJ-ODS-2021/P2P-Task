@@ -20,6 +20,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   @override
   Widget build(BuildContext context) {
     final viewModel = Provider.of<DeviceListViewModel>(context, listen: false);
+    viewModel.loadDevices();
 
     return Stack(
       alignment: const Alignment(0, 0.9),
@@ -123,7 +124,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     return Column(
       children: devices.map((peerInfo) {
         return ListSection(
-          title: peerInfo.name.isNotEmpty ? peerInfo.name : peerInfo.id,
+          title: _getDeviceName(peerInfo),
           children: peerInfo.locations.map((peerLocation) {
             return _buildSlidablePeerRow(
               peerInfo,
@@ -136,6 +137,13 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     );
   }
 
+  String _getDeviceName(PeerInfo peerInfo) {
+    var status = peerInfo.status.toString().replaceAll('Status.', '');
+    var name = peerInfo.name.isNotEmpty ? peerInfo.name : peerInfo.id;
+
+    return '$name - $status';
+  }
+
   Widget _buildSlidablePeerRow(
     PeerInfo peerInfo,
     PeerLocation peerLocation,
@@ -145,12 +153,22 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       actionPane: SlidableDrawerActionPane(),
       actionExtentRatio: 0.20,
       secondaryActions: <Widget>[
-        IconSlideAction(
-          caption: 'Sync',
-          color: Colors.grey.shade400,
-          icon: Icons.sync,
-          onTap: () => viewModel.syncWithPeer(peerInfo, location: peerLocation),
-        ),
+        if (peerInfo.status == Status.active)
+          IconSlideAction(
+            caption: 'Sync',
+            color: Colors.grey.shade400,
+            icon: Icons.sync,
+            onTap: () =>
+                viewModel.syncWithPeer(peerInfo, location: peerLocation),
+          ),
+        if (peerInfo.status == Status.created)
+          IconSlideAction(
+            caption: 'Connect',
+            color: Colors.yellow.shade200,
+            icon: Icons.settings_ethernet,
+            onTap: () =>
+                viewModel.sendIntroductionMessageToPeer(peerInfo, peerLocation),
+          ),
         IconSlideAction(
           caption: 'Delete',
           color: Colors.red.shade400,
@@ -158,7 +176,10 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           onTap: () => viewModel.remove(peerInfo),
         ),
       ],
-      child: _buildPeerLocationEntry(_listTileTitle(peerLocation)),
+      child: _buildPeerLocationEntry(
+        _listTileTitle(peerLocation),
+        'ID: ${peerInfo.id!}',
+      ),
     );
   }
 
@@ -167,11 +188,12 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           ? peerLocation.uriStr
           : '${peerLocation.uriStr} in ${peerLocation.networkName}';
 
-  Widget _buildPeerLocationEntry(String title) {
+  Widget _buildPeerLocationEntry(String location, String peerID) {
     return ListTile(
       tileColor: Colors.white,
       leading: Icon(Icons.send_to_mobile),
-      title: Text(title),
+      title: Text(location),
+      subtitle: Text(peerID),
       trailing: Icon(Icons.keyboard_arrow_left),
     );
   }

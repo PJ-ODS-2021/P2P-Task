@@ -4,6 +4,8 @@ import 'package:p2p_task/viewmodels/device_list_viewmodel.dart';
 import 'package:provider/provider.dart';
 
 class DeviceFormScreen extends StatefulWidget {
+  DeviceFormScreen();
+
   @override
   _DeviceFormScreenState createState() => _DeviceFormScreenState();
 }
@@ -11,10 +13,14 @@ class DeviceFormScreen extends StatefulWidget {
 class _DeviceFormScreenState extends State<DeviceFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController(text: '');
+  final _idController = TextEditingController(text: '');
   final _ipController = TextEditingController(text: '');
+  final _publicKeyController = TextEditingController(text: '');
   final _portController = TextEditingController(text: '');
   final _nameFocusNode = FocusNode();
+  final _idFocusNode = FocusNode();
   final _ipFocusNode = FocusNode();
+  final _publicKeyFocusNode = FocusNode();
   final _portFocusNode = FocusNode();
 
   @override
@@ -51,6 +57,54 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                   onFieldSubmitted: (value) {
                     if (value.isNotEmpty) _ipFocusNode.requestFocus();
                     _nameFocusNode.requestFocus();
+                  },
+                ),
+                SizedBox(
+                  height: 15,
+                ),
+                TextFormField(
+                  autofocus: true,
+                  focusNode: _idFocusNode,
+                  decoration: InputDecoration(
+                    hintText: 'ID',
+                    filled: true,
+                    fillColor: Colors.purple[50],
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                  ),
+                  controller: _idController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Give the device an id.';
+                    }
+
+                    return null;
+                  },
+                  onFieldSubmitted: (value) {
+                    _idFocusNode.requestFocus();
+                  },
+                ),
+                SizedBox(
+                  height: 15,
+                ),
+                TextFormField(
+                  focusNode: _publicKeyFocusNode,
+                  maxLines: null,
+                  decoration: InputDecoration(
+                    hintText: 'Public Key',
+                    filled: true,
+                    fillColor: Colors.purple[50],
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                  ),
+                  controller: _publicKeyController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'The publicKey address is missing.';
+                    }
+
+                    return null;
+                  },
+                  onFieldSubmitted: (value) {
+                    _publicKeyFocusNode.requestFocus();
                   },
                 ),
                 SizedBox(
@@ -102,7 +156,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                   },
                   onFieldSubmitted: (value) {
                     if (value.isNotEmpty && _formKey.currentState!.validate()) {
-                      _onSubmit();
+                      _handleSubmit();
                     }
                     _portFocusNode.requestFocus();
                   },
@@ -117,7 +171,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                         onPressed: () {
                           _formKey.currentState?.save();
                           if (_formKey.currentState!.validate()) {
-                            _onSubmit();
+                            _handleSubmit();
                           }
                         },
                         child: Text(
@@ -150,13 +204,21 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
     );
   }
 
-  void _onSubmit() {
-    final peerInfo = PeerInfo()
-      ..name = _nameController.text
-      ..locations.add(
-        PeerLocation('ws://${_ipController.text}:${_portController.text}'),
-      );
-    Provider.of<DeviceListViewModel>(context, listen: false).upsert(peerInfo);
+  void _handleSubmit() async {
+    var location =
+        PeerLocation('ws://${_ipController.text}:${_portController.text}');
+
+    final peerInfo = PeerInfo(
+      name: _nameController.text,
+      status: Status.created,
+      publicKeyPem: _publicKeyController.text,
+      id: _idController.text,
+      locations: [location],
+    );
+
+    var viewModel = Provider.of<DeviceListViewModel>(context, listen: false);
+    viewModel.addNewPeer(peerInfo);
+
     Navigator.of(context).pop();
   }
 }
