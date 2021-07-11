@@ -125,16 +125,17 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     final connection = tryWebSocketClientConnect(location.uri);
     if (connection == null) return false;
     final completer = Completer<bool>();
+    var success = false;
     connection.dataStream.listen(
       (data) async {
         logger.info('Received message from server:');
-        _handleMessage(connection, data, privateKey);
+        success = _handleMessage(connection, data, privateKey);
 
         // for now just always close after having received a message
         unawaited(connection.close());
       },
       onError: (error, stackTrace) {
-        completer.complete(false);
+        if (completer.isCompleted) completer.complete(false);
         logger.severe(
           'Error listening on websocket data stream to $location',
           error,
@@ -142,7 +143,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
         );
       },
       onDone: () {
-        if (!completer.isCompleted) completer.complete(true);
+        if (!completer.isCompleted) completer.complete(success);
       },
     );
     connection.send(payload);
@@ -194,7 +195,8 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     client.send(payload);
   }
 
-  void _handleMessage(
+  /// Return true to signal success
+  bool _handleMessage(
     WebSocketClient source,
     String message,
     RSAPrivateKey? privateKey,
@@ -204,7 +206,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     if (privateKey == null) {
       logger.warning('Cannot handle message - missing private key.');
 
-      return;
+      return false;
     }
 
     var payload = '';
@@ -216,7 +218,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
         'Could not handle message - could not decrypt received message: $e.',
       );
 
-      return;
+      return false;
     }
 
     try {
@@ -224,10 +226,12 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     } on FormatException catch (e) {
       logger.severe('could not decode received json: $e');
 
-      return;
+      return false;
     }
 
     logger.info('Packet:\n${packet.toJson().toString()}');
     invokeCallback(packet, source);
+
+    return true;
   }
 }
