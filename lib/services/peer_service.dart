@@ -233,7 +233,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     invokeChangeCallback();
   }
 
-  Future<void> syncWithPeer(PeerInfo peerInfo) async {
+  Future<PeerLocation?> syncWithPeer(PeerInfo peerInfo) async {
     var message = await _taskListService.crdtToJson();
     var peerID = await _identityService.peerId;
     var privateKey = await _identityService.privateKey;
@@ -244,17 +244,22 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       keyHelper.rsaSign(privateKey!, peerID),
       requestReply: true,
     );
-    await _peer.sendPacketToPeer(
+    final sentLocation = await _peer.sendPacketToPeer(
       peerInfo,
       await _identityService.privateKey,
       tasksPacket,
     );
+    if (sentLocation != null) {
+      await _movePeerLocationToFront(peerInfo.id, sentLocation);
+    }
+
+    return sentLocation;
   }
 
   /// Returns false if the message could not be sent.
   /// A return value of true does not mean that the message was received by the other peer.
-  Future<bool> sendIntroductionMessageToPeer(PeerInfo peerInfo) async {
-    return await _makeIntroductionMessage(requestReply: true)
+  Future<PeerLocation?> sendIntroductionMessageToPeer(PeerInfo peerInfo) async {
+    final sentLocation = await _makeIntroductionMessage(requestReply: true)
         .then((message) async => await _peer.sendPacketToPeer(
               peerInfo,
               await _identityService.privateKey,
@@ -263,8 +268,13 @@ class PeerService with LogMixin, ChangeCallbackProvider {
         .onError((error, stackTrace) async {
       logger.severe('Cannot send introduction message: $error');
 
-      return false;
+      return null;
     });
+    if (sentLocation != null) {
+      await _movePeerLocationToFront(peerInfo.id, sentLocation);
+    }
+
+    return sentLocation;
   }
 
   Future<void> sendDeletePeerMessageToPeer(PeerInfo peerInfo) async {
@@ -301,28 +311,50 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   }
 
   Future<void> syncWithAllKnownPeers() async {
-    var message = await _taskListService.crdtToJson();
-    var privateKey = await _identityService.privateKey;
-    var peerID = await _identityService.peerId;
+    final crdtContent = await _taskListService.crdtToJson();
+    final privateKey = await _identityService.privateKey;
+    final peerID = await _identityService.peerId;
 
     logger.info('syncing task list with all known peers');
     final tasksPacket = TaskListMessage(
-      message,
+      crdtContent,
       peerID,
       keyHelper.rsaSign(privateKey!, peerID),
       requestReply: true,
     );
     final peers = await _peerInfoService.activeDevices;
-    await _peer.sendPacketToAllPeers(
+    final sendInfo = await _peer.sendPacketToAllPeers(
       tasksPacket,
       peers,
       await _identityService.privateKey,
     );
+    await Future.wait(sendInfo
+        .where((sendInfo) => sendInfo.peerLocation != null)
+        .map((sendInfo) => _movePeerLocationToFront(
+              sendInfo.peerInfo.id,
+              sendInfo.peerLocation!,
+            )));
   }
 
   String _selectIp(List<String> ips, String? storedIp) {
     if (ips.contains(storedIp)) return storedIp!;
 
     return ips.isNotEmpty ? ips.first : '';
+  }
+
+  Future<void> _movePeerLocationToFront(
+    String? peerInfoId,
+    PeerLocation location,
+  ) async {
+    await _peerInfoService.update(peerInfoId, (peerInfo) {
+      if (peerInfo == null) return null;
+      final index = peerInfo.locations.indexOf(location);
+      if (index > 0) {
+        peerInfo.locations.removeAt(index);
+        peerInfo.locations.insert(0, location);
+      }
+
+      return peerInfo;
+    });
   }
 }

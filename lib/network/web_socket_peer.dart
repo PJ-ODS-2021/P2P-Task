@@ -13,6 +13,13 @@ import 'package:p2p_task/utils/serializable.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+class PeerInfoAndLocation {
+  final PeerInfo peerInfo;
+  final PeerLocation? peerLocation;
+
+  const PeerInfoAndLocation(this.peerInfo, this.peerLocation);
+}
+
 /// Represents one peer in the network.
 class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
   WebSocketServer? _server;
@@ -45,9 +52,10 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     );
   }
 
-  Future<void> sendPacketToAllPeers<T extends Serializable>(
+  Future<List<PeerInfoAndLocation>>
+      sendPacketToAllPeers<T extends Serializable>(
     T packet, [
-    List<PeerInfo> knownPeerInfos = const [],
+    List<PeerInfo> peers = const [],
     RSAPrivateKey? privateKey,
   ]) async {
     final payload = marshallPacket(packet);
@@ -58,19 +66,21 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
 
     // temporary implementation:
     // _server?.sendToClients(payload);
-    await Future.wait(knownPeerInfos.map(
-      (peerInfo) => sendToPeer(peerInfo, payload, privateKey),
+    return await Future.wait(peers.map(
+      (peerInfo) => sendToPeer(peerInfo, payload, privateKey)
+          .then((sentLocation) => PeerInfoAndLocation(peerInfo, sentLocation)),
     ));
   }
 
-  Future<bool> sendPacketToPeer<T extends Serializable>(
+  Future<PeerLocation?> sendPacketToPeer<T extends Serializable>(
     PeerInfo peerInfo,
     RSAPrivateKey? privateKey,
     T packet,
   ) async =>
       sendToPeer(peerInfo, marshallPacket(packet), privateKey);
 
-  Future<bool> sendToPeer(
+  /// Returns the peer location that was used for the sync
+  Future<PeerLocation?> sendToPeer(
     PeerInfo peerInfo,
     String payload,
     RSAPrivateKey? privateKey,
@@ -86,7 +96,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     if (peerInfo.locations.isEmpty) {
       logger.warning('Cannot sync with peer $peerInfo: no locations');
 
-      return false;
+      return null;
     }
 
     final encryptedPayload =
@@ -97,12 +107,12 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
       if (success) {
         logger.info('successfully synced with $peerInfo using $location');
 
-        return true;
+        return location;
       }
       logger.info('could not sync with $peerInfo using $location');
     }
 
-    return false;
+    return null;
   }
 
   Future<bool> _sendToPeerLocation(
@@ -131,7 +141,9 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
           stackTrace,
         );
       },
-      onDone: () => completer.complete(true),
+      onDone: () {
+        if (!completer.isCompleted) completer.complete(true);
+      },
     );
     connection.send(payload);
     logger.info('Client sent message to $location');
@@ -172,7 +184,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     RSAPublicKey? publicKey,
   ) {
     if (publicKey == null) {
-      logger.severe('missing public key for sending paket');
+      logger.severe('missing public key for sending packet');
 
       return;
     }
