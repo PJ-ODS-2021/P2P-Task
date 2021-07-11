@@ -66,23 +66,15 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
   Future<bool> sendPacketToPeer<T extends Serializable>(
     PeerInfo peerInfo,
     RSAPrivateKey? privateKey,
-    T packet, {
-    PeerLocation? location,
-  }) async {
-    return sendToPeer(
-      peerInfo,
-      marshallPacket(packet),
-      privateKey,
-      location: location,
-    );
-  }
+    T packet,
+  ) async =>
+      sendToPeer(peerInfo, marshallPacket(packet), privateKey);
 
   Future<bool> sendToPeer(
     PeerInfo peerInfo,
     String payload,
-    RSAPrivateKey? privateKey, {
-    PeerLocation? location,
-  }) async {
+    RSAPrivateKey? privateKey,
+  ) async {
     // This method doesn't actually need to be async (at least for now).
     // In theory this should use some sort of routing.
 
@@ -91,22 +83,14 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     // - if open, use it
     // - if a server is running, it can be used if the peer is currently connected to it
 
-    var encryptedPayload =
-        keyHelper.encryptWithPublicKeyPem(peerInfo.publicKeyPem, payload);
-
-    if (location != null) {
-      return _sendToPeerLocation(
-        privateKey,
-        location,
-        encryptedPayload,
-      );
-    }
     if (peerInfo.locations.isEmpty) {
-      logger.warning('Cannot sync with invalid peer $peerInfo: no locations');
+      logger.warning('Cannot sync with peer $peerInfo: no locations');
 
       return false;
     }
 
+    final encryptedPayload =
+        keyHelper.encryptWithPublicKeyPem(peerInfo.publicKeyPem, payload);
     for (final location in peerInfo.locations) {
       final success =
           await _sendToPeerLocation(privateKey, location, encryptedPayload);

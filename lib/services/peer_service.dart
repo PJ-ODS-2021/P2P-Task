@@ -78,7 +78,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     logger
         .info('Received delete peer message from ${deletePeerMessage.peerID}');
 
-    var peerInfo = await _peerInfoService.getById(deletePeerMessage.peerID);
+    final peerInfo = await _peerInfoService.getById(deletePeerMessage.peerID);
     if (peerInfo == null) {
       logger.warning('Unknown peerID - skipping');
 
@@ -118,23 +118,23 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   ) async {
     logger.info('Received introduction message');
 
-    var peerInfo = PeerInfo(
-      id: introductionMessage.peerID,
+    final peerInfo = PeerInfo(
+      id: introductionMessage.peerId,
       name: introductionMessage.name,
       status: Status.active,
       publicKeyPem: introductionMessage.publicKeyPem,
       locations: [
-        PeerLocation(
-          'ws://${introductionMessage.ip}:${introductionMessage.port}',
-        ),
+        if (introductionMessage.ip.isNotEmpty)
+          PeerLocation(
+            'ws://${introductionMessage.ip}:${introductionMessage.port}',
+          ),
       ],
     );
-
     await _peerInfoService.upsert(peerInfo, mergePeerLocations: true);
 
     _peer.sendPacketTo(
       source,
-      await _getIntroductionMessage(false),
+      await _makeIntroductionMessage(requestReply: false),
       keyHelper.decodePublicKeyFromPem(peerInfo.publicKeyPem),
     );
   }
@@ -144,10 +144,10 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   ) async {
     logger.info('Received introduction reply message');
 
-    var peerInfo = await _peerInfoService.getById(introductionMessage.peerID);
+    final peerInfo = await _peerInfoService.getById(introductionMessage.peerId);
     if (peerInfo == null) {
       logger.warning(
-        'Unknown peerID in introduction message ${introductionMessage.peerID} - skipping',
+        'Unknown peerID in introduction message ${introductionMessage.peerId} - skipping',
       );
 
       return;
@@ -155,10 +155,10 @@ class PeerService with LogMixin, ChangeCallbackProvider {
 
     if (!keyHelper.rsaVerify(
       peerInfo.publicKeyPem,
-      introductionMessage.peerID,
+      introductionMessage.peerId,
       introductionMessage.signature,
     )) {
-      logger.warning('Error message is not from claimed peerID');
+      logger.warning('Error message is not from claimed peerId');
     } else {
       logger.info('Update peer ${peerInfo.status} to active');
       await _peerInfoService.update(
@@ -172,7 +172,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     TaskListMessage taskListMessage,
     WebSocketClient source,
   ) async {
-    var peerInfo = await _peerInfoService.getById(taskListMessage.peerID);
+    final peerInfo = await _peerInfoService.getById(taskListMessage.peerID);
     if (peerInfo == null) {
       logger.warning('Unknown peerID ${taskListMessage.peerID} - skipping');
 
@@ -200,16 +200,15 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     await _taskListService.mergeCrdtJson(taskListMessage.taskListCrdtJson);
 
     if (taskListMessage.requestReply) {
-      var taskListCrdtJson = await _taskListService.crdtToJson();
-      var privateKey = await _identityService.privateKey;
-      var peerID = await _identityService.peerId;
+      final taskListCrdtJson = await _taskListService.crdtToJson();
+      final privateKey = await _identityService.privateKey;
+      final peerID = await _identityService.peerId;
 
       final message = TaskListMessage(
         taskListCrdtJson,
         peerID,
         keyHelper.rsaSign(privateKey!, peerID),
       );
-
       _peer.sendPacketTo(
         source,
         message,
@@ -234,7 +233,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     invokeChangeCallback();
   }
 
-  Future<void> syncWithPeer(PeerInfo peerInfo, {PeerLocation? location}) async {
+  Future<void> syncWithPeer(PeerInfo peerInfo) async {
     var message = await _taskListService.crdtToJson();
     var peerID = await _identityService.peerId;
     var privateKey = await _identityService.privateKey;
@@ -249,22 +248,23 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       peerInfo,
       await _identityService.privateKey,
       tasksPacket,
-      location: location,
     );
   }
 
-  Future<void> sendIntroductionMessageToPeer(
-    PeerInfo peerInfo, {
-    PeerLocation? location,
-  }) async {
-    final message = await _getIntroductionMessage(true);
+  /// Returns false if the message could not be sent.
+  /// A return value of true does not mean that the message was received by the other peer.
+  Future<bool> sendIntroductionMessageToPeer(PeerInfo peerInfo) async {
+    return await _makeIntroductionMessage(requestReply: true)
+        .then((message) async => await _peer.sendPacketToPeer(
+              peerInfo,
+              await _identityService.privateKey,
+              message,
+            ))
+        .onError((error, stackTrace) async {
+      logger.severe('Cannot send introduction message: $error');
 
-    await _peer.sendPacketToPeer(
-      peerInfo,
-      await _identityService.privateKey,
-      message,
-      location: location,
-    );
+      return false;
+    });
   }
 
   Future<void> sendDeletePeerMessageToPeer(PeerInfo peerInfo) async {
@@ -278,21 +278,24 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     );
   }
 
-  Future<IntroductionMessage> _getIntroductionMessage(bool requestReply) async {
-    var peerID = await _identityService.peerId;
-    var name = await _identityService.name;
-    var ip = _selectIp(_networkInfoService.ips, await _identityService.ip);
-    var port = await _identityService.port;
-    var publicKeyPem = await _identityService.publicKeyPem;
-    var privateKey = await _identityService.privateKey;
+  Future<IntroductionMessage> _makeIntroductionMessage({
+    required bool requestReply,
+  }) async {
+    final privateKey = await _identityService.privateKey;
+    if (privateKey == null) {
+      return Future.error(StateError(
+        'Cannot make introduction message because private key is null',
+      ));
+    }
+    final peerId = await _identityService.peerId;
 
     return IntroductionMessage(
-      peerID: peerID,
-      name: name,
-      ip: ip,
-      port: port,
-      publicKeyPem: publicKeyPem,
-      signature: keyHelper.rsaSign(privateKey!, peerID),
+      peerId: peerId,
+      name: await _identityService.name,
+      ip: _selectIp(_networkInfoService.ips, await _identityService.ip),
+      port: await _identityService.port,
+      publicKeyPem: await _identityService.publicKeyPem,
+      signature: keyHelper.rsaSign(privateKey, peerId),
       requestReply: requestReply,
     );
   }

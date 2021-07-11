@@ -96,10 +96,9 @@ void main() {
           await devices[1].peerInfoService.getById(peerInfoDevice0.id!);
       expect(currentPeerInfo, equals(null));
 
-      await devices[0].peerService.sendIntroductionMessageToPeer(
-            peerInfoDevice1,
-            location: peerInfoDevice1.locations.first,
-          );
+      await devices[0]
+          .peerService
+          .sendIntroductionMessageToPeer(peerInfoDevice1);
 
       final newPeerInfo =
           await devices[1].peerInfoService.getById(peerInfoDevice0.id!);

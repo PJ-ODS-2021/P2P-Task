@@ -159,16 +159,17 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
             caption: 'Sync',
             color: Colors.grey.shade400,
             icon: Icons.sync,
-            onTap: () =>
-                viewModel.syncWithPeer(peerInfo, location: peerLocation),
+            onTap: () => viewModel
+                .syncWithPeer(peerInfo.copyWith(locations: [peerLocation])),
           ),
         if (peerInfo.status == Status.created)
           IconSlideAction(
             caption: 'Connect',
             color: Colors.yellow.shade200,
             icon: Icons.settings_ethernet,
-            onTap: () =>
-                viewModel.sendIntroductionMessageToPeer(peerInfo, peerLocation),
+            onTap: () => viewModel.sendIntroductionMessageToPeer(
+              peerInfo.copyWith(locations: [peerLocation]),
+            ),
           ),
         IconSlideAction(
           caption: 'Delete',
