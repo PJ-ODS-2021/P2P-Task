@@ -208,7 +208,6 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     }
 
     var payload = '';
-
     try {
       logger.info('Decrypt message.');
       payload = keyHelper.decrypt(privateKey, message);

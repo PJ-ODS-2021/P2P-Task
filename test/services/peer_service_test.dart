@@ -144,6 +144,70 @@ void main() {
           }
         },
       );
+
+      test('should respect peers that have changed their location', () async {
+        final taskList = TaskList(id: 'list1Id', title: 'list1');
+
+        devices.add(await Device.create(name: 'device3', port: 58250));
+        await devices.last.peerService.startServer();
+
+        final device0PeerInfo = await devices[0].generatePeerInfo();
+        final device1PeerInfo = await devices[1].generatePeerInfo();
+        final device2PeerInfo = await devices[2].generatePeerInfo();
+
+        expect(
+          device1PeerInfo.publicKeyPem,
+          isNot(device2PeerInfo.publicKeyPem),
+        );
+
+        // add peer infos
+        await devices[0].peerInfoService.upsert(device1PeerInfo);
+        await devices[0].peerInfoService.upsert(device2PeerInfo);
+        await devices[1].peerInfoService.upsert(device0PeerInfo);
+        await devices[2].peerInfoService.upsert(device0PeerInfo);
+
+        // switch device 1 and device 2 ports
+        await devices[1].peerService.stopServer();
+        await devices[2].peerService.stopServer();
+        await devices[1]
+            .taskList
+            .identityService
+            .setPort(device2PeerInfo.locations.first.uri.port);
+        await devices[2]
+            .taskList
+            .identityService
+            .setPort(device1PeerInfo.locations.first.uri.port);
+        await devices[1].peerService.startServer();
+        await devices[2].peerService.startServer();
+
+        // add a task list in device 0
+        await devices[0].taskList.taskListService.upsertTaskList(taskList);
+
+        // sync form device 0 should do nothing because encryption keys are wrong
+        await devices[0].peerService.syncWithAllKnownPeers();
+        expect(
+          (await devices[1].taskList.taskListService.taskLists).isEmpty,
+          true,
+        );
+        expect(
+          (await devices[2].taskList.taskListService.taskLists).isEmpty,
+          true,
+        );
+
+        // sync from device 1 should work
+        await devices[1].peerService.syncWithAllKnownPeers();
+        expect(
+          (await devices[1].taskList.taskListService.taskLists).toList(),
+          [taskList],
+        );
+
+        // sync from device 2 should work
+        await devices[2].peerService.syncWithAllKnownPeers();
+        expect(
+          (await devices[2].taskList.taskListService.taskLists).toList(),
+          [taskList],
+        );
+      });
     });
 
     tearDown(() async {
