@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:p2p_task/utils/data_model.dart';
 
@@ -16,6 +17,13 @@ class PeerLocation {
   Map<String, dynamic> toJson() => _$PeerLocationToJson(this);
 
   Uri get uri => Uri.parse(uriStr);
+
+  @override
+  bool operator ==(Object other) {
+    return other is PeerLocation &&
+        other.uriStr == uriStr &&
+        other.networkName == networkName;
+  }
 
   @override
   String toString() {
@@ -43,8 +51,7 @@ class PeerInfo implements DataModel {
     required this.status,
     required this.publicKeyPem,
     required this.locations,
-  })  : assert(locations.isNotEmpty),
-        id = id;
+  }) : id = id;
 
   factory PeerInfo.fromJson(Map<String, dynamic> json) =>
       _$PeerInfoFromJson(json);
@@ -65,6 +72,16 @@ class PeerInfo implements DataModel {
         publicKeyPem: publicKeyPem ?? this.publicKeyPem,
         locations: locations ?? this.locations,
       );
+
+  @override
+  bool operator ==(Object other) {
+    return other is PeerInfo &&
+        other.id == id &&
+        other.name == name &&
+        other.status == status &&
+        ListEquality().equals(other.locations, locations) &&
+        other.publicKeyPem == publicKeyPem;
+  }
 
   @override
   String toString() {
