@@ -28,8 +28,10 @@ class _TaskListFormScreenState extends State<TaskListFormScreen> {
         context,
         listen: false,
       ).callbackProvider;
-      taskListService
-          .upsertTaskList(_taskList..title = _formTitleController.text);
+      taskListService.upsertTaskList(
+        _taskList..title = _formTitleController.text,
+        ignoreTasks: true,
+      );
       Navigator.pop(context);
     }
   }

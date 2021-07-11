@@ -23,20 +23,48 @@ class PeerLocation {
   }
 }
 
+// Status created indicates that the key exchange has started, but not finished yet.
+// It might have failed because the sever was off.
+// Once it is successfull, the status will be set to active.
+enum Status { created, active }
+
 @JsonSerializable(explicitToJson: true)
 class PeerInfo implements DataModel {
   @override
   String? id;
-  String name = '';
-  List<PeerLocation> locations = [];
+  String name;
+  Status status;
+  List<PeerLocation> locations;
+  String publicKeyPem;
 
-  PeerInfo();
+  PeerInfo({
+    String? id,
+    required this.name,
+    required this.status,
+    required this.publicKeyPem,
+    required this.locations,
+  })  : assert(locations.isNotEmpty),
+        id = id;
 
   factory PeerInfo.fromJson(Map<String, dynamic> json) =>
       _$PeerInfoFromJson(json);
 
   @override
   Map<String, dynamic> toJson() => _$PeerInfoToJson(this);
+
+  PeerInfo copyWith({
+    String? name,
+    List<PeerLocation>? locations,
+    String? publicKeyPem,
+    Status? status,
+  }) =>
+      PeerInfo(
+        id: id,
+        name: name ?? this.name,
+        status: status ?? this.status,
+        publicKeyPem: publicKeyPem ?? this.publicKeyPem,
+        locations: locations ?? this.locations,
+      );
 
   @override
   String toString() {
@@ -48,6 +76,8 @@ class PeerInfo implements DataModel {
     };
     addProperty('id', id);
     addProperty('name', name);
+    addProperty('status', status.toString());
+    addProperty('public_key_pem', publicKeyPem);
 
     return '[${locations.join(',')}]' +
         (buffer.isEmpty ? '' : ' (${buffer.toString()})');
