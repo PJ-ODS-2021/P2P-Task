@@ -53,7 +53,6 @@ class DeviceListViewModel with LogMixin {
       peerInfo,
       peerInfo.locations.first,
     );
-    loadDevices();
   }
 
   void handleQrCodeRead(String qrContent) async {
@@ -78,17 +77,14 @@ class DeviceListViewModel with LogMixin {
       peerInfo,
       peerInfo.locations.first,
     );
-    loadDevices();
   }
 
   void syncWithPeer(PeerInfo peer, {PeerLocation? location}) async {
     await _peerService.syncWithPeer(peer, location: location);
-    loadDevices();
   }
 
   void upsert(PeerInfo peer) async {
     await _peerInfoService.upsert(peer);
-    loadDevices();
   }
 
   void sendIntroductionMessageToPeer(
@@ -108,7 +104,6 @@ class DeviceListViewModel with LogMixin {
       logger.warning('could not send delete peer message - $e');
     } finally {
       await _peerInfoService.remove(peer);
-      loadDevices();
     }
   }
 
