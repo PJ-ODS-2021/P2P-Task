@@ -5,6 +5,7 @@ import 'package:p2p_task/config/style_constants.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/screens/devices/device_form_screen.dart';
 import 'package:p2p_task/screens/qr_scanner_screen.dart';
+import 'package:p2p_task/screens/simple_error_popup_dialog.dart';
 import 'package:p2p_task/viewmodels/device_list_viewmodel.dart';
 import 'package:p2p_task/widgets/list_section.dart';
 import 'package:provider/provider.dart';
@@ -159,17 +160,16 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
             caption: 'Sync',
             color: Colors.grey.shade400,
             icon: Icons.sync,
-            onTap: () => viewModel
-                .syncWithPeer(peerInfo.copyWith(locations: [peerLocation])),
+            onTap: () =>
+                _syncWithPeer(context, viewModel, peerInfo, peerLocation),
           ),
         if (peerInfo.status == Status.created)
           IconSlideAction(
             caption: 'Connect',
             color: Colors.yellow.shade200,
             icon: Icons.settings_ethernet,
-            onTap: () => viewModel.sendIntroductionMessageToPeer(
-              peerInfo.copyWith(locations: [peerLocation]),
-            ),
+            onTap: () =>
+                _connectToPeer(context, viewModel, peerInfo, peerLocation),
           ),
         IconSlideAction(
           caption: 'Delete',
@@ -229,5 +229,49 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
         builder: (context) => DeviceFormScreen(template: template),
       ),
     );
+  }
+
+  void _syncWithPeer(
+    BuildContext context,
+    DeviceListViewModel viewModel,
+    PeerInfo peerInfo,
+    PeerLocation peerLocation,
+  ) {
+    viewModel
+        .syncWithPeer(peerInfo.copyWith(locations: [peerLocation]))
+        .then((syncSuccessful) {
+      if (!syncSuccessful) {
+        showDialog(
+          context: context,
+          builder: (context) => SimpleErrorPopupDialog(
+            'Sync Unsuccessful',
+            'Could not sync with peer using ${peerLocation.uri}',
+          ),
+        );
+      }
+    });
+  }
+
+  void _connectToPeer(
+    BuildContext context,
+    DeviceListViewModel viewModel,
+    PeerInfo peerInfo,
+    PeerLocation peerLocation,
+  ) {
+    viewModel
+        .sendIntroductionMessageToPeer(
+      peerInfo.copyWith(locations: [peerLocation]),
+    )
+        .then((syncSuccessful) {
+      if (!syncSuccessful) {
+        showDialog(
+          context: context,
+          builder: (context) => SimpleErrorPopupDialog(
+            'Connection Unsuccessful',
+            'Could connect to peer using ${peerLocation.uri}',
+          ),
+        );
+      }
+    });
   }
 }

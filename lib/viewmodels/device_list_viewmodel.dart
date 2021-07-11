@@ -48,7 +48,7 @@ class DeviceListViewModel with LogMixin {
 
   void addNewPeer(PeerInfo peerInfo) async {
     await _peerInfoService.upsert(peerInfo);
-    sendIntroductionMessageToPeer(peerInfo);
+    await sendIntroductionMessageToPeer(peerInfo);
     loadDevices();
   }
 
@@ -70,15 +70,17 @@ class DeviceListViewModel with LogMixin {
       publicKeyPem: values[4],
     );
     await _peerInfoService.upsert(peerInfo, mergePeerLocations: true);
-    sendIntroductionMessageToPeer(
+    await sendIntroductionMessageToPeer(
       peerInfo.copyWith(locations: [peerInfo.locations.first]),
     );
     loadDevices();
   }
 
-  void syncWithPeer(PeerInfo peer) async {
-    await _peerService.syncWithPeer(peer);
+  Future<bool> syncWithPeer(PeerInfo peer) async {
+    final sentLocation = await _peerService.syncWithPeer(peer);
     loadDevices();
+
+    return sentLocation != null;
   }
 
   void upsert(PeerInfo peer) async {
@@ -86,9 +88,8 @@ class DeviceListViewModel with LogMixin {
     loadDevices();
   }
 
-  void sendIntroductionMessageToPeer(PeerInfo peerInfo) async {
-    await _peerService.sendIntroductionMessageToPeer(peerInfo);
-  }
+  Future<bool> sendIntroductionMessageToPeer(PeerInfo peerInfo) async =>
+      (await _peerService.sendIntroductionMessageToPeer(peerInfo)) != null;
 
   void removePeer(PeerInfo peer) async {
     try {
