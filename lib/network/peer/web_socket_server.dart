@@ -39,7 +39,9 @@ class WebSocketServer with LogMixin {
   }
 
   int get port => _server.port;
+
   String get address => _server.address.address;
+
   UnmodifiableListView<WebSocketChannel> get connectedClients =>
       UnmodifiableListView(_connectedClients);
 

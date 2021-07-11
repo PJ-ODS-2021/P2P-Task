@@ -1,3 +1,4 @@
+import 'package:p2p_task/security/key_helper.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/task_list/task_list_service.dart';
 import 'package:p2p_task/utils/key_value_repository.dart';
@@ -27,6 +28,7 @@ class DeviceTaskList {
     final keyValueRepository = KeyValueRepository(database, StoreRef(''));
     final identityService = IdentityService(keyValueRepository);
     if (name != null) await identityService.setName(name);
+    await _createKeys(identityService);
     final taskListService =
         TaskListService(keyValueRepository, identityService, null);
 
@@ -36,6 +38,15 @@ class DeviceTaskList {
       identityService,
       taskListService,
     );
+  }
+
+  static Future<void> _createKeys(IdentityService identityService) async {
+    final keyHelper = KeyHelper();
+    final keys = keyHelper.generateRSAKeyPair();
+    final privateKey = keyHelper.encodePrivateKeyToPem(keys.privateKey);
+    final publicKey = keyHelper.encodePublicKeyToPem(keys.publicKey);
+    await identityService.setPrivateKeyPem(privateKey);
+    await identityService.setPublicKeyPem(publicKey);
   }
 
   Future<void> close() {

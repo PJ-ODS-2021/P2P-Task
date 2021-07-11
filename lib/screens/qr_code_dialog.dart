@@ -5,6 +5,7 @@ import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 import 'package:provider/provider.dart';
+import 'package:p2p_task/viewmodels/device_list_viewmodel.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class QrCodeDialog extends StatelessWidget with LogMixin {
@@ -25,6 +26,8 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
             identityService.name,
             identityService.ip,
             identityService.port,
+            identityService.peerId,
+            identityService.publicKeyPem,
           ]),
           builder: (context, snapshot) {
             final loadingWidget = _createLoadingWidget(snapshot);
@@ -33,10 +36,12 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
             final storedIp = snapshot.data![1] as String?;
             final ips = networkInfoService.ips;
             final connectionInfo = _ConnectionInfo(
-              _selectIp(ips, storedIp),
-              ips,
-              snapshot.data![2] as int,
-              snapshot.data![0] as String,
+              selectedIp: _selectIp(ips, storedIp),
+              ips: ips,
+              port: snapshot.data![2] as int,
+              deviceName: snapshot.data![0] as String,
+              peerID: snapshot.data![3] as String,
+              publicKeyPem: snapshot.data![4] as String,
             );
             if (connectionInfo.selectedIp != null &&
                 connectionInfo.selectedIp != storedIp) {
@@ -58,7 +63,12 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
           },
         ),
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            var viewmodel =
+                Provider.of<DeviceListViewModel>(context, listen: false);
+            viewmodel.loadDevices();
+            Navigator.pop(context);
+          },
           child: Text('Close'),
         ),
       ],
@@ -71,13 +81,17 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
       return Column(
         children: [
           Text('Error'),
-          Text(snapshot.error.toString()),
+          Text(
+            snapshot.error.toString(),
+          ),
         ],
       );
     }
     if (snapshot.connectionState == ConnectionState.waiting ||
         !snapshot.hasData) {
-      return Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(),
+      );
     }
 
     return null;
@@ -90,7 +104,7 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
 
     return [
       if (!peerService.isServerRunning)
-        _makeWarningText(
+        _buildWarningText(
           context,
           'The server is not running',
         ),
@@ -103,7 +117,7 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
     IdentityService identityService,
   ) {
     return connectionInfo.ips.isEmpty
-        ? [_makeWarningText(context, 'Cannot detect connection info')]
+        ? [_buildWarningText(context, 'Cannot detect connection info')]
         : [
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Text('IP: '),
@@ -124,18 +138,22 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
                       },
                     )
                   : Text(connectionInfo.ips.first),
-              Padding(padding: EdgeInsets.symmetric(horizontal: 10.0)),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10.0),
+              ),
               Text('Port: ${connectionInfo.port}'),
             ]),
           ];
   }
 
-  Widget _makeWarningText(BuildContext context, String message) {
+  Widget _buildWarningText(BuildContext context, String message) {
     return RichText(
       text: TextSpan(
         style: DefaultTextStyle.of(context).style,
         children: [
-          WidgetSpan(child: Icon(Icons.warning_outlined)),
+          WidgetSpan(
+            child: Icon(Icons.warning_outlined),
+          ),
           TextSpan(
             text: ' $message',
             style: TextStyle(fontSize: 20.0),
@@ -164,6 +182,8 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
                 connectionInfo.deviceName,
                 connectionInfo.selectedIp!,
                 connectionInfo.port,
+                connectionInfo.publicKeyPem,
+                connectionInfo.peerID,
               ),
               version: QrVersions.auto,
             ),
@@ -178,8 +198,16 @@ class QrCodeDialog extends StatelessWidget with LogMixin {
     return ips.isNotEmpty ? ips.first : null;
   }
 
-  String _makeQrContent(String deviceName, String ip, int port) =>
-      '$deviceName,$ip,$port';
+  // ignore: long-parameter-list
+  String _makeQrContent(
+    String name,
+    String ip,
+    int port,
+    String publicKey,
+    String peerID,
+  ) {
+    return '$peerID,$name,$ip,$port,$publicKey';
+  }
 
   /// size calculation is very hacky
   double _calculateQrCodeSize(BuildContext context) {
@@ -197,6 +225,15 @@ class _ConnectionInfo {
   final List<String> ips;
   final int port;
   final String deviceName;
+  final String peerID;
+  final String publicKeyPem;
 
-  const _ConnectionInfo(this.selectedIp, this.ips, this.port, this.deviceName);
+  const _ConnectionInfo({
+    required this.selectedIp,
+    required this.ips,
+    required this.port,
+    required this.deviceName,
+    required this.peerID,
+    required this.publicKeyPem,
+  });
 }

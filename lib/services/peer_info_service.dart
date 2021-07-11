@@ -11,6 +11,10 @@ class PeerInfoService with ChangeCallbackProvider {
 
   Future<List<PeerInfo>> get devices async => await _repository.find();
 
+  Future<List<PeerInfo>> get activeDevices async => (await devices)
+      .where((device) => device.status == Status.active)
+      .toList();
+
   Future<Map<String, String>> get deviceNameMap async =>
       Map.fromEntries((await devices)
           .where((peerInfo) => peerInfo.id != null && peerInfo.name.isNotEmpty)
@@ -20,6 +24,14 @@ class PeerInfoService with ChangeCallbackProvider {
     await _repository.upsert(peerInfo);
     await _syncService?.run(runOnSyncAfterDeviceAdded: true);
     invokeChangeCallback();
+  }
+
+  Future<PeerInfo?> getByID(String id) async {
+    try {
+      return (await devices).firstWhere((device) => device.id == id);
+    } on StateError {
+      return null;
+    }
   }
 
   Future<void> remove(PeerInfo peerInfo) async {
