@@ -1,56 +1,45 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/services/change_callback_provider.dart';
 
 void main() {
   group('ChangeCallbackProvider', () {
-    test('should invoke change callback', () async {
+    test('should invoke change callback', () {
       final provider = ChangeCallbackProvider();
-      final completer = Completer<bool>();
-      final callback = () => completer.complete(true);
+      var completed = false;
+      final callback = () => completed = true;
       provider.addChangeCallback(callback);
       provider.invokeChangeCallback();
-      expect(completer.isCompleted, true);
-      expect(await completer.future, true);
+      expect(completed, true);
     });
 
     test('should not invoke change after removing it', () {
       final provider = ChangeCallbackProvider();
-      final completer = Completer<bool>();
-      final callback = () => completer.complete(true);
+      var completed = false;
+      final callback = () => completed = true;
       provider.addChangeCallback(callback);
       provider.removeChangeCallback(callback);
       provider.invokeChangeCallback();
-      expect(completer.isCompleted, false);
+      expect(completed, false);
     });
 
-    test('should invoke multiple callbacks', () async {
+    test('should invoke multiple callbacks', () {
       final provider = ChangeCallbackProvider();
-      final completers = [
-        for (var i = 0; i < 10; i++) Completer<bool>(),
+      final completed = List.filled(10, false);
+      final callbacks = [
+        for (var i = 0; i < completed.length; i++) () => completed[i] = true,
       ];
-      final callbacks = completers
-          .map((completer) => () => completer.complete(true))
-          .toList();
       callbacks.forEach(provider.addChangeCallback);
 
       provider.invokeChangeCallback();
-      completers.forEach((completer) => expect(completer.isCompleted, true));
-      expect(
-        await Future.wait(completers.map((completer) => completer.future)),
-        completers.map((_) => true).toList(),
-      );
+      expect(completed, List.filled(completed.length, true));
     });
 
     test('should invoke multiple callbacks remove some', () async {
       final provider = ChangeCallbackProvider();
-      final completers = [
-        for (var i = 0; i < 10; i++) Completer<bool>(),
+      final completed = List.filled(10, false);
+      final callbacks = [
+        for (var i = 0; i < completed.length; i++) () => completed[i] = true,
       ];
-      final callbacks = completers
-          .map((completer) => () => completer.complete(true))
-          .toList();
       callbacks.forEach(provider.addChangeCallback);
       for (var i = 0; i < callbacks.length; i++) {
         if (i.isEven) provider.removeChangeCallback(callbacks[i]);
@@ -58,15 +47,22 @@ void main() {
 
       provider.invokeChangeCallback();
 
-      for (var i = 0; i < completers.length; i++) {
-        final completer = completers[i];
-        if (i.isEven) {
-          expect(completer.isCompleted, false);
-        } else {
-          expect(completer.isCompleted, true);
-          expect(await completer.future, true);
-        }
-      }
+      expect(completed, [
+        for (var i = 0; i < completed.length; i++) i.isOdd,
+      ]);
+    });
+
+    test('should not invoke cleared callbacks', () {
+      final provider = ChangeCallbackProvider();
+      final completed = List.filled(10, false);
+      final callbacks = [
+        for (var i = 0; i < completed.length; i++) () => completed[i] = true,
+      ];
+      callbacks.forEach(provider.addChangeCallback);
+
+      provider.clearChangeCallbacks();
+      provider.invokeChangeCallback();
+      expect(completed, List.filled(completed.length, false));
     });
   });
 }
