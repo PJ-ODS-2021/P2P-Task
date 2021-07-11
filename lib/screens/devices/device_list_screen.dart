@@ -131,15 +131,16 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
               peerLocation,
               viewModel,
             );
-          }).toList(),
+          }).toList()
+            ..add(_buildAddPeerLocationRow(context, peerInfo)),
         );
       }).toList(),
     );
   }
 
   String _getDeviceName(PeerInfo peerInfo) {
-    var status = peerInfo.status.toString().replaceAll('Status.', '');
-    var name = peerInfo.name.isNotEmpty ? peerInfo.name : peerInfo.id;
+    final status = peerInfo.status.value;
+    final name = peerInfo.name.isNotEmpty ? peerInfo.name : peerInfo.id;
 
     return '$name - $status';
   }
@@ -173,13 +174,19 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           caption: 'Delete',
           color: Colors.red.shade400,
           icon: Icons.delete,
-          onTap: () => viewModel.remove(peerInfo),
+          onTap: () => viewModel.removePeerLocation(peerInfo.id, peerLocation),
         ),
       ],
-      child: _buildPeerLocationEntry(
-        _listTileTitle(peerLocation),
-        'ID: ${peerInfo.id!}',
-      ),
+      child: _buildPeerLocationEntry(peerLocation),
+    );
+  }
+
+  Widget _buildAddPeerLocationRow(BuildContext context, PeerInfo peerInfo) {
+    return ListTile(
+      tileColor: Colors.white,
+      leading: Icon(Icons.add),
+      title: Text('Add Peer Location'),
+      onTap: () => _openDeviceForm(context, template: peerInfo),
     );
   }
 
@@ -188,12 +195,14 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           ? peerLocation.uriStr
           : '${peerLocation.uriStr} in ${peerLocation.networkName}';
 
-  Widget _buildPeerLocationEntry(String location, String peerID) {
+  Widget _buildPeerLocationEntry(PeerLocation peerLocation) {
     return ListTile(
       tileColor: Colors.white,
       leading: Icon(Icons.send_to_mobile),
-      title: Text(location),
-      subtitle: Text(peerID),
+      title: Text(_listTileTitle(peerLocation)),
+      subtitle: peerLocation.networkName != null
+          ? Text('Network: ${peerLocation.networkName}')
+          : null,
       trailing: Icon(Icons.keyboard_arrow_left),
     );
   }
@@ -209,11 +218,14 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     );
   }
 
-  Future _openDeviceForm(BuildContext context) {
+  Future _openDeviceForm(
+    BuildContext context, {
+    PeerInfo? template,
+  }) {
     return Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DeviceFormScreen(),
+        builder: (context) => DeviceFormScreen(template: template),
       ),
     );
   }

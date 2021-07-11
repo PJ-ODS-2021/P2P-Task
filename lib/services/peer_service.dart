@@ -78,7 +78,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     logger
         .info('Received delete peer message from ${deletePeerMessage.peerID}');
 
-    var peerInfo = await _peerInfoService.getByID(deletePeerMessage.peerID);
+    var peerInfo = await _peerInfoService.getById(deletePeerMessage.peerID);
     if (peerInfo == null) {
       logger.warning('Unknown peerID - skipping');
 
@@ -96,7 +96,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       return;
     }
 
-    await _peerInfoService.remove(peerInfo);
+    await _peerInfoService.remove(peerInfo.id);
 
     return;
   }
@@ -130,7 +130,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       ],
     );
 
-    await _peerInfoService.upsert(peerInfo);
+    await _peerInfoService.upsert(peerInfo, mergePeerLocations: true);
 
     _peer.sendPacketTo(
       source,
@@ -144,7 +144,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
   ) async {
     logger.info('Received introduction reply message');
 
-    var peerInfo = await _peerInfoService.getByID(introductionMessage.peerID);
+    var peerInfo = await _peerInfoService.getById(introductionMessage.peerID);
     if (peerInfo == null) {
       logger.warning(
         'Unknown peerID in introduction message ${introductionMessage.peerID} - skipping',
@@ -161,7 +161,10 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       logger.warning('Error message is not from claimed peerID');
     } else {
       logger.info('Update peer ${peerInfo.status} to active');
-      await _peerInfoService.upsert(peerInfo..status = Status.active);
+      await _peerInfoService.update(
+        peerInfo.id,
+        (peerInfo) => peerInfo?..status = Status.active,
+      );
     }
   }
 
@@ -169,7 +172,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     TaskListMessage taskListMessage,
     WebSocketClient source,
   ) async {
-    var peerInfo = await _peerInfoService.getByID(taskListMessage.peerID);
+    var peerInfo = await _peerInfoService.getById(taskListMessage.peerID);
     if (peerInfo == null) {
       logger.warning('Unknown peerID ${taskListMessage.peerID} - skipping');
 

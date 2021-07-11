@@ -100,15 +100,33 @@ class DeviceListViewModel with LogMixin {
     );
   }
 
-  void remove(PeerInfo peer) async {
+  void removePeer(PeerInfo peer) async {
     try {
       await _peerService.sendDeletePeerMessageToPeer(peer);
     } on FormatException catch (e) {
       logger.warning('could not send delete peer message - $e');
     } finally {
-      await _peerInfoService.remove(peer);
-      loadDevices();
+      await _peerInfoService.remove(peer.id);
     }
+  }
+
+  void removePeerLocation(String? peerId, PeerLocation location) async {
+    if (peerId == null) return;
+    await _peerInfoService.update(peerId, (peerInfo) {
+      if (peerInfo == null) return null;
+      peerInfo.locations.remove(location);
+      if (peerInfo.locations.isEmpty) {
+        _peerService
+            .sendDeletePeerMessageToPeer(
+              peerInfo.copyWith(locations: [location]),
+            )
+            .onError((error, stackTrace) =>
+                logger.warning('could not send delete peer message - $error'));
+        peerInfo = null;
+      }
+
+      return peerInfo;
+    });
   }
 
   bool get showQrScannerButton {

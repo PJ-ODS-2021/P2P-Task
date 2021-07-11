@@ -93,7 +93,7 @@ void main() {
       final peerInfoDevice0 = await devices[0].generatePeerInfo();
       final peerInfoDevice1 = await devices[1].generatePeerInfo();
       final currentPeerInfo =
-          await devices[1].peerInfoService.getByID(peerInfoDevice0.id!);
+          await devices[1].peerInfoService.getById(peerInfoDevice0.id!);
       expect(currentPeerInfo, equals(null));
 
       await devices[0].peerService.sendIntroductionMessageToPeer(
@@ -102,7 +102,7 @@ void main() {
           );
 
       final newPeerInfo =
-          await devices[1].peerInfoService.getByID(peerInfoDevice0.id!);
+          await devices[1].peerInfoService.getById(peerInfoDevice0.id!);
       expect(newPeerInfo, isNot(null));
       expect(newPeerInfo!.name, equals(peerInfoDevice0.name));
       expect(newPeerInfo.publicKeyPem, equals(peerInfoDevice0.publicKeyPem));
@@ -119,7 +119,7 @@ void main() {
 
       expect(
         await receivingDevice.peerInfoService
-            .getByID((await sendingDevice.generatePeerInfo()).id!),
+            .getById((await sendingDevice.generatePeerInfo()).id!),
         isNot(null),
       );
 
@@ -129,7 +129,7 @@ void main() {
 
       expect(
         await receivingDevice.peerInfoService
-            .getByID((await sendingDevice.generatePeerInfo()).id!),
+            .getById((await sendingDevice.generatePeerInfo()).id!),
         equals(null),
       );
     });

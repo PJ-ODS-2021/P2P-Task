@@ -4,10 +4,13 @@ import 'package:p2p_task/viewmodels/device_list_viewmodel.dart';
 import 'package:provider/provider.dart';
 
 class DeviceFormScreen extends StatefulWidget {
-  DeviceFormScreen();
+  final PeerInfo? _template;
+
+  DeviceFormScreen({PeerInfo? template}) : _template = template;
 
   @override
-  _DeviceFormScreenState createState() => _DeviceFormScreenState();
+  _DeviceFormScreenState createState() =>
+      _DeviceFormScreenState(template: _template);
 }
 
 class _DeviceFormScreenState extends State<DeviceFormScreen> {
@@ -22,6 +25,14 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
   final _ipFocusNode = FocusNode();
   final _publicKeyFocusNode = FocusNode();
   final _portFocusNode = FocusNode();
+
+  _DeviceFormScreenState({PeerInfo? template}) {
+    if (template != null) {
+      _nameController.text = template.name;
+      _idController.text = template.id ?? '';
+      _publicKeyController.text = template.publicKeyPem;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

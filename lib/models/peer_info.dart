@@ -73,6 +73,10 @@ class PeerInfo implements DataModel {
         locations: locations ?? this.locations,
       );
 
+  void addPeerLocation(PeerLocation location) {
+    if (!locations.contains(location)) locations.add(location);
+  }
+
   @override
   bool operator ==(Object other) {
     return other is PeerInfo &&
@@ -99,4 +103,8 @@ class PeerInfo implements DataModel {
     return '[${locations.join(',')}]' +
         (buffer.isEmpty ? '' : ' (${buffer.toString()})');
   }
+}
+
+extension Value on Status {
+  String get value => toString().split('.').last;
 }

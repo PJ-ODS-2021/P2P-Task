@@ -20,23 +20,56 @@ class PeerInfoService with ChangeCallbackProvider {
           .where((peerInfo) => peerInfo.id != null && peerInfo.name.isNotEmpty)
           .map((peerInfo) => MapEntry(peerInfo.id!, peerInfo.name)));
 
-  Future<void> upsert(PeerInfo peerInfo) async {
-    await _repository.upsert(peerInfo);
+  Future<void> upsert(
+    PeerInfo peerInfo, {
+    bool mergePeerLocations = true,
+  }) async {
+    if (mergePeerLocations && peerInfo.id != null) {
+      await _repository.runTransaction((txn) async {
+        final existentPeerInfo = await _repository.get(peerInfo.id!, txn: txn);
+        if (existentPeerInfo != null) {
+          existentPeerInfo.locations
+              .forEach((location) => peerInfo.addPeerLocation(location));
+        }
+        await _repository.upsert(peerInfo, txn: txn);
+      });
+    } else {
+      await _repository.upsert(peerInfo);
+    }
+
     await _syncService?.run(runOnSyncAfterDeviceAdded: true);
     invokeChangeCallback();
   }
 
-  Future<PeerInfo?> getByID(String id) async {
-    try {
-      return (await devices).firstWhere((device) => device.id == id);
-    } on StateError {
-      return null;
+  Future<void> update(
+    String? id,
+    PeerInfo? Function(PeerInfo?) updateFunc,
+  ) async {
+    if (id == null) {
+      final peerInfo = updateFunc(null);
+      if (peerInfo != null) await _repository.upsert(peerInfo);
+    } else {
+      await _repository.runTransaction((txn) async {
+        var peerInfo = await _repository.get(id, txn: txn);
+        final existed = peerInfo != null;
+        peerInfo = updateFunc(peerInfo);
+        if (peerInfo == null) {
+          if (existed) await _repository.remove(id, txn: txn);
+        } else {
+          peerInfo.id ??= id;
+          if (peerInfo.id != id) await _repository.remove(id, txn: txn);
+          await _repository.upsert(peerInfo, txn: txn);
+        }
+      });
     }
+    invokeChangeCallback();
   }
 
-  Future<void> remove(PeerInfo peerInfo) async {
-    if (peerInfo.id == null) return;
-    await _repository.remove(peerInfo.id!);
+  Future<PeerInfo?> getById(String id) async => await _repository.get(id);
+
+  Future<void> remove(String? id) async {
+    if (id == null) return;
+    await _repository.remove(id);
     invokeChangeCallback();
   }
 }
