@@ -64,13 +64,13 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         child: Column(
           children: [
             _textSection(
-              Key('title'),
+              Key('taskTitle'),
               context,
               _formTitleController,
               'Title',
             ),
             _textSection(
-              Key('description'),
+              Key('taskDescription'),
               context,
               _formDescriptionController,
               'Description',
