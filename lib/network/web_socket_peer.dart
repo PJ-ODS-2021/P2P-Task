@@ -119,7 +119,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     RSAPrivateKey? privateKey,
     PeerLocation location,
     String payload, {
-    Duration timeout = const Duration(seconds: 2),
+    Duration timeout = const Duration(seconds: 3),
   }) async {
     logger.info('Trying to sync with $location...');
     final connection = tryWebSocketClientConnect(location.uri);
@@ -128,6 +128,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     var success = false;
     connection.dataStream.listen(
       (data) async {
+        if (completer.isCompleted) return;
         logger.info('Received message from server:');
         success = _handleMessage(connection, data, privateKey);
 
@@ -135,12 +136,12 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
         unawaited(connection.close());
       },
       onError: (error, stackTrace) {
-        if (completer.isCompleted) completer.complete(false);
         logger.severe(
           'Error listening on websocket data stream to $location',
           error,
           stackTrace,
         );
+        if (!completer.isCompleted) completer.complete(false);
       },
       onDone: () {
         if (!completer.isCompleted) completer.complete(success);
@@ -151,6 +152,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     Future.delayed(timeout, () {
       logger.info('closing connection to $location due to timeout');
       connection.close();
+      if (!completer.isCompleted) completer.complete(false);
     });
 
     return await completer.future;
