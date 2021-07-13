@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:p2p_task/screens/activity_log_screen.dart';
+import 'package:p2p_task/screens/activity_log/activity_log_screen.dart';
 import 'package:p2p_task/screens/devices/device_list_screen.dart';
 import 'package:p2p_task/screens/qr_code_dialog.dart';
 import 'package:p2p_task/screens/settings/settings_screen.dart';
@@ -11,6 +11,7 @@ import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/widgets/bottom_navigation.dart';
 import 'package:p2p_task/widgets/fade_route_builder.dart';
+import 'package:p2p_task/security/key_helper.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -33,8 +34,10 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       listen: false,
     ).callbackProvider;
+
+    _handleEncryptionKeys(identityService);
     identityService.name.then((value) {
-      if (value == null) {
+      if (value.isEmpty) {
         Navigator.pushReplacement(
           context,
           FadeRoute(
@@ -43,6 +46,17 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     });
+  }
+
+  void _handleEncryptionKeys(IdentityService identityService) async {
+    if ((await identityService.publicKeyPem).isEmpty) {
+      var keyHelper = KeyHelper();
+      var pair = keyHelper.generateRSAKeyPair();
+      var privatekeyPem = keyHelper.encodePrivateKeyToPem(pair.privateKey);
+      var publicKeyPem = keyHelper.encodePublicKeyToPem(pair.publicKey);
+      await identityService.setPrivateKeyPem(privatekeyPem);
+      await identityService.setPublicKeyPem(publicKeyPem);
+    }
   }
 
   @override

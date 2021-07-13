@@ -32,6 +32,9 @@ dependencies:
   shelf_web_socket: ^1.0.1 # BSD License
   uuid: ^3.0.4 # MIT License
   web_socket_channel: ^2.1.0 # BSD License
+  pointycastle: ^3.1.2 # MIT License
+  asn1lib: ^1.0.2 # BSD License
+  encrypt: ^5.0.0 # BSD License
 
   lww_crdt:
     path: lww_crdt
