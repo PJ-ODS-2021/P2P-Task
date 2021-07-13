@@ -10,7 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:sembast/sembast.dart' hide Finder;
 import 'package:sembast/sembast_memory.dart';
 
-import '../utils.dart';
+import '../utils/device_task_list.dart';
+import '../utils/widgets.dart';
 
 void main() {
   late Database database;
@@ -19,8 +20,9 @@ void main() {
   late Widget app;
 
   setUpAll(() async {
-    database = await databaseFactoryMemory.openDatabase('');
-    taskListService = await initTaskListService(database);
+    final deviceTaskList = await DeviceTaskList.create(name: 'Test Device');
+    database = deviceTaskList.database;
+    taskListService = deviceTaskList.taskListService;
     taskList = TaskList(title: 'Test List');
     app = MultiProvider(
       providers: [

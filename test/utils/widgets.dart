@@ -61,16 +61,3 @@ Future<void> slideWidgetOpen(WidgetTester tester, Finder finder) async {
   await tester.drag(finder, const Offset(-500, 0));
   await tester.pumpAndSettle();
 }
-
-Future<TaskListService> initTaskListService(Database database) async {
-  final keyValueRepository = KeyValueRepository(database, StoreRef(''));
-  final identityService = IdentityService(keyValueRepository);
-  final syncService = SyncService(keyValueRepository);
-  await syncService.setInterval(0);
-
-  return TaskListService(
-    keyValueRepository,
-    identityService,
-    syncService,
-  );
-}
