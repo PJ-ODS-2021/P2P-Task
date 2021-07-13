@@ -80,13 +80,20 @@ class KeyHelper with LogMixin {
           ? engine.inputBlockSize
           : input.length - inputOffset;
 
-      outputOffset += engine.processBlock(
-        input,
-        inputOffset,
-        chunkSize,
-        output,
-        outputOffset,
-      );
+      try {
+        outputOffset += engine.processBlock(
+          input,
+          inputOffset,
+          chunkSize,
+          output,
+          outputOffset,
+        );
+      } on ArgumentError catch (e) {
+        // TODO: this is very implementation defined
+        if (e.message == 'decoding error') {
+          throw Exception('decryption failed');
+        }
+      }
 
       inputOffset += chunkSize;
     }
