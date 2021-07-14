@@ -134,20 +134,16 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     PeerInfo peerInfo,
     int index,
   ) {
-    final color = index.isEven ? Colors.white : Colors.white60;
-
     return ExpansionTile(
-      collapsedBackgroundColor: color,
-      backgroundColor: color,
       title: _buildPeerInfoTitle(viewModel, peerInfo),
-      children: peerInfo.locations.map((peerLocation) {
-        return _buildSlidablePeerRow(
-          peerInfo,
-          peerLocation,
-          viewModel,
-        );
-      }).toList()
-        ..add(_buildAddPeerLocationRow(context, peerInfo)),
+      children: peerInfo.locations
+          .map((peerLocation) => _buildSlidablePeerRow(
+                peerInfo,
+                peerLocation,
+                viewModel,
+              ))
+          .toList()
+            ..add(_buildAddPeerLocationTile(context, peerInfo)),
     );
   }
 
@@ -282,9 +278,8 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     );
   }
 
-  Widget _buildAddPeerLocationRow(BuildContext context, PeerInfo peerInfo) {
+  Widget _buildAddPeerLocationTile(BuildContext context, PeerInfo peerInfo) {
     return ListTile(
-      tileColor: Colors.white,
       leading: Icon(Icons.add),
       title: Text('Add Peer Location'),
       onTap: () => _openDeviceForm(context, template: peerInfo),
@@ -298,7 +293,6 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
 
   Widget _buildPeerLocationEntry(PeerLocation peerLocation) {
     return ListTile(
-      tileColor: Colors.white,
       leading: Icon(Icons.send_to_mobile),
       title: Text(_listTileTitle(peerLocation)),
       subtitle: peerLocation.networkName != null
