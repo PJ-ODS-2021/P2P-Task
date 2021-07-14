@@ -36,6 +36,7 @@ class DeviceListViewModel with LogMixin {
 
   DeviceListViewModel(this._peerInfoService, this._peerService) {
     loadDevices();
+    _peerInfoService.addChangeCallback(loadDevices);
   }
 
   void loadDevices() {
@@ -47,9 +48,8 @@ class DeviceListViewModel with LogMixin {
   }
 
   void addNewPeer(PeerInfo peerInfo) async {
-    await _peerInfoService.upsert(peerInfo);
+    await _peerInfoService.upsert(peerInfo, mergeWithExistent: true);
     sendIntroductionMessageToPeer(peerInfo);
-    loadDevices();
   }
 
   void handleQrCodeRead(String qrContent) async {
@@ -73,17 +73,14 @@ class DeviceListViewModel with LogMixin {
     sendIntroductionMessageToPeer(
       peerInfo.copyWith(locations: [peerInfo.locations.first]),
     );
-    loadDevices();
   }
 
   void syncWithPeer(PeerInfo peer) async {
     await _peerService.syncWithPeer(peer);
-    loadDevices();
   }
 
   void upsert(PeerInfo peer) async {
     await _peerInfoService.upsert(peer);
-    loadDevices();
   }
 
   void sendIntroductionMessageToPeer(PeerInfo peerInfo) async {
@@ -134,6 +131,7 @@ class DeviceListViewModel with LogMixin {
   }
 
   void dispose() {
+    _peerInfoService.removeChangeCallback(loadDevices);
     peerInfos.dispose();
   }
 }
