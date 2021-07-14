@@ -4,7 +4,7 @@ import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/screens/devices/device_form_screen.dart';
 import 'package:p2p_task/screens/home_screen.dart';
 import 'package:p2p_task/screens/qr_scanner_screen.dart';
-import 'package:p2p_task/screens/setup/config_screen.dart';
+import 'package:p2p_task/screens/setup/setup_screen.dart';
 import 'package:p2p_task/viewmodels/device_list_viewmodel.dart';
 import 'package:p2p_task/widgets/fade_route_builder.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +14,7 @@ class DeviceSetupScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final viewModel = Provider.of<DeviceListViewModel>(context);
 
-    return ConfigScreen(
+    return SetupScreen(
       title: 'Scan other devices 📱',
       onSubmit: () => _handleSubmit(context),
       child: Column(

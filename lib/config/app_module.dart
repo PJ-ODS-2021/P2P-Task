@@ -26,7 +26,7 @@ class AppModule {
     injector = Injector();
 
     final sharedPreferences = await SharedPreferences.getInstance();
-    injector.map((injector) => sharedPreferences, isSingleton: true);
+    injector.map<SharedPreferences>((_) => sharedPreferences);
     await _provideDatabaseService(sharedPreferences, injector);
     injector.map<Database>(
       (i) => i.get<DatabaseService>().database!,
@@ -85,12 +85,7 @@ class AppModule {
         i.get<IdentityService>(),
         i.get<NetworkInfoService>(),
         i.get<SyncService>(),
-      ),
-      isSingleton: true,
-    );
-    injector.map<SyncService>(
-      (i) => SyncService(
-        i.get<KeyValueRepository>(key: StoreRefNames.settings.value),
+        i.get<SharedPreferences>(),
       ),
       isSingleton: true,
     );
@@ -99,6 +94,12 @@ class AppModule {
         i.get<KeyValueRepository>(key: StoreRefNames.tasks.value),
         i.get<IdentityService>(),
         i.get<SyncService>(),
+      ),
+      isSingleton: true,
+    );
+    injector.map<SyncService>(
+      (i) => SyncService(
+        i.get<KeyValueRepository>(key: StoreRefNames.settings.value),
       ),
       isSingleton: true,
     );

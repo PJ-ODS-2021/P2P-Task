@@ -10,7 +10,18 @@ import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/utils/data_model_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/device_task_list.dart';
+
+class FakeSharedPreferences extends Fake implements SharedPreferences {
+  bool value = false;
+
+  @override
+  bool? getBool(String key) => value;
+
+  @override
+  Future<bool> setBool(String key, bool value) async => this.value = value;
+}
 
 class FakeNetworkInfoService extends Fake implements NetworkInfoService {
   @override
@@ -52,6 +63,7 @@ class Device {
       taskList.identityService,
       FakeNetworkInfoService(),
       null,
+      FakeSharedPreferences(),
     );
 
     return Device(taskList, peerInfoService, peerService);

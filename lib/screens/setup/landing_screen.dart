@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:p2p_task/screens/home_screen.dart';
-import 'package:p2p_task/screens/setup/database_config_screen.dart';
+import 'package:p2p_task/screens/setup/database_setup_screen.dart';
 import 'package:p2p_task/screens/setup/dependencies_initalizor.dart';
 import 'package:p2p_task/screens/setup/splash_screen.dart';
 import 'package:p2p_task/utils/shared_preferences_keys.dart';
@@ -28,7 +28,7 @@ class LandingScreen extends StatelessWidget {
               )
             : SplashScreen<Directory>(
                 getApplicationDocumentsDirectory(),
-                (directory) => DatabaseConfigScreen(directory),
+                (directory) => DatabaseSetupScreen(directory),
                 'Retrieve default directory...',
               );
       },

@@ -2,12 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:p2p_task/screens/setup/scroll_column_expandable.dart';
 
-class ConfigScreen extends StatelessWidget {
+class SetupScreen extends StatelessWidget {
   final Widget child;
   final String title;
   final Function() onSubmit;
 
-  ConfigScreen({
+  SetupScreen({
     required this.child,
     required this.title,
     required this.onSubmit,
