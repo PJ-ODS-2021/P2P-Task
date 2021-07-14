@@ -130,7 +130,7 @@ class PeerService with LogMixin, ChangeCallbackProvider {
           ),
       ],
     );
-    await _peerInfoService.upsert(peerInfo, mergePeerLocations: true);
+    await _peerInfoService.upsert(peerInfo, mergeWithExistent: true);
 
     _peer.sendPacketTo(
       source,

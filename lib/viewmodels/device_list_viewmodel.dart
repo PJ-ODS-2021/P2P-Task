@@ -69,7 +69,7 @@ class DeviceListViewModel with LogMixin {
       locations: [PeerLocation('ws://${values[2]}:${values[3]}')],
       publicKeyPem: values[4],
     );
-    await _peerInfoService.upsert(peerInfo, mergePeerLocations: true);
+    await _peerInfoService.upsert(peerInfo, mergeWithExistent: true);
     sendIntroductionMessageToPeer(
       peerInfo.copyWith(locations: [peerInfo.locations.first]),
     );
