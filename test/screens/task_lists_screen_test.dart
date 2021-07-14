@@ -7,8 +7,7 @@ import 'package:p2p_task/screens/task_list_form_screen.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:provider/provider.dart';
-import 'package:sembast/sembast.dart' hide Finder;
-import 'package:sembast/sembast_memory.dart';
+import 'package:sembast/sembast.dart';
 
 import '../utils/device_task_list.dart';
 import '../utils/widgets.dart';

@@ -3,13 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:p2p_task/services/identity_service.dart';
-import 'package:p2p_task/services/sync_service.dart';
-import 'package:p2p_task/services/task_list_service.dart';
-import 'package:p2p_task/utils/key_value_repository.dart';
 import 'package:provider/provider.dart';
-// Don't shadow the Finder from flutter_test (CommonFinders)
-import 'package:sembast/sembast.dart' hide Finder;
 
 Widget buildAppWithScreen(
   Widget screen, [
