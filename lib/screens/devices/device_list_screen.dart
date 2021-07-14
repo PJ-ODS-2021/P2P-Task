@@ -6,7 +6,7 @@ import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/screens/devices/device_form_screen.dart';
 import 'package:p2p_task/screens/qr_scanner_screen.dart';
 import 'package:p2p_task/viewmodels/device_list_viewmodel.dart';
-import 'package:p2p_task/widgets/list_section.dart';
+import 'package:p2p_task/widgets/yes_no_dialog.dart';
 import 'package:provider/provider.dart';
 
 class DeviceListScreen extends StatefulWidget {
@@ -71,7 +71,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           return _buildNoDevicesMessage();
         }
 
-        return _buildDeviceList(viewModel, loadProcess.data!);
+        return _buildPeerInfoList(viewModel, loadProcess.data!);
       },
     );
   }
@@ -117,32 +117,123 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     );
   }
 
-  Widget _buildDeviceList(
+  Widget _buildPeerInfoList(
     DeviceListViewModel viewModel,
-    List<PeerInfo> devices,
+    List<PeerInfo> peerInfos,
   ) {
-    return Column(
-      children: devices.map((peerInfo) {
-        return ListSection(
-          title: _getDeviceName(peerInfo),
-          children: peerInfo.locations.map((peerLocation) {
-            return _buildSlidablePeerRow(
-              peerInfo,
-              peerLocation,
-              viewModel,
-            );
-          }).toList()
-            ..add(_buildAddPeerLocationRow(context, peerInfo)),
-        );
-      }).toList(),
+    return ListView(
+      children: [
+        for (var i = 0; i < peerInfos.length; i++)
+          _buildPeerInfoTile(viewModel, peerInfos[i], i),
+      ],
     );
   }
 
-  String _getDeviceName(PeerInfo peerInfo) {
-    final status = peerInfo.status.value;
-    final name = peerInfo.name.isNotEmpty ? peerInfo.name : peerInfo.id;
+  Widget _buildPeerInfoTile(
+    DeviceListViewModel viewModel,
+    PeerInfo peerInfo,
+    int index,
+  ) {
+    final color = index.isEven ? Colors.white : Colors.white60;
 
-    return '$name - $status';
+    return ExpansionTile(
+      collapsedBackgroundColor: color,
+      backgroundColor: color,
+      title: _buildPeerInfoTitle(viewModel, peerInfo),
+      children: peerInfo.locations.map((peerLocation) {
+        return _buildSlidablePeerRow(
+          peerInfo,
+          peerLocation,
+          viewModel,
+        );
+      }).toList()
+        ..add(_buildAddPeerLocationRow(context, peerInfo)),
+    );
+  }
+
+  Widget _buildPeerInfoTitle(
+    DeviceListViewModel viewModel,
+    PeerInfo peerInfo,
+  ) {
+    return ListTile(
+      title: Row(children: [
+        _buildPeerInfoStatusIcon(peerInfo),
+        SizedBox(width: 5),
+        Flexible(
+          fit: FlexFit.tight,
+          flex: 1,
+          child: Text(
+            peerInfo.name.isNotEmpty ? peerInfo.name : (peerInfo.id ?? ''),
+            textAlign: TextAlign.left,
+          ),
+        ),
+        Spacer(),
+        ..._buildSyncOrConnectButton(viewModel, peerInfo),
+        SizedBox(width: 5),
+        IconButton(
+          onPressed: () => YesNoDialog.show(
+            context,
+            title: 'Delete Peer',
+            description:
+                'Do you really want to delete the peer "${peerInfo.name}" with ID "${peerInfo.id}"?',
+          ).then((value) {
+            if (value != null && value) viewModel.removePeer(peerInfo);
+          }),
+          tooltip: 'Delete',
+          color: Colors.red.shade400,
+          icon: Icon(Icons.delete),
+        ),
+      ]),
+      subtitle: peerInfo.id != null
+          ? Text(
+              'ID: ${peerInfo.id!}',
+              style: TextStyle(color: Colors.grey.shade600),
+            )
+          : null,
+    );
+  }
+
+  Icon _buildPeerInfoStatusIcon(PeerInfo peerInfo) {
+    switch (peerInfo.status) {
+      case Status.created:
+        return Icon(
+          Icons.unpublished_outlined,
+          semanticLabel: 'Inactive',
+        );
+      case Status.active:
+        return Icon(
+          Icons.published_with_changes_outlined,
+          semanticLabel: 'Active',
+        );
+    }
+  }
+
+  List<Widget> _buildSyncOrConnectButton(
+    DeviceListViewModel viewModel,
+    PeerInfo peerInfo,
+  ) {
+    switch (peerInfo.status) {
+      case Status.active:
+        return [
+          IconButton(
+            onPressed: () => viewModel.syncWithPeer(peerInfo),
+            tooltip: 'Sync',
+            color: Colors.grey.shade500,
+            icon: Icon(Icons.sync),
+          ),
+        ];
+      case Status.created:
+        return [
+          IconButton(
+            onPressed: () => viewModel.sendIntroductionMessageToPeer(peerInfo),
+            tooltip: 'Connect',
+            color: Colors.yellow.shade700,
+            icon: Icon(Icons.settings_ethernet),
+          ),
+        ];
+      default:
+        return [];
+    }
   }
 
   Widget _buildSlidablePeerRow(
@@ -175,7 +266,16 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           caption: 'Delete',
           color: Colors.red.shade400,
           icon: Icons.delete,
-          onTap: () => viewModel.removePeerLocation(peerInfo.id, peerLocation),
+          onTap: () => YesNoDialog.show(
+            context,
+            title: 'Delete Peer Location',
+            description:
+                'Do you really want to delete the peer location "${peerLocation.uri}" from the peer "${peerInfo.name}" with ID "${peerInfo.id}"?',
+          ).then((value) {
+            if (value != null && value) {
+              viewModel.removePeerLocation(peerInfo.id, peerLocation);
+            }
+          }),
         ),
       ],
       child: _buildPeerLocationEntry(peerLocation),
