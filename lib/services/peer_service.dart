@@ -172,16 +172,16 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     TaskListMessage taskListMessage,
     WebSocketClient source,
   ) async {
-    final peerInfo = await _peerInfoService.getById(taskListMessage.peerID);
+    final peerInfo = await _peerInfoService.getById(taskListMessage.peerId);
     if (peerInfo == null) {
-      logger.warning('Unknown peerID ${taskListMessage.peerID} - skipping');
+      logger.warning('Unknown peerID ${taskListMessage.peerId} - skipping');
 
       return;
     }
 
     if (!keyHelper.rsaVerify(
       peerInfo.publicKeyPem,
-      taskListMessage.peerID,
+      taskListMessage.peerId,
       taskListMessage.signature,
     )) {
       logger.warning('Signature cannot be verified - skipping');
