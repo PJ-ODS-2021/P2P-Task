@@ -163,6 +163,28 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
   Future<String> crdtToJson() async =>
       _readTaskListCollectionCrdtStringFromDatabase().then((v) => v ?? '');
 
+  Future<bool> canContainChanges(String otherJson) async {
+    if (otherJson.isEmpty) return false;
+    Map<String, dynamic> otherJsonMap = jsonDecode(otherJson);
+    if (otherJsonMap.isEmpty) return false;
+    final selfJson = await _readTaskListCollectionCrdtStringFromDatabase();
+    if (selfJson == null || selfJson.isEmpty) return true;
+    Map<String, dynamic> selfJsonMap = jsonDecode(selfJson);
+    if (selfJsonMap.isEmpty) return true;
+    final other = MapCrdtRoot.fromJson(
+      otherJsonMap,
+      keyDecode: (_) => null,
+      valueDecode: (_) => null,
+    );
+    final self = MapCrdtRoot.fromJson(
+      selfJsonMap,
+      keyDecode: (_) => null,
+      valueDecode: (_) => null,
+    );
+
+    return other.canContainChangesFor(self);
+  }
+
   Future<void> mergeCrdtJson(String otherJson) async {
     logger.info('Merging with $otherJson');
     final self = (await _readAndDecodeTaskListCollectionCrdt());

@@ -54,10 +54,10 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
 
   Future<List<PeerInfoAndLocation>>
       sendPacketToAllPeers<T extends Serializable>(
-    T packet, [
-    List<PeerInfo> peers = const [],
+    T packet,
+    Iterable<PeerInfo> peers, {
     RSAPrivateKey? privateKey,
-  ]) async {
+  }) async {
     final payload = marshallPacket(packet);
     logger.info('sending packet to all peers');
 

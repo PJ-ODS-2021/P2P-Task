@@ -15,11 +15,15 @@ class TaskListMessage implements Serializable {
   @Uint8ListConverter()
   Uint8List signature;
 
+  /// If not null, the message will be forwarded to known peers not in this list
+  Set<String>? traversedPeerIds;
+
   TaskListMessage(
     this.taskListCrdtJson,
     this.peerId,
     this.signature, {
     this.requestReply = false,
+    this.traversedPeerIds,
   });
 
   factory TaskListMessage.fromJson(Map<String, dynamic> json) =>

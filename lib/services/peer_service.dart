@@ -13,6 +13,7 @@ import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/security/key_helper.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
+import 'package:pedantic/pedantic.dart';
 
 class PeerService with LogMixin, ChangeCallbackProvider {
   final WebSocketPeer _peer;
@@ -49,8 +50,16 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       'DeletePeerMessage',
       (json) => DeletePeerMessage.fromJson(json),
     );
+
     _peer.registerCallback<DebugMessage>(_debugMessageCallback);
-    _peer.registerCallback<TaskListMessage>(_taskListMessageCallback);
+    _peer
+        .registerCallback<TaskListMessage>((final message, final source) async {
+      try {
+        await _taskListMessageCallback(message, source);
+      } on Exception catch (e) {
+        logger.severe('Exception in task list message callback: $e');
+      }
+    });
     _peer.registerCallback<IntroductionMessage>(_introductionMessageCallback);
     _peer.registerCallback<DeletePeerMessage>(_deletePeerMessageCallback);
 
@@ -172,15 +181,16 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     TaskListMessage taskListMessage,
     WebSocketClient source,
   ) async {
-    final peerInfo = await _peerInfoService.getById(taskListMessage.peerId);
-    if (peerInfo == null) {
+    final messagePeerInfo =
+        await _peerInfoService.getById(taskListMessage.peerId);
+    if (messagePeerInfo == null) {
       logger.warning('Unknown peerID ${taskListMessage.peerId} - skipping');
 
       return;
     }
 
     if (!keyHelper.rsaVerify(
-      peerInfo.publicKeyPem,
+      messagePeerInfo.publicKeyPem,
       taskListMessage.peerId,
       taskListMessage.signature,
     )) {
@@ -189,36 +199,69 @@ class PeerService with LogMixin, ChangeCallbackProvider {
       return;
     }
 
-    logger.info('Received TaskListMessage from ${peerInfo.id}');
+    logger.info('Received TaskListMessage from ${messagePeerInfo.id}');
 
-    if (peerInfo.status != Status.active) {
+    if (messagePeerInfo.status != Status.active) {
       logger.warning('Peer is not active - skipping');
 
       return;
     }
 
-    await _taskListService.mergeCrdtJson(taskListMessage.taskListCrdtJson);
+    await _handleRemoteTaskList(taskListMessage);
 
     if (taskListMessage.requestReply) {
-      final taskListCrdtJson = await _taskListService.crdtToJson();
-      final privateKey = await _identityService.privateKey;
-      final peerID = await _identityService.peerId;
-
-      final message = TaskListMessage(
-        taskListCrdtJson,
-        peerID,
-        keyHelper.rsaSign(privateKey!, peerID),
-      );
-      _peer.sendPacketTo(
+      await _sendTaskListReplyMessage(
         source,
-        message,
-        keyHelper.decodePublicKeyFromPem(peerInfo.publicKeyPem),
+        taskListMessage,
+        messagePeerInfo.publicKeyPem,
       );
-
-      // TODO: propagate new task list through the network using other connected and known peers (if updated)
-    } else {
-      logger.info('Server received TaskListMessage');
     }
+  }
+
+  Future<void> _handleRemoteTaskList(TaskListMessage taskListMessage) async {
+    final canContainChanges = await _taskListService
+        .canContainChanges(taskListMessage.taskListCrdtJson);
+    if (canContainChanges) {
+      await _taskListService.mergeCrdtJson(taskListMessage.taskListCrdtJson);
+
+      // propagate message broadcast
+      if (taskListMessage.traversedPeerIds != null) {
+        // If this is already a reply message but the content changed,
+        // restart sync with our now newer version to every peer except the sender
+        final ignorePeers = taskListMessage.requestReply
+            ? taskListMessage.traversedPeerIds!
+            : {taskListMessage.peerId};
+        unawaited(syncWithAllKnownPeers(
+          broadcast: true,
+          ignorePeers: ignorePeers,
+        ).onError((error, stackTrace) =>
+            logger.severe('Exception in unawaited sync: $error')));
+      }
+    }
+  }
+
+  Future<void> _sendTaskListReplyMessage(
+    WebSocketClient source,
+    TaskListMessage taskListMessage,
+    String publicKeyPem,
+  ) async {
+    final taskListCrdtJson = await _taskListService.crdtToJson();
+    final privateKey = await _identityService.privateKey;
+    final selfPeerId = await _identityService.peerId;
+
+    final message = TaskListMessage(
+      taskListCrdtJson,
+      selfPeerId,
+      keyHelper.rsaSign(privateKey!, selfPeerId),
+      traversedPeerIds: taskListMessage.traversedPeerIds != null
+          ? (taskListMessage.traversedPeerIds!..add(selfPeerId))
+          : null,
+    );
+    _peer.sendPacketTo(
+      source,
+      message,
+      keyHelper.decodePublicKeyFromPem(publicKeyPem),
+    );
   }
 
   Future<void> startServer() async {
@@ -310,23 +353,28 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     );
   }
 
-  Future<void> syncWithAllKnownPeers() async {
+  Future<void> syncWithAllKnownPeers({
+    bool broadcast = true,
+    Set<String> ignorePeers = const {},
+  }) async {
     final crdtContent = await _taskListService.crdtToJson();
     final privateKey = await _identityService.privateKey;
-    final peerID = await _identityService.peerId;
+    final peerId = await _identityService.peerId;
 
     logger.info('syncing task list with all known peers');
     final tasksPacket = TaskListMessage(
       crdtContent,
-      peerID,
-      keyHelper.rsaSign(privateKey!, peerID),
+      peerId,
+      keyHelper.rsaSign(privateKey!, peerId),
       requestReply: true,
+      traversedPeerIds: broadcast ? ({peerId}..addAll(ignorePeers)) : null,
     );
     final peers = await _peerInfoService.activeDevices;
+    peers.removeWhere((peer) => ignorePeers.contains(peer.id));
     final sendInfo = await _peer.sendPacketToAllPeers(
       tasksPacket,
       peers,
-      await _identityService.privateKey,
+      privateKey: await _identityService.privateKey,
     );
     await Future.wait(sendInfo
         .where((sendInfo) => sendInfo.peerLocation != null)
