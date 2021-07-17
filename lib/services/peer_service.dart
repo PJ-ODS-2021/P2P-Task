@@ -245,7 +245,10 @@ class PeerService with LogMixin, ChangeCallbackProvider {
     TaskListMessage taskListMessage,
     String publicKeyPem,
   ) async {
-    final taskListCrdtJson = await _taskListService.crdtToJson();
+    final taskListCrdtJson = await _taskListService
+            .canContainChangesFor(taskListMessage.taskListCrdtJson)
+        ? await _taskListService.crdtToJson()
+        : '';
     final privateKey = await _identityService.privateKey;
     final selfPeerId = await _identityService.peerId;
 

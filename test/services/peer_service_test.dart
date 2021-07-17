@@ -339,6 +339,7 @@ void main() {
   });
 }
 
+/// Will fail if [expectedTaskLists] is empty because the task list change callback will never be called
 Future<void> _checkBroadcastWorks(
   List<Device> devices,
   Device syncDevice, {
