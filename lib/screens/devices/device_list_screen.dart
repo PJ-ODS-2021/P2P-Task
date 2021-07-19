@@ -194,12 +194,12 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     switch (peerInfo.status) {
       case Status.created:
         return Icon(
-          Icons.unpublished_outlined,
+          Icons.no_encryption_outlined,
           semanticLabel: 'Inactive',
         );
       case Status.active:
         return Icon(
-          Icons.published_with_changes_outlined,
+          Icons.lock_open_outlined,
           semanticLabel: 'Active',
         );
     }
