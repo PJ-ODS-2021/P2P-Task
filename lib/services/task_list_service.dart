@@ -247,7 +247,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
               !(taskRecordEntry.value.value is _TaskCrdtType))
           .map((taskRecordEntry) => taskRecordEntry.value.clock)
           .toSet()
-            ?..removeWhere((clock) => clock <= taskRecordEntry.value.clock);
+        ?..removeWhere((clock) => clock <= taskRecordEntry.value.clock);
 
       return [
         TaskListActivity(
@@ -307,7 +307,7 @@ class TaskListService with LogMixin, ChangeCallbackProvider {
     final valueClocks = taskCrdt.records.values
         .map((record) => record.clock)
         .toSet()
-          ..removeWhere((clock) => clock <= entry.value.clock);
+      ..removeWhere((clock) => clock <= entry.value.clock);
 
     return [
       _taskActivityFromRecordEntry(
