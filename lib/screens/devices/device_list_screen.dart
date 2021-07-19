@@ -144,7 +144,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                 viewModel,
               ))
           .toList()
-        ..add(_buildAddPeerLocationTile(context, peerInfo)),
+            ..add(_buildAddPeerLocationTile(context, peerInfo)),
     );
   }
 
