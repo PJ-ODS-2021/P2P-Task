@@ -6,7 +6,7 @@ import 'package:p2p_task/network/messages/converter.dart';
 part 'introduction_message.g.dart';
 
 @JsonSerializable()
-class IntroductionMessage extends Serializable {
+class IntroductionMessage implements Serializable {
   String peerId;
   String name;
   String ip;

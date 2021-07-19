@@ -36,6 +36,7 @@ class DeviceListViewModel with LogMixin {
 
   DeviceListViewModel(this._peerInfoService, this._peerService) {
     loadDevices();
+    _peerInfoService.addChangeCallback(loadDevices);
   }
 
   void loadDevices() {
@@ -46,13 +47,12 @@ class DeviceListViewModel with LogMixin {
     });
   }
 
-  void addNewPeer(PeerInfo peerInfo) async {
-    await _peerInfoService.upsert(peerInfo);
+  Future<void> addNewPeer(PeerInfo peerInfo) async {
+    await _peerInfoService.upsert(peerInfo, mergeWithExistent: true);
     await sendIntroductionMessageToPeer(peerInfo);
-    loadDevices();
   }
 
-  void handleQrCodeRead(String qrContent) async {
+  Future<void> handleQrCodeRead(String qrContent) async {
     var values = qrContent.split(',');
     if (values.length < 5) {
       logger.warning(
@@ -69,23 +69,20 @@ class DeviceListViewModel with LogMixin {
       locations: [PeerLocation('ws://${values[2]}:${values[3]}')],
       publicKeyPem: values[4],
     );
-    await _peerInfoService.upsert(peerInfo, mergePeerLocations: true);
+    await _peerInfoService.upsert(peerInfo, mergeWithExistent: true);
     await sendIntroductionMessageToPeer(
       peerInfo.copyWith(locations: [peerInfo.locations.first]),
     );
-    loadDevices();
   }
 
   Future<bool> syncWithPeer(PeerInfo peer) async {
     final sentLocation = await _peerService.syncWithPeer(peer);
-    loadDevices();
 
     return sentLocation != null;
   }
 
   void upsert(PeerInfo peer) async {
     await _peerInfoService.upsert(peer);
-    loadDevices();
   }
 
   Future<bool> sendIntroductionMessageToPeer(PeerInfo peerInfo) async =>
@@ -135,6 +132,7 @@ class DeviceListViewModel with LogMixin {
   }
 
   void dispose() {
+    _peerInfoService.removeChangeCallback(loadDevices);
     peerInfos.dispose();
   }
 }

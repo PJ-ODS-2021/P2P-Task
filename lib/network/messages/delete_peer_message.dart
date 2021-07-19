@@ -6,7 +6,7 @@ import 'package:p2p_task/network/messages/converter.dart';
 part 'delete_peer_message.g.dart';
 
 @JsonSerializable()
-class DeletePeerMessage extends Serializable {
+class DeletePeerMessage implements Serializable {
   String peerID;
 
   @Uint8ListConverter()
