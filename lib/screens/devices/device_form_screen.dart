@@ -228,7 +228,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
     );
 
     var viewModel = Provider.of<DeviceListViewModel>(context, listen: false);
-    viewModel.addNewPeer(peerInfo);
+    await viewModel.addNewPeer(peerInfo);
 
     Navigator.of(context).pop();
   }
