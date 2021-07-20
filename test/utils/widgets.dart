@@ -1,5 +1,4 @@
 /// Utility functions for testing
-
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,7 +49,8 @@ Future<void> pumpAppAndSettle(WidgetTester tester, Widget app) async {
 }
 
 Future<void> slideWidgetOpen(WidgetTester tester, Finder finder) async {
-  // If this test fails unexpectedly, the slideOffset is likely wrong.
+  // If this test fails unexpectedly, the slideOffset is likely not "high"
+  // enough to swipe the widget open.
   // Increase the offset e.g. to Offset(-1000, 0) and rerun the test.
   await tester.drag(finder, const Offset(-500, 0));
   await tester.pumpAndSettle();

@@ -8,21 +8,19 @@ import 'package:p2p_task/screens/task_list_screen.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/task_list_service.dart';
 import 'package:provider/provider.dart';
-import 'package:sembast/sembast.dart';
 
 import '../utils/device_task_list.dart';
 import '../utils/widgets.dart';
 
 void main() {
-  late Database database;
+  late DeviceTaskList deviceTaskList;
   late TaskListService taskListService;
   late TaskList taskList;
   late Task task;
   late Widget app;
 
   setUpAll(() async {
-    final deviceTaskList = await DeviceTaskList.create(name: 'Test Device');
-    database = deviceTaskList.database;
+    deviceTaskList = await DeviceTaskList.create(name: 'Test Device');
     taskListService = deviceTaskList.taskListService;
     taskList = TaskList(
       title: 'Important Test Tasks ✨',
@@ -38,7 +36,7 @@ void main() {
   });
 
   tearDownAll(() async {
-    await database.close();
+    await deviceTaskList.close();
   });
 
   group(
@@ -97,7 +95,7 @@ void main() {
       );
 
       testWidgets(
-        'shows plus button to add a new list',
+        'shows plus button to add a new task',
         (WidgetTester tester) async {
           await pumpAppAndSettle(tester, app);
 
