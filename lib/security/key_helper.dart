@@ -89,7 +89,8 @@ class KeyHelper with LogMixin {
           outputOffset,
         );
       } on ArgumentError catch (e) {
-        // TODO: this is very implementation defined
+        // Pointycastle throws an argument error when there is an error in the decryption.
+        // We want to throw an Exception instead (Exception is meant for runtime errors and Error is meant for programmer errors).
         if (e.message == 'decoding error') {
           throw Exception('decryption failed');
         }

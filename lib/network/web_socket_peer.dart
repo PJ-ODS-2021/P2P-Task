@@ -167,6 +167,8 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
         error,
         stackTrace,
       );
+    } on FormatException catch (error) {
+      logger.info('Invalid websocket URI: $error');
     }
 
     return null;

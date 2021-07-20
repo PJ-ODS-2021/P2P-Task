@@ -170,9 +170,9 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
         IconButton(
           onPressed: () => YesNoDialog.show(
             context,
-            title: 'Delete Peer',
+            title: 'Delete Device',
             description:
-                'Do you really want to delete the peer "${peerInfo.name}" with ID "${peerInfo.id}"?',
+                'Do you really want to delete the device "${peerInfo.name}" with ID "${peerInfo.id}"?',
           ).then((value) {
             if (value != null && value) viewModel.removePeer(peerInfo);
           }),
@@ -272,7 +272,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           icon: Icons.delete,
           onTap: () => YesNoDialog.show(
             context,
-            title: 'Delete Peer Location',
+            title: 'Delete Location',
             description:
                 'Do you really want to delete the peer location "${peerLocation.uri}" from the peer "${peerInfo.name}" with ID "${peerInfo.id}"?',
           ).then((value) {
@@ -289,7 +289,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   Widget _buildAddPeerLocationTile(BuildContext context, PeerInfo peerInfo) {
     return ListTile(
       leading: Icon(Icons.add),
-      title: Text('Add Peer Location'),
+      title: Text('Add Location'),
       onTap: () => _openDeviceForm(context, template: peerInfo),
     );
   }
@@ -350,8 +350,8 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           builder: (context) => SimpleErrorPopupDialog(
             'Sync Unsuccessful',
             peerLocation == null
-                ? 'Could not sync with peer using "${peerInfo.name}"'
-                : 'Could not sync with peer using ${peerLocation.uri}',
+                ? 'Could not sync with "${peerInfo.name}"'
+                : 'Could not sync with "${peerInfo.name}" using ${peerLocation.uri}',
           ),
         );
       }
@@ -377,8 +377,8 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           builder: (context) => SimpleErrorPopupDialog(
             'Connection Unsuccessful',
             peerLocation == null
-                ? 'Could connect to peer "${peerInfo.name}"'
-                : 'Could connect to peer using ${peerLocation.uri}',
+                ? 'Could not connect to "${peerInfo.name}"'
+                : 'Could not connect to "${peerInfo.name}" using ${peerLocation.uri}',
           ),
         );
       }

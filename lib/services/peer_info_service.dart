@@ -20,22 +20,13 @@ class PeerInfoService with ChangeCallbackProvider {
           .where((peerInfo) => peerInfo.id != null && peerInfo.name.isNotEmpty)
           .map((peerInfo) => MapEntry(peerInfo.id!, peerInfo.name)));
 
-  Future<void> upsert(
-    PeerInfo peerInfo, {
-    bool mergeWithExistent = true,
-  }) async {
-    if (mergeWithExistent && peerInfo.id != null) {
+  Future<void> upsert(PeerInfo peerInfo) async {
+    if (peerInfo.id != null) {
       await _repository.runTransaction((txn) async {
         final existentPeerInfo = await _repository.get(peerInfo.id!, txn: txn);
         if (existentPeerInfo != null) {
-          existentPeerInfo.locations
-              .forEach((location) => peerInfo.addPeerLocation(location));
-
-          // if existent peer info is active and the public key is the same, the new peer info should also be active
-          if (existentPeerInfo.status == Status.active &&
-              peerInfo.publicKeyPem == existentPeerInfo.publicKeyPem) {
-            peerInfo.status = Status.active;
-          }
+          existentPeerInfo.locations.forEach(peerInfo.addPeerLocation);
+          peerInfo.status = existentPeerInfo.status;
         }
         await _repository.upsert(peerInfo, txn: txn);
       });

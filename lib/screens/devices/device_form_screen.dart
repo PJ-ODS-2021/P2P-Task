@@ -25,12 +25,15 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
   final _ipFocusNode = FocusNode();
   final _publicKeyFocusNode = FocusNode();
   final _portFocusNode = FocusNode();
+  final _isPeerInfoTemplate;
 
-  _DeviceFormScreenState({PeerInfo? template}) {
+  _DeviceFormScreenState({PeerInfo? template})
+      : _isPeerInfoTemplate = template != null {
     if (template != null) {
       _nameController.text = template.name;
       _idController.text = template.id ?? '';
       _publicKeyController.text = template.publicKeyPem;
+      _ipFocusNode.requestFocus();
     }
   }
 
@@ -38,7 +41,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Device'),
+        title: Text(_isPeerInfoTemplate ? 'Add Device Location' : 'Add Device'),
         centerTitle: true,
       ),
       body: ListView(
@@ -50,6 +53,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
               children: [
                 TextFormField(
                   autofocus: true,
+                  readOnly: _isPeerInfoTemplate,
                   focusNode: _nameFocusNode,
                   decoration: InputDecoration(
                     hintText: 'Name',
@@ -75,6 +79,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                 ),
                 TextFormField(
                   autofocus: true,
+                  readOnly: _isPeerInfoTemplate,
                   focusNode: _idFocusNode,
                   decoration: InputDecoration(
                     hintText: 'ID',
@@ -98,6 +103,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                   height: 15,
                 ),
                 TextFormField(
+                  readOnly: _isPeerInfoTemplate,
                   focusNode: _publicKeyFocusNode,
                   maxLines: null,
                   decoration: InputDecoration(
@@ -133,6 +139,9 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'The IP address is missing.';
+                    }
+                    if (value.contains(' ')) {
+                      return 'The IP may not contain spaces';
                     }
 
                     return null;

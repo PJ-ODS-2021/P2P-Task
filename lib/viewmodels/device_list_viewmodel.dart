@@ -48,7 +48,7 @@ class DeviceListViewModel with LogMixin {
   }
 
   Future<void> addNewPeer(PeerInfo peerInfo) async {
-    await _peerInfoService.upsert(peerInfo, mergeWithExistent: true);
+    await _peerInfoService.upsert(peerInfo);
     await sendIntroductionMessageToPeer(peerInfo);
   }
 
@@ -69,7 +69,7 @@ class DeviceListViewModel with LogMixin {
       locations: [PeerLocation('ws://${values[2]}:${values[3]}')],
       publicKeyPem: values[4],
     );
-    await _peerInfoService.upsert(peerInfo, mergeWithExistent: true);
+    await _peerInfoService.upsert(peerInfo);
     await sendIntroductionMessageToPeer(
       peerInfo.copyWith(locations: [peerInfo.locations.first]),
     );
