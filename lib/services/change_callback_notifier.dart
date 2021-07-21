@@ -6,12 +6,12 @@ class ChangeCallbackNotifier<T extends ChangeCallbackProvider>
   final T callbackProvider;
 
   ChangeCallbackNotifier(this.callbackProvider) {
-    callbackProvider.changeCallback = () => notifyListeners();
+    callbackProvider.addChangeCallback(notifyListeners);
   }
 
   @override
   void dispose() {
-    callbackProvider.changeCallback = null;
+    callbackProvider.removeChangeCallback(notifyListeners);
     super.dispose();
   }
 }

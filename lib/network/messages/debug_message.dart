@@ -4,7 +4,7 @@ import 'package:p2p_task/utils/serializable.dart';
 part 'debug_message.g.dart';
 
 @JsonSerializable()
-class DebugMessage extends Serializable {
+class DebugMessage implements Serializable {
   String value;
 
   DebugMessage(this.value);

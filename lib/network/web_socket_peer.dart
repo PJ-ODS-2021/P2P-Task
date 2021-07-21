@@ -13,6 +13,13 @@ import 'package:p2p_task/utils/serializable.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+class PeerInfoAndLocation {
+  final PeerInfo peerInfo;
+  final PeerLocation? peerLocation;
+
+  const PeerInfoAndLocation(this.peerInfo, this.peerLocation);
+}
+
 /// Represents one peer in the network.
 class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
   WebSocketServer? _server;
@@ -45,9 +52,10 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     );
   }
 
-  Future<void> sendPacketToAllPeers<T extends Serializable>(
+  Future<List<PeerInfoAndLocation>>
+      sendPacketToAllPeers<T extends Serializable>(
     T packet, [
-    List<PeerInfo> knownPeerInfos = const [],
+    List<PeerInfo> peers = const [],
     RSAPrivateKey? privateKey,
   ]) async {
     final payload = marshallPacket(packet);
@@ -58,31 +66,25 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
 
     // temporary implementation:
     // _server?.sendToClients(payload);
-    await Future.wait(knownPeerInfos.map(
-      (peerInfo) => sendToPeer(peerInfo, payload, privateKey),
+    return await Future.wait(peers.map(
+      (peerInfo) => sendToPeer(peerInfo, payload, privateKey)
+          .then((sentLocation) => PeerInfoAndLocation(peerInfo, sentLocation)),
     ));
   }
 
-  Future<bool> sendPacketToPeer<T extends Serializable>(
+  Future<PeerLocation?> sendPacketToPeer<T extends Serializable>(
     PeerInfo peerInfo,
     RSAPrivateKey? privateKey,
-    T packet, {
-    PeerLocation? location,
-  }) async {
-    return sendToPeer(
-      peerInfo,
-      marshallPacket(packet),
-      privateKey,
-      location: location,
-    );
-  }
+    T packet,
+  ) async =>
+      sendToPeer(peerInfo, marshallPacket(packet), privateKey);
 
-  Future<bool> sendToPeer(
+  /// Returns the peer location that was used for the sync
+  Future<PeerLocation?> sendToPeer(
     PeerInfo peerInfo,
     String payload,
-    RSAPrivateKey? privateKey, {
-    PeerLocation? location,
-  }) async {
+    RSAPrivateKey? privateKey,
+  ) async {
     // This method doesn't actually need to be async (at least for now).
     // In theory this should use some sort of routing.
 
@@ -91,69 +93,66 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     // - if open, use it
     // - if a server is running, it can be used if the peer is currently connected to it
 
-    var encryptedPayload =
-        keyHelper.encryptWithPublicKeyPem(peerInfo.publicKeyPem, payload);
-
-    if (location != null) {
-      return _sendToPeerLocation(
-        privateKey,
-        location,
-        encryptedPayload,
-      );
-    }
     if (peerInfo.locations.isEmpty) {
-      logger.warning('Cannot sync with invalid peer $peerInfo: no locations');
+      logger.warning('Cannot sync with peer $peerInfo: no locations');
 
-      return false;
+      return null;
     }
 
+    final encryptedPayload =
+        keyHelper.encryptWithPublicKeyPem(peerInfo.publicKeyPem, payload);
     for (final location in peerInfo.locations) {
       final success =
           await _sendToPeerLocation(privateKey, location, encryptedPayload);
       if (success) {
         logger.info('successfully synced with $peerInfo using $location');
 
-        return true;
+        return location;
       }
       logger.info('could not sync with $peerInfo using $location');
     }
 
-    return false;
+    return null;
   }
 
   Future<bool> _sendToPeerLocation(
     RSAPrivateKey? privateKey,
     PeerLocation location,
     String payload, {
-    Duration timeout = const Duration(seconds: 2),
+    Duration timeout = const Duration(seconds: 3),
   }) async {
     logger.info('Trying to sync with $location...');
     final connection = tryWebSocketClientConnect(location.uri);
     if (connection == null) return false;
     final completer = Completer<bool>();
+    var success = false;
     connection.dataStream.listen(
       (data) async {
+        if (completer.isCompleted) return;
         logger.info('Received message from server:');
-        _handleMessage(connection, data, privateKey);
+        success = _handleMessage(connection, data, privateKey);
 
         // for now just always close after having received a message
         unawaited(connection.close());
       },
       onError: (error, stackTrace) {
-        completer.complete(false);
         logger.severe(
           'Error listening on websocket data stream to $location',
           error,
           stackTrace,
         );
+        if (!completer.isCompleted) completer.complete(false);
       },
-      onDone: () => completer.complete(true),
+      onDone: () {
+        if (!completer.isCompleted) completer.complete(success);
+      },
     );
     connection.send(payload);
     logger.info('Client sent message to $location');
     Future.delayed(timeout, () {
       logger.info('closing connection to $location due to timeout');
       connection.close();
+      if (!completer.isCompleted) completer.complete(false);
     });
 
     return await completer.future;
@@ -168,6 +167,8 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
         error,
         stackTrace,
       );
+    } on FormatException catch (error) {
+      logger.info('Invalid websocket URI: $error');
     }
 
     return null;
@@ -188,7 +189,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     RSAPublicKey? publicKey,
   ) {
     if (publicKey == null) {
-      logger.severe('missing public key for sending paket');
+      logger.severe('missing public key for sending packet');
 
       return;
     }
@@ -198,7 +199,8 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     client.send(payload);
   }
 
-  void _handleMessage(
+  /// Return true to signal success
+  bool _handleMessage(
     WebSocketClient source,
     String message,
     RSAPrivateKey? privateKey,
@@ -208,11 +210,10 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     if (privateKey == null) {
       logger.warning('Cannot handle message - missing private key.');
 
-      return;
+      return false;
     }
 
     var payload = '';
-
     try {
       logger.info('Decrypt message.');
       payload = keyHelper.decrypt(privateKey, message);
@@ -221,7 +222,7 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
         'Could not handle message - could not decrypt received message: $e.',
       );
 
-      return;
+      return false;
     }
 
     try {
@@ -229,10 +230,12 @@ class WebSocketPeer with LogMixin, PacketHandler<WebSocketClient> {
     } on FormatException catch (e) {
       logger.severe('could not decode received json: $e');
 
-      return;
+      return false;
     }
 
     logger.info('Packet:\n${packet.toJson().toString()}');
     invokeCallback(packet, source);
+
+    return true;
   }
 }

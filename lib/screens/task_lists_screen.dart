@@ -44,6 +44,7 @@ class TaskListsScreen extends StatelessWidget {
       children: [
         futureBuilder,
         ElevatedButton(
+          key: Key('addTaskListButton'),
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(

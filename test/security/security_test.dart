@@ -39,7 +39,7 @@ void main() {
       final publicKeyPem = keyHelper.encodePublicKeyToPem(keyPair.publicKey);
       final sig = keyHelper.rsaSign(keyPair.privateKey, 'peerID');
       final introductionMessage = IntroductionMessage(
-        peerID: 'peerID',
+        peerId: 'peerID',
         name: 'name',
         ip: 'ip',
         port: 58241,
@@ -63,12 +63,12 @@ void main() {
       expect(
         keyHelper.rsaVerify(
           publicKeyPem,
-          plainMessage.peerID,
+          plainMessage.peerId,
           plainMessage.signature,
         ),
         true,
       );
-      expect(plainMessage.peerID, introductionMessage.peerID);
+      expect(plainMessage.peerId, introductionMessage.peerId);
       expect(plainMessage.publicKeyPem, introductionMessage.publicKeyPem);
       expect(plainMessage.name, introductionMessage.name);
     });

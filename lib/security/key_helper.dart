@@ -80,13 +80,21 @@ class KeyHelper with LogMixin {
           ? engine.inputBlockSize
           : input.length - inputOffset;
 
-      outputOffset += engine.processBlock(
-        input,
-        inputOffset,
-        chunkSize,
-        output,
-        outputOffset,
-      );
+      try {
+        outputOffset += engine.processBlock(
+          input,
+          inputOffset,
+          chunkSize,
+          output,
+          outputOffset,
+        );
+      } on ArgumentError catch (e) {
+        // Pointycastle throws an argument error when there is an error in the decryption.
+        // We want to throw an Exception instead (Exception is meant for runtime errors and Error is meant for programmer errors).
+        if (e.message == 'decoding error') {
+          throw Exception('decryption failed');
+        }
+      }
 
       inputOffset += chunkSize;
     }

@@ -56,9 +56,10 @@ void main() {
     client.registerCallback<DebugMessage>(
       (msg, source) => serverDebugMessageCompleter.complete(msg.value),
     );
-    final sendSucceeded = await client.sendPacketToPeer(
+    final peerLocation = PeerLocation('ws://localhost:$port');
+    final sentLocation = await client.sendPacketToPeer(
       PeerInfo(
-        locations: [PeerLocation('ws://localhost:$port')],
+        locations: [peerLocation],
         name: '',
         status: Status.active,
         publicKeyPem: publicKey,
@@ -67,7 +68,7 @@ void main() {
       DebugMessage(messageContent),
     );
 
-    expect(sendSucceeded, true);
+    expect(sentLocation, peerLocation);
     final message = await serverDebugMessageCompleter.future
         .timeout(Duration(seconds: 5), onTimeout: () => null);
     expect(

@@ -1,5 +1,9 @@
 # P2P Task Manager
 
+![CI](https://github.com/PJ-ODS-2021/P2P-Task/actions/workflows/main.yaml/badge.svg)
+[![codecov](https://codecov.io/gh/PJ-ODS-2021/P2P-Task/branch/main/graph/badge.svg?token=DZ54RNQEIF)](https://codecov.io/gh/PJ-ODS-2021/P2P-Task)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 A privacy-aware task manager. No account needed, all your tasks get synced using the local network only.
 Because your data belongs to you!
 

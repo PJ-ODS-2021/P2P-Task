@@ -102,4 +102,30 @@ void main() {
       },
     );
   });
+
+  group('#transaction', () {
+    test('execute', () async {
+      final peerInfos = [
+        PeerInfo(
+          name: 'info1',
+          status: Status.created,
+          publicKeyPem: '',
+          locations: [],
+        ),
+        PeerInfo(
+          name: 'info2',
+          status: Status.created,
+          publicKeyPem: '',
+          locations: [],
+        ),
+      ];
+      await dataModelRepository.runTransaction((DatabaseClient txn) async {
+        await Future.wait(peerInfos
+            .map((peerInfo) => dataModelRepository.upsert(peerInfo, txn: txn)));
+      });
+
+      final entries = await dataModelRepository.find();
+      expect(entries.toSet(), peerInfos.toSet());
+    });
+  });
 }

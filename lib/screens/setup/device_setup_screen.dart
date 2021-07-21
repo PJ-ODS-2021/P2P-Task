@@ -41,7 +41,10 @@ class DeviceSetupScreen extends StatelessWidget {
                           trailing: IconButton(
                             icon: Icon(Icons.close_rounded),
                             color: Colors.redAccent,
-                            onPressed: () => viewModel.remove(peerInfo),
+                            onPressed: () => viewModel.removePeerLocation(
+                              peerInfo.id,
+                              location,
+                            ),
                           ),
                         );
                       });
