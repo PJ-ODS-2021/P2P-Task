@@ -36,6 +36,7 @@ class DeviceListViewModel with LogMixin {
 
   DeviceListViewModel(this._peerInfoService, this._peerService) {
     loadDevices();
+    _peerInfoService.addChangeCallback(loadDevices);
   }
 
   void loadDevices() {
@@ -46,16 +47,12 @@ class DeviceListViewModel with LogMixin {
     });
   }
 
-  void addNewPeer(PeerInfo peerInfo) async {
+  Future<void> addNewPeer(PeerInfo peerInfo) async {
     await _peerInfoService.upsert(peerInfo);
-    sendIntroductionMessageToPeer(
-      peerInfo,
-      peerInfo.locations.first,
-    );
-    loadDevices();
+    await sendIntroductionMessageToPeer(peerInfo);
   }
 
-  void handleQrCodeRead(String qrContent) async {
+  Future<void> handleQrCodeRead(String qrContent) async {
     var values = qrContent.split(',');
     if (values.length < 5) {
       logger.warning(
@@ -73,42 +70,51 @@ class DeviceListViewModel with LogMixin {
       publicKeyPem: values[4],
     );
     await _peerInfoService.upsert(peerInfo);
-    sendIntroductionMessageToPeer(
-      peerInfo,
-      peerInfo.locations.first,
+    await sendIntroductionMessageToPeer(
+      peerInfo.copyWith(locations: [peerInfo.locations.first]),
     );
-    loadDevices();
   }
 
-  void syncWithPeer(PeerInfo peer, {PeerLocation? location}) async {
-    await _peerService.syncWithPeer(peer, location: location);
-    loadDevices();
+  Future<bool> syncWithPeer(PeerInfo peer) async {
+    final sentLocation = await _peerService.syncWithPeer(peer);
+
+    return sentLocation != null;
   }
 
   void upsert(PeerInfo peer) async {
     await _peerInfoService.upsert(peer);
-    loadDevices();
   }
 
-  void sendIntroductionMessageToPeer(
-    PeerInfo peerInfo,
-    PeerLocation location,
-  ) async {
-    await _peerService.sendIntroductionMessageToPeer(
-      peerInfo,
-      location: location,
-    );
-  }
+  Future<bool> sendIntroductionMessageToPeer(PeerInfo peerInfo) async =>
+      (await _peerService.sendIntroductionMessageToPeer(peerInfo)) != null;
 
-  void remove(PeerInfo peer) async {
+  void removePeer(PeerInfo peer) async {
     try {
       await _peerService.sendDeletePeerMessageToPeer(peer);
     } on FormatException catch (e) {
       logger.warning('could not send delete peer message - $e');
     } finally {
-      await _peerInfoService.remove(peer);
-      loadDevices();
+      await _peerInfoService.remove(peer.id);
     }
+  }
+
+  void removePeerLocation(String? peerId, PeerLocation location) async {
+    if (peerId == null) return;
+    await _peerInfoService.update(peerId, (peerInfo) {
+      if (peerInfo == null) return null;
+      peerInfo.locations.remove(location);
+      if (peerInfo.locations.isEmpty) {
+        _peerService
+            .sendDeletePeerMessageToPeer(
+              peerInfo.copyWith(locations: [location]),
+            )
+            .onError((error, stackTrace) =>
+                logger.warning('could not send delete peer message - $error'));
+        peerInfo = null;
+      }
+
+      return peerInfo;
+    });
   }
 
   bool get showQrScannerButton {
@@ -126,6 +132,7 @@ class DeviceListViewModel with LogMixin {
   }
 
   void dispose() {
+    _peerInfoService.removeChangeCallback(loadDevices);
     peerInfos.dispose();
   }
 }

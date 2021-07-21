@@ -4,10 +4,13 @@ import 'package:p2p_task/viewmodels/device_list_viewmodel.dart';
 import 'package:provider/provider.dart';
 
 class DeviceFormScreen extends StatefulWidget {
-  DeviceFormScreen();
+  final PeerInfo? _template;
+
+  DeviceFormScreen({PeerInfo? template}) : _template = template;
 
   @override
-  _DeviceFormScreenState createState() => _DeviceFormScreenState();
+  _DeviceFormScreenState createState() =>
+      _DeviceFormScreenState(template: _template);
 }
 
 class _DeviceFormScreenState extends State<DeviceFormScreen> {
@@ -22,12 +25,23 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
   final _ipFocusNode = FocusNode();
   final _publicKeyFocusNode = FocusNode();
   final _portFocusNode = FocusNode();
+  final _isPeerInfoTemplate;
+
+  _DeviceFormScreenState({PeerInfo? template})
+      : _isPeerInfoTemplate = template != null {
+    if (template != null) {
+      _nameController.text = template.name;
+      _idController.text = template.id ?? '';
+      _publicKeyController.text = template.publicKeyPem;
+      _ipFocusNode.requestFocus();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Device'),
+        title: Text(_isPeerInfoTemplate ? 'Add Device Location' : 'Add Device'),
         centerTitle: true,
       ),
       body: ListView(
@@ -39,6 +53,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
               children: [
                 TextFormField(
                   autofocus: true,
+                  readOnly: _isPeerInfoTemplate,
                   focusNode: _nameFocusNode,
                   decoration: InputDecoration(
                     hintText: 'Name',
@@ -64,6 +79,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                 ),
                 TextFormField(
                   autofocus: true,
+                  readOnly: _isPeerInfoTemplate,
                   focusNode: _idFocusNode,
                   decoration: InputDecoration(
                     hintText: 'ID',
@@ -87,6 +103,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                   height: 15,
                 ),
                 TextFormField(
+                  readOnly: _isPeerInfoTemplate,
                   focusNode: _publicKeyFocusNode,
                   maxLines: null,
                   decoration: InputDecoration(
@@ -123,6 +140,9 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                     if (value == null || value.isEmpty) {
                       return 'The IP address is missing.';
                     }
+                    if (value.contains(' ')) {
+                      return 'The IP may not contain spaces';
+                    }
 
                     return null;
                   },
@@ -147,7 +167,8 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                     if (value == null || value.isEmpty) {
                       return 'The port is missing.';
                     }
-                    var port = int.parse(value);
+                    final port = int.tryParse(value);
+                    if (port == null) return 'The port must be a number';
                     if (port < 49152 || port > 65535) {
                       return 'The port must be in the range 49152 to 65535';
                     }
@@ -217,7 +238,7 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
     );
 
     var viewModel = Provider.of<DeviceListViewModel>(context, listen: false);
-    viewModel.addNewPeer(peerInfo);
+    await viewModel.addNewPeer(peerInfo);
 
     Navigator.of(context).pop();
   }

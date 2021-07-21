@@ -7,17 +7,17 @@ import 'package:p2p_task/utils/serializable.dart';
 part 'task_list_message.g.dart';
 
 @JsonSerializable()
-class TaskListMessage extends Serializable {
+class TaskListMessage implements Serializable {
   String taskListCrdtJson;
   bool requestReply;
-  String peerID;
+  String peerId;
 
   @Uint8ListConverter()
   Uint8List signature;
 
   TaskListMessage(
     this.taskListCrdtJson,
-    this.peerID,
+    this.peerId,
     this.signature, {
     this.requestReply = false,
   });

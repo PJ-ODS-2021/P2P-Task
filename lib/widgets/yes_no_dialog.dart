@@ -31,11 +31,9 @@ class YesNoDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      scrollable: true,
       title: Text(title ?? 'Are you sure?'),
-      content: Text(
-        description ?? '',
-        maxLines: 4,
-      ),
+      content: Text(description ?? ''),
       actions: [
         TextButton(
           onPressed: () {
