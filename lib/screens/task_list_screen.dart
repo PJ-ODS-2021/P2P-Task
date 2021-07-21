@@ -62,6 +62,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         children: [
           futureBuilder,
           ElevatedButton(
+            key: Key('addTaskButton'),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -74,7 +75,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
               shape: CircleBorder(),
               padding: EdgeInsets.all(24),
             ),
-            child: Icon(Icons.add),
+            child: Icon(Icons.add, semanticLabel: 'Add task'),
           ),
         ],
       ),

@@ -64,11 +64,13 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         child: Column(
           children: [
             _textSection(
+              Key('taskTitle'),
               context,
               _formTitleController,
               'Title',
             ),
             _textSection(
+              Key('taskDescription'),
               context,
               _formDescriptionController,
               'Description',
@@ -87,6 +89,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   }
 
   Widget _textSection(
+    Key key,
     BuildContext context,
     TextEditingController controller,
     String hintText,
@@ -97,6 +100,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         horizontal: 15.0,
       ),
       child: TextFormField(
+        key: key,
         autofocus: true,
         onFieldSubmitted: (value) => _onSubmitPressed(context),
         decoration: InputDecoration(
