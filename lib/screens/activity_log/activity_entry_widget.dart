@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:p2p_task/services/activity_record.dart';
+import 'package:p2p_task/services/task_list/activity_record.dart';
 
 class ActivityEntryWidget extends StatelessWidget {
   final ActivityRecord activity;

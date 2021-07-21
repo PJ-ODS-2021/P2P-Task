@@ -85,7 +85,7 @@ void main() {
         await devices[0].peerService.syncWithAllKnownPeers();
 
         final device2TaskLists =
-            (await devices[1].taskList.taskListService.taskLists).toList();
+            (await devices[1].taskList.taskListService.getTaskLists()).toList();
         expect(device2TaskLists.length, 1);
         expect(device2TaskLists.first.title, taskList.title);
         expect(device2TaskLists.first.elements, [task]);
@@ -105,7 +105,7 @@ void main() {
         await devices[1].peerService.syncWithAllKnownPeers();
 
         expect(
-          (await devices[1].taskList.taskListService.taskLists).toList(),
+          (await devices[1].taskList.taskListService.getTaskLists()).toList(),
           [taskList],
         );
       });
@@ -190,25 +190,25 @@ void main() {
         // sync form device 0 should do nothing because encryption keys are wrong
         await devices[0].peerService.syncWithAllKnownPeers();
         expect(
-          (await devices[1].taskList.taskListService.taskLists).isEmpty,
+          (await devices[1].taskList.taskListService.getTaskLists()).isEmpty,
           true,
         );
         expect(
-          (await devices[2].taskList.taskListService.taskLists).isEmpty,
+          (await devices[2].taskList.taskListService.getTaskLists()).isEmpty,
           true,
         );
 
         // sync from device 1 should work
         await devices[1].peerService.syncWithAllKnownPeers();
         expect(
-          (await devices[1].taskList.taskListService.taskLists).toList(),
+          (await devices[1].taskList.taskListService.getTaskLists()).toList(),
           [taskList],
         );
 
         // sync from device 2 should work
         await devices[2].peerService.syncWithAllKnownPeers();
         expect(
-          (await devices[2].taskList.taskListService.taskLists).toList(),
+          (await devices[2].taskList.taskListService.getTaskLists()).toList(),
           [taskList],
         );
 
@@ -232,11 +232,11 @@ void main() {
         // sync form device 0 should work
         await devices[0].peerService.syncWithAllKnownPeers();
         expect(
-          (await devices[1].taskList.taskListService.taskLists).isEmpty,
+          (await devices[1].taskList.taskListService.getTaskLists()).isEmpty,
           true,
         );
         expect(
-          (await devices[2].taskList.taskListService.taskLists).isEmpty,
+          (await devices[2].taskList.taskListService.getTaskLists()).isEmpty,
           true,
         );
       });

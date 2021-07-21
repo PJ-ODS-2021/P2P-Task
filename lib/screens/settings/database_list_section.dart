@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:p2p_task/screens/setup/dependencies_provider.dart';
 import 'package:p2p_task/services/peer_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
-import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/task_list/task_list_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/database_service.dart';
 import 'package:p2p_task/widgets/list_section.dart';
@@ -21,7 +21,9 @@ class DatabaseSection extends StatelessWidget {
 
     return FutureBuilder<int>(
       initialData: -1,
-      future: taskListService.count(),
+      future: taskListService
+          .getTaskLists(decodeTasks: false)
+          .then((lists) => lists.length),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
@@ -47,7 +49,7 @@ class DatabaseSection extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () async {
-                          await taskListService.delete();
+                          await taskListService.purge();
                           Navigator.pop(context);
                         },
                         child: Text('Yes'),

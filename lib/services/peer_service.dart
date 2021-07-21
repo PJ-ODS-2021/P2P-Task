@@ -11,7 +11,7 @@ import 'package:p2p_task/services/network_info_service.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
 import 'package:p2p_task/services/sync_service.dart';
 import 'package:p2p_task/security/key_helper.dart';
-import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/task_list/task_list_service.dart';
 import 'package:p2p_task/utils/log_mixin.dart';
 
 class PeerService with LogMixin, ChangeCallbackProvider {

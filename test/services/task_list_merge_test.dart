@@ -32,27 +32,14 @@ void main() {
         .taskListService
         .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
 
-    final taskLists = (await devices[0].taskListService.taskLists).toList();
+    final taskLists =
+        (await devices[0].taskListService.getTaskLists()).toList();
     expect(taskLists.length, 1);
     expect(taskLists.first.id, 'id');
     expect(taskLists.first.title, 'list');
     expect(
       unorderedListEquality(
-        taskLists.first.elements.toList(),
-        {task1, task2},
-      ),
-      true,
-    );
-    expect(
-      unorderedListEquality(
-        (await devices[0].taskListService.getTasksFromList('id')).toList(),
-        {task1, task2},
-      ),
-      true,
-    );
-    expect(
-      unorderedListEquality(
-        (await devices[0].taskListService.allTasks).toList(),
+        taskLists.first.elements,
         {task1, task2},
       ),
       true,
@@ -82,7 +69,8 @@ void main() {
     await devices[0].taskListService.mergeCrdtJson(jsonEncode(device1Crdt));
     expect(
       unorderedListEquality(
-        (await devices[0].taskListService.taskLists).toList(),
+        (await devices[0].taskListService.getTaskLists(decodeTasks: false))
+            .toList(),
         {taskList1, taskList2},
       ),
       true,
@@ -105,7 +93,7 @@ void main() {
         .taskListService
         .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
     final mergedTaskLists =
-        (await devices[0].taskListService.taskLists).toList();
+        (await devices[0].taskListService.getTaskLists()).toList();
     expect(mergedTaskLists.length, 1);
     final mergedTaskList = mergedTaskLists.first;
     expect(mergedTaskList.title, taskList.title);
@@ -131,7 +119,7 @@ void main() {
         .taskListService
         .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
     final mergedTaskLists =
-        (await devices[0].taskListService.taskLists).toList();
+        (await devices[0].taskListService.getTaskLists()).toList();
     expect(mergedTaskLists.length, 1);
     final mergedTaskList = mergedTaskLists.first;
     expect(mergedTaskList.title, taskList.title);
@@ -177,11 +165,13 @@ void main() {
     await devices[0]
         .taskListService
         .mergeCrdtJson(await devices[1].taskListService.crdtToJson());
-    final allTasks = (await devices[0].taskListService.allTasks).toList();
-    expect(allTasks.length, 1);
-    expect(allTasks.first.id, 'task1Id');
-    expect(allTasks.first.title, 'task1 updated');
-    expect(allTasks.first.description, 'task2 description');
+    final taskLists =
+        (await devices[0].taskListService.getTaskLists()).toList();
+    expect(taskLists.length, 1);
+    expect(taskLists.first.elements.length, 1);
+    expect(taskLists.first.elements.first.id, 'task1Id');
+    expect(taskLists.first.elements.first.title, 'task1 updated');
+    expect(taskLists.first.elements.first.description, 'task2 description');
   });
 
   test(
@@ -254,11 +244,11 @@ void main() {
       );
 
       // completed and flagged should be marked as true
+      final taskLists =
+          (await devices[1].taskListService.getTaskLists()).toList();
+      expect(taskLists.length, 1);
       expect(
-        unorderedListEquality(
-          (await devices[1].taskListService.allTasks).toList(),
-          {expectedTask},
-        ),
+        unorderedListEquality(taskLists.first.elements, {expectedTask}),
         true,
       );
     },

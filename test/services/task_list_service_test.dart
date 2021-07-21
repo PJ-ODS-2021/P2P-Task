@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/models/task_list.dart';
-import 'package:p2p_task/services/activity_record.dart';
+import 'package:p2p_task/services/task_list/activity_record.dart';
 import 'package:uuid/uuid.dart';
 
 import '../utils/device_task_list.dart';
@@ -18,7 +18,7 @@ void main() {
     final listId = Uuid().v4();
     final taskList = TaskList(id: listId, title: 'list1');
     await device.taskListService.upsertTaskList(taskList);
-    final taskLists = (await device.taskListService.taskLists).toList();
+    final taskLists = (await device.taskListService.getTaskLists()).toList();
     expect(taskLists.length, 1);
     expect(taskLists.first.id, listId);
     expect(taskLists.first.title, 'list1');
@@ -30,7 +30,7 @@ void main() {
     final taskList = TaskList(id: listId, title: 'list1');
     await device.taskListService.upsertTaskList(taskList);
     await device.taskListService.removeTaskList(listId);
-    expect((await device.taskListService.taskLists).toList(), []);
+    expect((await device.taskListService.getTaskLists()).toList(), []);
   });
 
   test('create and get task', () async {
@@ -39,7 +39,10 @@ void main() {
         .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
     await device.taskListService.upsertTask('listId', task);
     expect(task.id, isNot(null));
-    expect((await device.taskListService.allTasks).toList(), [task]);
+    expect(
+      (await device.taskListService.getTaskListById('listId'))?.elements,
+      [task],
+    );
   });
 
   test('create and remove task', () async {
@@ -48,7 +51,12 @@ void main() {
         .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
     await device.taskListService.upsertTask('listId', task);
     await device.taskListService.removeTask('listId', task.id!);
-    expect((await device.taskListService.allTasks).toList(), []);
+    expect(
+      (await device.taskListService.getTaskListById('listId'))
+          ?.elements
+          .isEmpty,
+      true,
+    );
   });
 
   test('create, remove and re-insert task', () async {
@@ -59,7 +67,10 @@ void main() {
     await device.taskListService.upsertTask('listId', task1);
     await device.taskListService.removeTask('listId', task1.id!);
     await device.taskListService.upsertTask('listId', task2..id = task1.id);
-    expect((await device.taskListService.allTasks).toList(), [task2]);
+    expect(
+      (await device.taskListService.getTaskListById('listId'))?.elements,
+      [task2],
+    );
   });
 
   test('create task and remove its task list', () async {
@@ -68,7 +79,7 @@ void main() {
         .upsertTaskList(TaskList(id: 'listId', title: 'list1'));
     await device.taskListService.upsertTask('listId', task);
     await device.taskListService.removeTaskList('listId');
-    expect((await device.taskListService.allTasks).toList(), []);
+    expect((await device.taskListService.getTaskLists()).isEmpty, true);
   });
 
   group('activities', () {
@@ -80,8 +91,9 @@ void main() {
       await device.taskListService.upsertTask('listId', task1);
       await device.taskListService.upsertTask('listId', task2);
 
-      final taskActivities =
-          (await device.taskListService.taskActivities).toList();
+      final taskActivities = (await device.taskListService.activities)
+          .whereType<TaskActivity>()
+          .toList();
       final tasks = taskActivities.map((v) => v.task).toList();
       expect(
         unorderedListEquality(tasks, {task1, task2}),
@@ -102,8 +114,9 @@ void main() {
       await device.taskListService.upsertTask('listId', task1);
       await device.taskListService.removeTask('listId', task1.id!);
 
-      final taskActivities =
-          (await device.taskListService.taskActivities).toList();
+      final taskActivities = (await device.taskListService.activities)
+          .whereType<TaskActivity>()
+          .toList();
       expect(taskActivities.length, 1);
       expect(taskActivities.first.isDeleted, true);
       expect(taskActivities.first.taskListId, 'listId');
@@ -118,8 +131,9 @@ void main() {
       await device.taskListService
           .upsertTask('listId', task..description = 'a new description');
 
-      final taskActivities =
-          (await device.taskListService.taskActivities).toList();
+      final taskActivities = (await device.taskListService.activities)
+          .whereType<TaskActivity>()
+          .toList();
       expect(taskActivities.length, 2);
       taskActivities.forEach((activity) {
         expect(activity.task, task);
@@ -144,8 +158,9 @@ void main() {
           .upsertTask('listId', task..description = 'a new description');
       await device.taskListService.upsertTask('listId', task..completed = true);
 
-      final taskActivities =
-          (await device.taskListService.taskActivities).toList();
+      final taskActivities = (await device.taskListService.activities)
+          .whereType<TaskActivity>()
+          .toList();
       expect(taskActivities.length, 3);
       taskActivities.forEach((activity) {
         expect(activity.task, task);
@@ -163,8 +178,9 @@ void main() {
       await device.taskListService.upsertTaskList(list1);
       await device.taskListService.upsertTaskList(list2);
 
-      final listActivities =
-          (await device.taskListService.taskListActivities).toList();
+      final listActivities = (await device.taskListService.activities)
+          .whereType<TaskListActivity>()
+          .toList();
       final lists = listActivities.map((v) => v.taskList).toList();
       expect(
         unorderedListEquality(lists, {list1, list2}),
@@ -181,8 +197,9 @@ void main() {
       await device.taskListService.upsertTaskList(list);
       await device.taskListService.removeTaskList('listId');
 
-      final listActivities =
-          (await device.taskListService.taskListActivities).toList();
+      final listActivities = (await device.taskListService.activities)
+          .whereType<TaskListActivity>()
+          .toList();
       expect(listActivities.length, 1);
       expect(listActivities.first.isDeleted, true);
     });
@@ -192,8 +209,9 @@ void main() {
       await device.taskListService.upsertTaskList(list);
       await device.taskListService.upsertTaskList(list..title = 'a new title');
 
-      final listActivities =
-          (await device.taskListService.taskListActivities).toList();
+      final listActivities = (await device.taskListService.activities)
+          .whereType<TaskListActivity>()
+          .toList();
       expect(listActivities.length, 2);
       listActivities.forEach((activity) {
         expect(activity.taskList, list);
@@ -216,8 +234,9 @@ void main() {
       await device.taskListService
           .upsertTaskList(list..sortBy = SortOption.DueDate);
 
-      final listActivities =
-          (await device.taskListService.taskListActivities).toList();
+      final listActivities = (await device.taskListService.activities)
+          .whereType<TaskListActivity>()
+          .toList();
       expect(listActivities.length, 3);
       listActivities.forEach((activity) {
         expect(activity.taskList, list);
@@ -235,8 +254,7 @@ void main() {
       await device.taskListService.upsertTaskList(list);
       await device.taskListService.upsertTask('listId', task);
 
-      final allActivities =
-          (await device.taskListService.allActivities).toList();
+      final allActivities = (await device.taskListService.activities).toList();
       expect(allActivities.length, 2);
       final taskActivities = allActivities.whereType<TaskActivity>().toList();
       expect(taskActivities.length, 1);

@@ -92,42 +92,46 @@ void main() {
     });
 
     test(
-        'should run a migration function with '
-        'version greater than current version', () async {
-      when(migrationFunctionDispenser.get(any)).thenReturn((_) async => null);
+      'should run a migration function with '
+      'version greater than current version',
+      () async {
+        when(migrationFunctionDispenser.get(any)).thenReturn((_) async => null);
 
-      await DatabaseService(
-        databaseFactory,
-        version: 2,
-        databaseName: databaseName,
-        migrationDispenser: migrationFunctionDispenser,
-        inMemory: true,
-      ).create();
+        await DatabaseService(
+          databaseFactory,
+          version: 2,
+          databaseName: databaseName,
+          migrationDispenser: migrationFunctionDispenser,
+          inMemory: true,
+        ).create();
 
-      verify(migrationFunctionDispenser.get(2)).called(1);
-      verifyNoMoreInteractions(migrationFunctionDispenser);
-    });
+        verify(migrationFunctionDispenser.get(2)).called(1);
+        verifyNoMoreInteractions(migrationFunctionDispenser);
+      },
+    );
 
     test(
-        'should run the migration functions with '
-        'version greater than the current version', () async {
-      when(migrationFunctionDispenser.get(any)).thenReturn((_) async => null);
+      'should run the migration functions with '
+      'version greater than the current version',
+      () async {
+        when(migrationFunctionDispenser.get(any)).thenReturn((_) async => null);
 
-      await DatabaseService(
-        databaseFactory,
-        version: 4,
-        databaseName: databaseName,
-        migrationDispenser: migrationFunctionDispenser,
-        inMemory: true,
-      ).create();
+        await DatabaseService(
+          databaseFactory,
+          version: 4,
+          databaseName: databaseName,
+          migrationDispenser: migrationFunctionDispenser,
+          inMemory: true,
+        ).create();
 
-      verifyNever(migrationFunctionDispenser.get(1));
-      verify(migrationFunctionDispenser.get(2)).called(1);
-      verify(migrationFunctionDispenser.get(3)).called(1);
-      verify(migrationFunctionDispenser.get(4)).called(1);
-      verifyNever(migrationFunctionDispenser.get(5));
-      verifyNoMoreInteractions(migrationFunctionDispenser);
-    });
+        verifyNever(migrationFunctionDispenser.get(1));
+        verify(migrationFunctionDispenser.get(2)).called(1);
+        verify(migrationFunctionDispenser.get(3)).called(1);
+        verify(migrationFunctionDispenser.get(4)).called(1);
+        verifyNever(migrationFunctionDispenser.get(5));
+        verifyNoMoreInteractions(migrationFunctionDispenser);
+      },
+    );
 
     test('should run the migration functions in correct order', () async {
       when(migrationFunctionDispenser.get(any)).thenReturn((_) async => null);

@@ -6,7 +6,7 @@ import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/screens/task_form_screen.dart';
 import 'package:p2p_task/screens/task_list_screen.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
-import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/task_list/task_list_service.dart';
 import 'package:provider/provider.dart';
 
 import '../utils/device_task_list.dart';
@@ -183,8 +183,9 @@ void main() {
 
           await tester.runAsync(() async {
             final taskRecords =
-                await taskListService.getTasksFromList(taskList.id!);
-            expect(taskRecords.length, 1);
+                (await taskListService.getTaskListById(taskList.id!))?.elements;
+            expect(taskRecords, isNot(null));
+            expect(taskRecords!.length, 1);
             final task = taskRecords.first;
             expect(task.isFlagged, true);
           });
@@ -219,8 +220,9 @@ void main() {
 
           await tester.runAsync(() async {
             final taskRecords =
-                await taskListService.getTasksFromList(taskList.id!);
-            expect(taskRecords.length, 1);
+                (await taskListService.getTaskListById(taskList.id!))?.elements;
+            expect(taskRecords, isNot(null));
+            expect(taskRecords!.length, 1);
             final task = taskRecords.first;
             expect(task.completed, true);
           });
@@ -255,7 +257,8 @@ void main() {
           await tester.pumpAndSettle();
 
           await tester.runAsync(() async {
-            final tasks = await taskListService.getTasksFromList(taskList.id!);
+            final tasks =
+                (await taskListService.getTaskListById(taskList.id!))?.elements;
             expect(tasks, isEmpty);
           });
         },

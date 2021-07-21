@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:p2p_task/config/style_constants.dart';
-import 'package:p2p_task/services/activity_record.dart';
+import 'package:p2p_task/services/task_list/activity_record.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/services/identity_service.dart';
 import 'package:p2p_task/services/peer_info_service.dart';
-import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/task_list/task_list_service.dart';
 import 'package:provider/provider.dart';
 
 import 'activity_entry_widget.dart';
@@ -24,7 +24,7 @@ class ActivityLogScreen extends StatelessWidget {
 
     return FutureBuilder<List>(
       future: Future.wait([
-        taskListService.allActivities,
+        taskListService.activities,
         identityService.peerId,
         peerInfoService.deviceNameMap,
       ]),

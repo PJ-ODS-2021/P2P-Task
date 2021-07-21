@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/screens/task_form_screen.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
-import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/task_list/task_list_service.dart';
 import 'package:provider/provider.dart';
 
 import '../utils/device_task_list.dart';
@@ -47,8 +47,10 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.runAsync(() async {
-        final tasks = await taskListService.getTasksFromList(taskList.id!);
-        expect(tasks.length, 1);
+        final tasks =
+            (await taskListService.getTaskListById(taskList.id!))?.elements;
+        expect(tasks, isNot(null));
+        expect(tasks!.length, 1);
         final createdTask = tasks.first;
         expect(createdTask.title, title);
         expect(createdTask.description, description);

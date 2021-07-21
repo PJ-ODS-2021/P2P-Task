@@ -4,7 +4,7 @@ import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/screens/task_list_screen.dart';
 import 'package:p2p_task/screens/task_lists_screen.dart';
 import 'package:p2p_task/screens/task_list_form_screen.dart';
-import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/task_list/task_list_service.dart';
 import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:provider/provider.dart';
 
@@ -117,7 +117,7 @@ void main() {
           await tester.pumpAndSettle();
 
           await tester.runAsync(() async {
-            final lists = await taskListService.taskLists;
+            final lists = await taskListService.getTaskLists();
             expect(lists, isEmpty);
           });
         },

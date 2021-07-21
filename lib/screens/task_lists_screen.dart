@@ -5,7 +5,7 @@ import 'package:p2p_task/services/change_callback_notifier.dart';
 import 'package:p2p_task/models/task_list.dart';
 import 'package:p2p_task/screens/task_list_screen.dart';
 import 'package:p2p_task/screens/task_list_form_screen.dart';
-import 'package:p2p_task/services/task_list_service.dart';
+import 'package:p2p_task/services/task_list/task_list_service.dart';
 import 'package:p2p_task/widgets/pull_to_sync_widget.dart';
 import 'package:provider/provider.dart';
 
@@ -18,7 +18,8 @@ class TaskListsScreen extends StatelessWidget {
 
     final futureBuilder = FutureBuilder<List<TaskList>>(
       initialData: [],
-      future: taskService.taskLists
+      future: taskService
+          .getTaskLists(decodeTasks: false)
           .then((v) => v.toList()..sort((a, b) => a.title.compareTo(b.title))),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
