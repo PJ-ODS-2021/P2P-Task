@@ -167,7 +167,8 @@ class _DeviceFormScreenState extends State<DeviceFormScreen> {
                     if (value == null || value.isEmpty) {
                       return 'The port is missing.';
                     }
-                    var port = int.parse(value);
+                    final port = int.tryParse(value);
+                    if (port == null) return 'The port must be a number';
                     if (port < 49152 || port > 65535) {
                       return 'The port must be in the range 49152 to 65535';
                     }

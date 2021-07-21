@@ -274,7 +274,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
             context,
             title: 'Delete Location',
             description:
-                'Do you really want to delete the peer location "${peerLocation.uri}" from the peer "${peerInfo.name}" with ID "${peerInfo.id}"?',
+                'Do you really want to delete the location "${peerLocation.uri}" from the device "${peerInfo.name}" with ID "${peerInfo.id}"?',
           ).then((value) {
             if (value != null && value) {
               viewModel.removePeerLocation(peerInfo.id, peerLocation);
