@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:p2p_task/models/peer_info.dart';
 import 'package:p2p_task/models/task.dart';
 import 'package:p2p_task/models/task_list.dart';
 
 import '../utils/device.dart';
+import '../utils/unordered_list_compare.dart';
 
 void main() {
   group('#PeerService', () {
@@ -86,9 +89,7 @@ void main() {
 
         final device2TaskLists =
             (await devices[1].taskList.taskListService.taskLists).toList();
-        expect(device2TaskLists.length, 1);
-        expect(device2TaskLists.first.title, taskList.title);
-        expect(device2TaskLists.first.elements, [task]);
+        expect(device2TaskLists, [taskList..elements.add(task)]);
       });
 
       test('should try multiple peer locations', () async {
@@ -242,8 +243,145 @@ void main() {
       });
     });
 
+    group('Broadcast', () {
+      setUp(() async {
+        final additionalDevices = [
+          await Device.create(name: 'device3', port: 58243),
+          await Device.create(name: 'device4', port: 58244),
+        ];
+        await Future.wait(additionalDevices.map(
+          (device) => device.peerService.startServer(),
+        ));
+        devices.addAll(additionalDevices);
+      });
+
+      test('task list message device chain topology no reply', () async {
+        final peerInfos = await Future.wait(
+          devices.map((device) => device.generatePeerInfo()).toList(),
+        );
+        await Future.wait([
+          for (var i = 1; i < peerInfos.length; i++) ...[
+            devices[i - 1].peerInfoService.upsert(peerInfos[i]),
+            devices[i - 1]
+                .peerService
+                .sendIntroductionMessageToPeer(peerInfos[i]),
+          ],
+        ]);
+
+        final taskList = TaskList(title: 'taskList');
+        await devices.first.taskList.taskListService.upsertTaskList(taskList);
+        await _checkBroadcastWorks(
+          devices,
+          devices.first,
+          expectedTaskLists: {taskList},
+        );
+      });
+
+      test('task list message device chain topology with reply', () async {
+        final peerInfos = await Future.wait(
+          devices.map((device) => device.generatePeerInfo()).toList(),
+        );
+        await Future.wait([
+          for (var i = 1; i < peerInfos.length; i++) ...[
+            devices[i - 1].peerInfoService.upsert(peerInfos[i]),
+            devices[i - 1]
+                .peerService
+                .sendIntroductionMessageToPeer(peerInfos[i]),
+          ],
+        ]);
+
+        final taskList1 = TaskList(title: 'taskList1');
+        final taskList2 = TaskList(title: 'taskList2');
+        await devices.first.taskList.taskListService.upsertTaskList(taskList1);
+        await devices.last.taskList.taskListService.upsertTaskList(taskList2);
+
+        await _checkBroadcastWorks(
+          devices,
+          devices.first,
+          expectedTaskLists: {taskList1, taskList2},
+        );
+      });
+
+      test('task list message quad topology with reply', () async {
+        final peerInfos = await Future.wait(
+          devices.map((device) => device.generatePeerInfo()).toList(),
+        );
+        final addPeerInfo = (int index) {
+          final otherIndex = (index + 1) % peerInfos.length;
+
+          return [
+            devices[index].peerInfoService.upsert(peerInfos[otherIndex]),
+            devices[index]
+                .peerService
+                .sendIntroductionMessageToPeer(peerInfos[otherIndex]),
+          ];
+        };
+        await Future.wait([
+          for (var i = 0; i < peerInfos.length; i++) ...addPeerInfo(i),
+        ]);
+
+        final taskList1 = TaskList(title: 'taskList1');
+        final taskList2 = TaskList(title: 'taskList2');
+        await devices.first.taskList.taskListService.upsertTaskList(taskList1);
+        await devices[2].taskList.taskListService.upsertTaskList(taskList2);
+
+        await _checkBroadcastWorks(
+          devices,
+          devices.first,
+          expectedTaskLists: {taskList1, taskList2},
+        );
+      });
+    });
+
     tearDown(() async {
       await Future.wait(devices.map((device) => device.close()));
     });
   });
+}
+
+/// Will fail if [expectedTaskLists] is empty because the task list change callback will never be called
+Future<void> _checkBroadcastWorks(
+  List<Device> devices,
+  Device syncDevice, {
+  required Set<TaskList> expectedTaskLists,
+  Duration timeout = const Duration(seconds: 10),
+}) async {
+  final taskListChangedCompleters = <Completer<bool>>[];
+  devices.forEach((device) {
+    final completer = Completer<bool>();
+    taskListChangedCompleters.add(completer);
+    device.taskList.taskListService.addChangeCallback(() async {
+      try {
+        final taskLists =
+            (await device.taskList.taskListService.taskLists).toList();
+        if (unorderedListEquality(taskLists, expectedTaskLists)) {
+          if (!completer.isCompleted) completer.complete(true);
+        }
+      } on Exception {
+        // Ignore exception: can happen if database is destroyed before all messages are handled
+      }
+    });
+  });
+  await syncDevice.peerService.syncWithAllKnownPeers();
+
+  final completed = await Future.wait(taskListChangedCompleters.map(
+    (completer) => completer.future.timeout(timeout, onTimeout: () => false),
+  ));
+  expect(
+    completed,
+    List.filled(completed.length, true),
+    reason: 'expected all task lists to have updated in $timeout time',
+  );
+
+  for (final device in devices) {
+    expect(
+      unorderedListEquality(
+        (await device.taskList.taskListService.taskLists).toList(),
+        expectedTaskLists,
+      ),
+      true,
+      reason:
+          '${await device.taskList.identityService.name} should have correct task lists at the end',
+    );
+  }
 }
